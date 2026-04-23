@@ -6,6 +6,7 @@ import NodeCard from '@/components/meshtastic/NodeCard.jsx';
 import NodeMap from '@/components/meshtastic/NodeMap.jsx';
 import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
 import MessageLog from '@/components/meshtastic/MessageLog.jsx';
+import MessageInput from '@/components/meshtastic/MessageInput.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Radio, Map, MessageSquare, List } from 'lucide-react';
@@ -94,8 +95,11 @@ export default function Dashboard() {
                 <TabsContent value="detail" className="flex-1 overflow-auto">
                   <NodeDetail node={selectedNode} />
                 </TabsContent>
-                <TabsContent value="messages" className="flex-1 overflow-auto bg-slate-50">
-                  <MessageLog messages={messages} nodes={nodes} />
+                <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+                  <div className="flex-1 overflow-auto">
+                    <MessageLog messages={messages} nodes={nodes} />
+                  </div>
+                  <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -132,13 +136,14 @@ export default function Dashboard() {
                     onSelectNode={setSelectedNodeNum}
                   />
                 </div>
-                <div className="h-48 border-t bg-slate-50 flex flex-col">
-                  <div className="px-4 py-2 border-b bg-white">
+                <div className="h-64 border-t bg-slate-50 flex flex-col shrink-0">
+                  <div className="px-4 py-2 border-b bg-white shrink-0">
                     <h3 className="font-semibold text-sm text-slate-600">Nachrichten ({messages.length})</h3>
                   </div>
-                  <ScrollArea className="flex-1">
+                  <div className="flex-1 overflow-y-auto min-h-0">
                     <MessageLog messages={messages} nodes={nodes} />
-                  </ScrollArea>
+                  </div>
+                  <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
                 </div>
               </div>
 
