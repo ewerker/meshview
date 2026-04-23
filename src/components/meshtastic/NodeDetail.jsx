@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Battery, MapPin, Wifi, Thermometer, Droplets, Gauge, Wind, Clock, Cpu, Radio } from 'lucide-react';
 import { HardwareModel } from '@/lib/meshtastic/constants.js';
 import TelemetryChart from './TelemetryChart.jsx';
+import SignalChart from './SignalChart.jsx';
+import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -27,6 +29,8 @@ function timeAgo(timestamp) {
 }
 
 export default function NodeDetail({ node }) {
+  const { packetLog } = useMeshStore();
+
   if (!node) return (
     <div className="flex items-center justify-center h-full text-slate-400">
       <div className="text-center">
@@ -70,6 +74,7 @@ export default function NodeDetail({ node }) {
       <Tabs defaultValue="info" className="p-4">
         <TabsList className="w-full">
           <TabsTrigger value="info" className="flex-1">Info</TabsTrigger>
+          <TabsTrigger value="signal" className="flex-1">Signal</TabsTrigger>
           <TabsTrigger value="position" className="flex-1">Position</TabsTrigger>
           <TabsTrigger value="telemetry" className="flex-1">Telemetrie</TabsTrigger>
           <TabsTrigger value="env" className="flex-1">Umgebung</TabsTrigger>
@@ -113,6 +118,10 @@ export default function NodeDetail({ node }) {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="signal" className="mt-4">
+          <SignalChart node={node} packetLog={packetLog} />
         </TabsContent>
 
         <TabsContent value="position" className="mt-4">
