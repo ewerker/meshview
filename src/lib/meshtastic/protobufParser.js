@@ -36,11 +36,16 @@ export function parseFromRadio(bytes) {
     // Log all parsed fields for debugging
     console.log('[FromRadio] field keys:', Object.keys(fields).join(','), '| types:', Object.entries(fields).map(([k,v]) => `${k}:${v instanceof Uint8Array ? 'bytes('+v.length+')' : v}`).join(' '));
 
+    // Verified FromRadio field numbers from byte analysis:
+    // field 2  (0x12) = packet (MeshPacket)       — wire2
+    // field 3  (0x1a) = my_info (MyNodeInfo)       — wire2
+    // field 4  (0x22) = node_info (NodeInfo)        — wire2
+    // field 7  (0x38) = config_complete_id (uint32) — varint
+    // field 15 (0x7a) = fileInfo (xmodem)           — wire2 (ignored)
     if (fields[2]) results.push({ type: 'packet', packet: parseMeshPacket(fields[2]) });
     if (fields[3]) results.push({ type: 'myInfo', myInfo: parseMyNodeInfo(fields[3]) });
     if (fields[4]) results.push({ type: 'nodeInfo', nodeInfo: parseNodeInfo(fields[4]) });
-    if (fields[6]) results.push({ type: 'configComplete', configCompleteId: fields[6] });
-    if (fields[11]) results.push({ type: 'metadata', metadata: parseDeviceMetadata(fields[11]) });
+    if (fields[7] !== undefined) results.push({ type: 'configComplete', configCompleteId: fields[7] });
 
     if (results.length === 0) return [{ type: 'unknown', raw: fields }];
     return results;
@@ -51,25 +56,32 @@ export function parseFromRadio(bytes) {
 
 function parseMeshPacket(bytes) {
   const fields = parseMessage(bytes);
-  // MeshPacket fields (mesh.proto):
-  // 1=to, 2=from, 3=decoded, 4=encrypted, 6=id, 7=rx_time, 8=rx_snr(float32), 9=hop_limit,
-  // 10=want_ack, 11=rx_rssi, 12=delayed, 14=channel, 15=public_key, 16=pki_encrypted, 19=next_hop, 20=relay_node
+  // MeshPacket OTA fields (verified from byte analysis):
+  // field 1  (wire5/fixed32) = from
+  // field 2  (wire5/fixed32) = to
+  // field 3  (wire0/varint)  = channel (OTA channel index)
+  // field 4  (wire2)         = encrypted payload
+  // field 5  (wire2)         = decoded Data (unencrypted)
+  // field 6  (wire0/varint)  = id
+  // field 7  (wire0/varint)  = rx_time
+  // field 8  (wire5/float32) = rx_snr
+  // field 9  (wire0/varint)  = hop_limit
+  // field 11 (wire0/varint)  = rx_rssi
   const packet = {
-    from: fields[2] || 0,
-    to: fields[1] || 0,
+    from: fields[1] || 0,
+    to: fields[2] || 0,
     id: fields[6] || 0,
     rxTime: fields[7] || 0,
     rxSnr: fields[8] ? int32ToFloat(fields[8]) : 0,
     hopLimit: fields[9] || 0,
-    channel: fields[14] || 0,
+    channel: fields[3] || 0,
     rxRssi: signedInt(fields[11] || 0),
-    viaMqtt: fields[16] || false,
     decoded: null,
   };
 
-  // field 3 = decoded Data (unencrypted), field 4 = encrypted (skip)
-  if (fields[3]) {
-    packet.decoded = parseData(fields[3]);
+  // field 5 = decoded Data (unencrypted), field 4 = encrypted (skip)
+  if (fields[5]) {
+    packet.decoded = parseData(fields[5]);
   }
 
   return packet;
