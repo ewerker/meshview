@@ -10,6 +10,7 @@ import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
+import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
@@ -186,15 +187,20 @@ export default function Dashboard() {
 
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
-                {/* Center: Map */}
+                {/* Center: Map + Serial Log */}
                 <Panel defaultSize={55} minSize={30}>
-                  <div className="p-4 h-full">
-                    <NodeMap
-                      nodes={nodes}
-                      myNodeNum={myNodeNum}
-                      selectedNodeNum={selectedNodeNum}
-                      onSelectNode={setSelectedNodeNum}
-                    />
+                  <div className="flex flex-col h-full">
+                    <div className="flex-1 p-4 overflow-hidden">
+                      <NodeMap
+                        nodes={nodes}
+                        myNodeNum={myNodeNum}
+                        selectedNodeNum={selectedNodeNum}
+                        onSelectNode={setSelectedNodeNum}
+                      />
+                    </div>
+                    <div className="border-t px-4 py-3 bg-card dark:bg-slate-800 shrink-0">
+                      <SerialLog />
+                    </div>
                   </div>
                 </Panel>
 
