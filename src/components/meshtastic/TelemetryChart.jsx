@@ -7,7 +7,16 @@ function formatTime(timestamp) {
 }
 
 export default function TelemetryChart({ node }) {
-  const history = node?.telemetryHistory || [];
+  let history = node?.telemetryHistory || [];
+
+  // Add current metrics if available and not in history
+  if (node?.deviceMetrics && (!history.length || !history.some(t => t.deviceMetrics))) {
+    history = [{
+      time: node.lastHeard || Math.floor(Date.now() / 1000),
+      deviceMetrics: node.deviceMetrics,
+      environmentMetrics: node.environmentMetrics,
+    }, ...history];
+  }
 
   const deviceData = history
     .filter(t => t.deviceMetrics)
