@@ -2,12 +2,18 @@ import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { Clock, MessageSquare, MapPin, Zap, Radio } from 'lucide-react';
 
 function getPacketIcon(packet) {
-  if (packet.raw?.decoded) {
-    const portnum = packet.raw.decoded.portnum;
-    if (portnum === 1) return <MessageSquare className="w-3 h-3 text-green-500" />;
-    if (portnum === 3) return <MapPin className="w-3 h-3 text-red-500" />;
-    if (portnum === 67) return <Zap className="w-3 h-3 text-yellow-500" />;
-  }
+  // Text message (portnum 1)
+  if (packet.raw?.decoded?.portnum === 1) return <MessageSquare className="w-3 h-3 text-green-500" />;
+  if (packet.raw?.decoded?.text) return <MessageSquare className="w-3 h-3 text-green-500" />;
+  
+  // Position (portnum 3)
+  if (packet.raw?.decoded?.portnum === 3) return <MapPin className="w-3 h-3 text-red-500" />;
+  if (packet.raw?.position) return <MapPin className="w-3 h-3 text-red-500" />;
+  
+  // Telemetry (portnum 67)
+  if (packet.raw?.decoded?.portnum === 67) return <Zap className="w-3 h-3 text-yellow-500" />;
+  if (packet.raw?.deviceMetrics || packet.raw?.environmentMetrics) return <Zap className="w-3 h-3 text-yellow-500" />;
+  
   return <Radio className="w-3 h-3 text-blue-500" />;
 }
 
@@ -62,12 +68,10 @@ function getPacketLabel(packet) {
   return `Paket (portnum: ${packet.raw?.decoded?.portnum || '?'})`;
 }
 
-function timeAgo(timestamp) {
+function formatTime(timestamp) {
   if (!timestamp) return '-';
-  const diff = Math.floor(Date.now() / 1000) - timestamp;
-  if (diff < 60) return `vor ${diff}s`;
-  if (diff < 3600) return `vor ${Math.floor(diff / 60)}min`;
-  return `vor ${Math.floor(diff / 3600)}h`;
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 export default function ReceivedPacketsTable() {
@@ -105,8 +109,8 @@ export default function ReceivedPacketsTable() {
               <td className="px-3 py-2 text-slate-400 truncate max-w-xs">
                 {getPacketLabel(packet).split(':')[1] || '-'}
               </td>
-              <td className="px-3 py-2 text-slate-500">
-                {timeAgo(packet.time)}
+              <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
+                {formatTime(packet.time)}
               </td>
             </tr>
           ))}
