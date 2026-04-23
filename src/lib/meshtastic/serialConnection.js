@@ -195,15 +195,15 @@ function buildTextPacket(textBytes, destination, channel, wantAck = false) {
     0x12, ...encodeVarint(textBytes.length), ...textBytes // field 2 (payload)
   ];
 
-  const packetId = Math.floor(Math.random() * 0xffffffff);
+  const packetId = (Math.random() * 0xffffffff) >>> 0;
   const meshBytes = [
     0x08, ...encodeVarint(destination >>> 0),              // field 1  (to)
     0x1a, ...encodeVarint(dataBytes.length), ...dataBytes, // field 3  (decoded)
-    0x30, ...encodeVarint(packetId >>> 0),                 // field 6  (id)
+    0x30, ...encodeVarint(packetId),                       // field 6  (id) — varint
     0x48, 0x03,                                            // field 9  (hop_limit = 3)
-    0x72, ...encodeVarint(channel),                        // field 14 (channel)
+    0x50, ...encodeVarint(wantAck ? 1 : 0),               // field 10 (want_ack)
+    0x70, ...encodeVarint(channel),                        // field 14 (channel) — varint
   ];
-  if (wantAck) meshBytes.push(0x50, 0x01);               // field 10 (want_ack)
 
   // ToRadio { field 1 (packet): MeshPacket }
   const toRadioBytes = [0x0a, ...encodeVarint(meshBytes.length), ...meshBytes];

@@ -48,21 +48,23 @@ export function parseFromRadio(bytes) {
 
 function parseMeshPacket(bytes) {
   const fields = parseMessage(bytes);
+  // MeshPacket fields (mesh.proto):
+  // 1=to, 2=from, 3=decoded, 4=encrypted, 6=id, 7=rx_time, 8=rx_snr(float32), 9=hop_limit,
+  // 10=want_ack, 11=rx_rssi, 12=delayed, 14=channel, 15=public_key, 16=pki_encrypted, 19=next_hop, 20=relay_node
   const packet = {
-    from: fields[1] || 0,
-    to: fields[2] || 0,
-    // field 3 = decoded (length-delimited) OR field 4 = encrypted (length-delimited)
-    id: fields[4] || 0,
-    rxTime: fields[5] || 0,
-    rxSnr: fields[7] ? int32ToFloat(fields[7]) : 0,
-    hopLimit: fields[8] || 0,
-    channel: fields[10] || 0,
+    from: fields[2] || 0,
+    to: fields[1] || 0,
+    id: fields[6] || 0,
+    rxTime: fields[7] || 0,
+    rxSnr: fields[8] ? int32ToFloat(fields[8]) : 0,
+    hopLimit: fields[9] || 0,
+    channel: fields[14] || 0,
     rxRssi: signedInt(fields[11] || 0),
-    viaMqtt: fields[12] || false,
+    viaMqtt: fields[16] || false,
     decoded: null,
   };
 
-  // field 3 = decoded Data (unencrypted channel)
+  // field 3 = decoded Data (unencrypted), field 4 = encrypted (skip)
   if (fields[3]) {
     packet.decoded = parseData(fields[3]);
   }
