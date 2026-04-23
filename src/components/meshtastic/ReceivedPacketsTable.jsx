@@ -66,6 +66,8 @@ function formatTime(timestamp) {
 export default function ReceivedPacketsTable() {
   const { packetLog } = useMeshStore();
 
+  console.log('ReceivedPacketsTable rendered, packetLog:', packetLog);
+
   if (packetLog.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
