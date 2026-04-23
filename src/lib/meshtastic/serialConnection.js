@@ -102,16 +102,22 @@ export class MeshtasticSerial {
       const s1 = this.buffer.indexOf(START1);
       if (s1 === -1) {
         // Keep last 3 bytes in case START sequence is split across reads
+        const discarded = this.buffer.length;
         if (this.buffer.length > 3) {
           this.buffer = this.buffer.slice(-3);
+        } else {
+          this.buffer = [];
         }
+        console.log(`[processBuffer] No START1 found, discarded ${discarded}b, kept ${this.buffer.length}b`);
         return;
       }
       if (s1 > 0) {
+        console.log(`[processBuffer] Found START1 at offset ${s1}, discarding ${s1}b`);
         this.buffer = this.buffer.slice(s1);
       }
       if (this.buffer.length < 2) return;
       if (this.buffer[1] !== START2) {
+        console.log(`[processBuffer] No START2 at [1], byte is 0x${this.buffer[1].toString(16).padStart(2,'0')}, skipping`);
         this.buffer = this.buffer.slice(1);
         continue;
       }
@@ -123,13 +129,17 @@ export class MeshtasticSerial {
       const packetLen = (msb << 8) | lsb;
 
       if (packetLen > 512) {
-        // Invalid length, skip this START2 and continue
+        console.log(`[processBuffer] Invalid length ${packetLen}, skipping`);
         this.buffer = this.buffer.slice(2);
         continue;
       }
 
-      if (this.buffer.length < 4 + packetLen) return;
+      if (this.buffer.length < 4 + packetLen) {
+        console.log(`[processBuffer] Incomplete packet: have ${this.buffer.length}b, need ${4 + packetLen}b`);
+        return;
+      }
 
+      console.log(`[processBuffer] Valid packet: ${packetLen}b, total ${4 + packetLen}b`);
       const packetData = this.buffer.slice(4, 4 + packetLen);
       this.buffer = this.buffer.slice(4 + packetLen);
 
