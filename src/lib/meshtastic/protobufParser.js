@@ -24,35 +24,23 @@ export function parseFromRadio(bytes) {
     // field 11 = queueStatus
     // field 13 = metadata
 
-    const result = { type: 'unknown', raw: fields };
-
     // FromRadio field numbers (Meshtastic protobuf):
     // field 1 (0x0a) = packet (MeshPacket)
     // field 2 (0x12) = my_info (MyNodeInfo)
     // field 4 (0x22) = node_info (NodeInfo)
-    // field 6 (0x32) = config
     // field 8 (0x42) = config_complete_id (uint32)
-    // field 11 (0x5a) = channel
-    // field 12 (0x62) = queueStatus
     // field 13 (0x6a) = metadata (DeviceMetadata)
-    if (fields[1]) {
-      result.type = 'packet';
-      result.packet = parseMeshPacket(fields[1]);
-    } else if (fields[2]) {
-      result.type = 'myInfo';
-      result.myInfo = parseMyNodeInfo(fields[2]);
-    } else if (fields[4]) {
-      result.type = 'nodeInfo';
-      result.nodeInfo = parseNodeInfo(fields[4]);
-    } else if (fields[8] !== undefined) {
-      result.type = 'configComplete';
-      result.configCompleteId = fields[8];
-    } else if (fields[13]) {
-      result.type = 'metadata';
-      result.metadata = parseDeviceMetadata(fields[13]);
-    }
+    // A single FromRadio message can contain multiple fields — emit one result per field.
+    const results = [];
 
-    return result;
+    if (fields[1]) results.push({ type: 'packet', packet: parseMeshPacket(fields[1]) });
+    if (fields[2]) results.push({ type: 'myInfo', myInfo: parseMyNodeInfo(fields[2]) });
+    if (fields[4]) results.push({ type: 'nodeInfo', nodeInfo: parseNodeInfo(fields[4]) });
+    if (fields[8] !== undefined) results.push({ type: 'configComplete', configCompleteId: fields[8] });
+    if (fields[13]) results.push({ type: 'metadata', metadata: parseDeviceMetadata(fields[13]) });
+
+    if (results.length === 0) return [{ type: 'unknown', raw: fields }];
+    return results;
   } catch (e) {
     return { type: 'error', error: e.message };
   }

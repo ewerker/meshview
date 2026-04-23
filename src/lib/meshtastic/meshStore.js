@@ -47,36 +47,33 @@ class MeshStore {
   }
 
   handlePacket(rawBytes) {
-    const parsed = parseFromRadio(rawBytes);
+    const parsedList = parseFromRadio(rawBytes);
 
-    // Log all packets
-    this.packetLog.unshift({
-      time: new Date(),
-      type: parsed.type,
-      raw: parsed,
-    });
-    if (this.packetLog.length > 200) this.packetLog.pop();
+    for (const parsed of parsedList) {
+      this.packetLog.unshift({ time: new Date(), type: parsed.type, raw: parsed });
+      if (this.packetLog.length > 200) this.packetLog.pop();
 
-    if (parsed.type === 'myInfo') {
-      this.myNodeNum = parsed.myInfo.myNodeNum;
-    } else if (parsed.type === 'nodeInfo') {
-      const ni = parsed.nodeInfo;
-      this.mergeNode(ni.num, {
-        num: ni.num,
-        user: ni.user,
-        position: ni.position,
-        snr: ni.snr,
-        lastHeard: ni.lastHeard,
-        deviceMetrics: ni.deviceMetrics,
-        channel: ni.channel,
-        hopsAway: ni.hopsAway,
-        isFavorite: ni.isFavorite,
-        viaMqtt: ni.viaMqtt,
-      });
-    } else if (parsed.type === 'packet' && parsed.packet?.decoded) {
-      this.handleDecodedPacket(parsed.packet);
-    } else if (parsed.type === 'metadata') {
-      this.metadata = parsed.metadata;
+      if (parsed.type === 'myInfo') {
+        this.myNodeNum = parsed.myInfo.myNodeNum;
+      } else if (parsed.type === 'nodeInfo') {
+        const ni = parsed.nodeInfo;
+        this.mergeNode(ni.num, {
+          num: ni.num,
+          user: ni.user,
+          position: ni.position,
+          snr: ni.snr,
+          lastHeard: ni.lastHeard,
+          deviceMetrics: ni.deviceMetrics,
+          channel: ni.channel,
+          hopsAway: ni.hopsAway,
+          isFavorite: ni.isFavorite,
+          viaMqtt: ni.viaMqtt,
+        });
+      } else if (parsed.type === 'packet' && parsed.packet?.decoded) {
+        this.handleDecodedPacket(parsed.packet);
+      } else if (parsed.type === 'metadata') {
+        this.metadata = parsed.metadata;
+      }
     }
 
     this.notify();
