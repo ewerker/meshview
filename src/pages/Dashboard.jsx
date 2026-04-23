@@ -8,7 +8,7 @@ import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
 import MessageLog from '@/components/meshtastic/MessageLog.jsx';
 import MessageInput from '@/components/meshtastic/MessageInput.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { Radio, Map, MessageSquare, List } from 'lucide-react';
 
 export default function Dashboard() {
@@ -104,60 +104,79 @@ export default function Dashboard() {
               </Tabs>
             </div>
 
-            {/* Desktop: 3-column layout */}
-            <div className="hidden lg:grid lg:grid-cols-[280px_1fr_320px] h-full gap-0">
-              {/* Left: Node list */}
-              <div className="border-r bg-white flex flex-col min-h-0">
-                <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
-                  <h3 className="font-semibold text-sm text-slate-600">Nodes ({nodes.length})</h3>
-                </div>
-                <div className="flex-1 overflow-y-auto min-h-0">
-                  <div className="p-3 space-y-2">
-                    {sortedNodes.map(node => (
-                      <NodeCard
-                        key={node.num}
-                        node={node}
-                        isMyNode={node.num === myNodeNum}
-                        selected={node.num === selectedNodeNum}
-                        onClick={() => setSelectedNodeNum(node.num)}
-                      />
-                    ))}
+            {/* Desktop: resizable 3-column layout */}
+            <div className="hidden lg:flex h-full">
+              <PanelGroup direction="horizontal" className="h-full w-full">
+                {/* Left: Node list */}
+                <Panel defaultSize={20} minSize={12} maxSize={40}>
+                  <div className="border-r bg-white flex flex-col h-full">
+                    <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
+                      <h3 className="font-semibold text-sm text-slate-600">Nodes ({nodes.length})</h3>
+                    </div>
+                    <div className="flex-1 overflow-y-auto min-h-0">
+                      <div className="p-3 space-y-2">
+                        {sortedNodes.map(node => (
+                          <NodeCard
+                            key={node.num}
+                            node={node}
+                            isMyNode={node.num === myNodeNum}
+                            selected={node.num === selectedNodeNum}
+                            onClick={() => setSelectedNodeNum(node.num)}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </Panel>
 
-              {/* Center: Map + Messages */}
-              <div className="flex flex-col overflow-hidden">
-                <div className="flex-1 p-4 min-h-0">
-                  <NodeMap
-                    nodes={nodes}
-                    myNodeNum={myNodeNum}
-                    selectedNodeNum={selectedNodeNum}
-                    onSelectNode={setSelectedNodeNum}
-                  />
-                </div>
-                <div className="h-64 border-t bg-slate-50 flex flex-col shrink-0">
-                  <div className="px-4 py-2 border-b bg-white shrink-0">
-                    <h3 className="font-semibold text-sm text-slate-600">Nachrichten ({messages.length})</h3>
-                  </div>
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    <MessageLog messages={messages} nodes={nodes} />
-                  </div>
-                  <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
-                </div>
-              </div>
+                <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
-              {/* Right: Node detail */}
-              <div className="border-l bg-white flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b bg-slate-50">
-                  <h3 className="font-semibold text-sm text-slate-600">
-                    {selectedNode ? selectedNode.user?.longName || 'Node Detail' : 'Node auswählen'}
-                  </h3>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <NodeDetail node={selectedNode} />
-                </div>
-              </div>
+                {/* Center: Map + Messages (vertical split) */}
+                <Panel defaultSize={55} minSize={30}>
+                  <PanelGroup direction="vertical" className="h-full">
+                    <Panel defaultSize={65} minSize={25}>
+                      <div className="p-4 h-full">
+                        <NodeMap
+                          nodes={nodes}
+                          myNodeNum={myNodeNum}
+                          selectedNodeNum={selectedNodeNum}
+                          onSelectNode={setSelectedNodeNum}
+                        />
+                      </div>
+                    </Panel>
+
+                    <PanelResizeHandle className="h-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize" />
+
+                    <Panel defaultSize={35} minSize={20}>
+                      <div className="border-t bg-slate-50 flex flex-col h-full">
+                        <div className="px-4 py-2 border-b bg-white shrink-0">
+                          <h3 className="font-semibold text-sm text-slate-600">Nachrichten ({messages.length})</h3>
+                        </div>
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                          <MessageLog messages={messages} nodes={nodes} />
+                        </div>
+                        <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
+                      </div>
+                    </Panel>
+                  </PanelGroup>
+                </Panel>
+
+                <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
+
+                {/* Right: Node detail */}
+                <Panel defaultSize={25} minSize={15} maxSize={45}>
+                  <div className="border-l bg-white flex flex-col h-full">
+                    <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
+                      <h3 className="font-semibold text-sm text-slate-600">
+                        {selectedNode ? selectedNode.user?.longName || 'Node Detail' : 'Node auswählen'}
+                      </h3>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <NodeDetail node={selectedNode} />
+                    </div>
+                  </div>
+                </Panel>
+              </PanelGroup>
             </div>
           </div>
         </>
