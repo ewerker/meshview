@@ -5,12 +5,11 @@ import StatsBar from '@/components/meshtastic/StatsBar.jsx';
 import NodeCard from '@/components/meshtastic/NodeCard.jsx';
 import NodeMap from '@/components/meshtastic/NodeMap.jsx';
 import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
-import MessageLog from '@/components/meshtastic/MessageLog.jsx';
-import MessageInput from '@/components/meshtastic/MessageInput.jsx';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
-import { Radio, Map, MessageSquare, List } from 'lucide-react';
+import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
@@ -67,7 +66,6 @@ export default function Dashboard() {
                 ['🗺️', 'GPS-Karte', 'Alle Positionen visualisiert'],
                 ['📊', 'Telemetrie', 'Akku, Signal, Uptime'],
                 ['🌡️', 'Umgebung', 'Temp., Luftdruck, Feuchte'],
-                ['💬', 'Nachrichten', 'Text-Messages im Mesh'],
                 ['📶', 'Signal', 'SNR, RSSI, Hops'],
               ].map(([icon, title, desc]) => (
                 <div key={title} className="bg-white rounded-lg p-3 border">
@@ -91,7 +89,6 @@ export default function Dashboard() {
                   <TabsTrigger value="map" className="flex-1 gap-1"><Map className="w-4 h-4" />Karte</TabsTrigger>
                   <TabsTrigger value="nodes" className="flex-1 gap-1"><List className="w-4 h-4" />Nodes</TabsTrigger>
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />Detail</TabsTrigger>
-                  <TabsTrigger value="messages" className="flex-1 gap-1"><MessageSquare className="w-4 h-4" />Nachrichten</TabsTrigger>
                 </TabsList>
                 <TabsContent value="map" className="flex-1 p-4 overflow-hidden">
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
@@ -115,12 +112,6 @@ export default function Dashboard() {
                 </TabsContent>
                 <TabsContent value="detail" className="flex-1 overflow-auto">
                   <NodeDetail node={selectedNode} />
-                </TabsContent>
-                <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-                  <div className="flex-1 overflow-auto">
-                    <MessageLog messages={messages} nodes={nodes} />
-                  </div>
-                  <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -153,34 +144,16 @@ export default function Dashboard() {
 
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
-                {/* Center: Map + Messages (vertical split) */}
+                {/* Center: Map */}
                 <Panel defaultSize={55} minSize={30}>
-                  <PanelGroup direction="vertical" className="h-full">
-                    <Panel defaultSize={65} minSize={25}>
-                      <div className="p-4 h-full">
-                        <NodeMap
-                          nodes={nodes}
-                          myNodeNum={myNodeNum}
-                          selectedNodeNum={selectedNodeNum}
-                          onSelectNode={setSelectedNodeNum}
-                        />
-                      </div>
-                    </Panel>
-
-                    <PanelResizeHandle className="h-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize" />
-
-                    <Panel defaultSize={35} minSize={20}>
-                      <div className="border-t bg-slate-50 flex flex-col h-full">
-                        <div className="px-4 py-2 border-b bg-white shrink-0">
-                          <h3 className="font-semibold text-sm text-slate-600">Nachrichten ({messages.length})</h3>
-                        </div>
-                        <div className="flex-1 overflow-y-auto min-h-0">
-                          <MessageLog messages={messages} nodes={nodes} />
-                        </div>
-                        <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
-                      </div>
-                    </Panel>
-                  </PanelGroup>
+                  <div className="p-4 h-full">
+                    <NodeMap
+                      nodes={nodes}
+                      myNodeNum={myNodeNum}
+                      selectedNodeNum={selectedNodeNum}
+                      onSelectNode={setSelectedNodeNum}
+                    />
+                  </div>
                 </Panel>
 
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
