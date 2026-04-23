@@ -1,9 +1,25 @@
 import { useMeshStore } from '@/hooks/useMeshStore.js';
-import { Clock, MessageSquare, MapPin, Zap, Radio } from 'lucide-react';
+import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle } from 'lucide-react';
 
 function getDecoded(packet) {
   return packet.raw?.packet?.decoded || null;
 }
+
+const TYPE_ICONS = {
+  nodeInfo: <Radio className="w-3 h-3 text-blue-500" />,
+  myInfo: <Radio className="w-3 h-3 text-green-400" />,
+  metadata: <Radio className="w-3 h-3 text-purple-500" />,
+  configComplete: <Settings className="w-3 h-3 text-slate-400" />,
+  config: <Settings className="w-3 h-3 text-cyan-500" />,
+  moduleConfig: <Settings className="w-3 h-3 text-indigo-500" />,
+  channel: <Hash className="w-3 h-3 text-amber-500" />,
+  queueStatus: <List className="w-3 h-3 text-slate-400" />,
+  logRecord: <FileText className="w-3 h-3 text-orange-400" />,
+  xmodemPacket: <FileText className="w-3 h-3 text-slate-400" />,
+  mqttClientProxyMessage: <Radio className="w-3 h-3 text-teal-500" />,
+  fileInfo: <FileText className="w-3 h-3 text-slate-400" />,
+  clientNotification: <AlertTriangle className="w-3 h-3 text-yellow-500" />,
+};
 
 function getPacketIcon(packet) {
   const decoded = getDecoded(packet);
@@ -11,10 +27,7 @@ function getPacketIcon(packet) {
   if (decoded?.position) return <MapPin className="w-3 h-3 text-red-500" />;
   if (decoded?.telemetry) return <Zap className="w-3 h-3 text-yellow-500" />;
   if (decoded?.user) return <Radio className="w-3 h-3 text-blue-500" />;
-  if (packet.type === 'nodeInfo') return <Radio className="w-3 h-3 text-blue-500" />;
-  if (packet.type === 'myInfo') return <Radio className="w-3 h-3 text-green-400" />;
-  if (packet.type === 'metadata') return <Radio className="w-3 h-3 text-purple-500" />;
-  if (packet.type === 'configComplete') return <Radio className="w-3 h-3 text-slate-400" />;
+  if (TYPE_ICONS[packet.type]) return TYPE_ICONS[packet.type];
   if (decoded?.portnum) return <Radio className="w-3 h-3 text-orange-400" />;
   return <Radio className="w-3 h-3 text-slate-400" />;
 }
@@ -31,7 +44,27 @@ function getPacketLabel(packet) {
   if (packet.type === 'nodeInfo') return `Node: ${packet.raw?.nodeInfo?.user?.longName || 'Unbekannt'}`;
   if (packet.type === 'myInfo') return `My Info: #${packet.raw?.myInfo?.myNodeNum}`;
   if (packet.type === 'metadata') return `Metadata: FW ${packet.raw?.metadata?.firmwareVersion || '?'}`;
-  if (packet.type === 'configComplete') return 'Config komplett';
+  if (packet.type === 'configComplete') return 'Config: komplett';
+  if (packet.type === 'config') return `Config: ${packet.raw?.config?.type || '?'}`;
+  if (packet.type === 'moduleConfig') return `Modul-Config: ${packet.raw?.moduleConfig?.type || '?'}`;
+  if (packet.type === 'channel') {
+    const ch = packet.raw?.channel;
+    const name = ch?.settings?.name || `Kanal ${ch?.index ?? '?'}`;
+    const roles = ['Deaktiviert', 'Primär', 'Sekundär'];
+    return `Kanal: ${name} (${roles[ch?.role] || '?'})`;
+  }
+  if (packet.type === 'queueStatus') {
+    const qs = packet.raw?.queueStatus;
+    return `Queue: ${qs?.free ?? '?'} frei, max ${qs?.maxlen ?? '?'}`;
+  }
+  if (packet.type === 'logRecord') {
+    const lr = packet.raw?.logRecord;
+    return `Log: ${lr?.message?.slice(0, 60) || '?'}`;
+  }
+  if (packet.type === 'xmodemPacket') return 'XModem-Paket';
+  if (packet.type === 'mqttClientProxyMessage') return 'MQTT Proxy';
+  if (packet.type === 'fileInfo') return 'Datei-Info';
+  if (packet.type === 'clientNotification') return 'Benachrichtigung';
   if (decoded?.portnumName) return `${decoded.portnumName}`;
   return `${packet.type || 'unbekannt'}`;
 }

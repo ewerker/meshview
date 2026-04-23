@@ -52,6 +52,8 @@ class MeshStore {
       logEntry.to = parsed.packet.to;
     } else if (parsed.type === 'nodeInfo' && parsed.nodeInfo) {
       logEntry.from = parsed.nodeInfo.num;
+    } else if (parsed.type === 'myInfo' && parsed.myInfo) {
+      logEntry.from = parsed.myInfo.myNodeNum;
     }
     this.packetLog.unshift(logEntry);
     if (this.packetLog.length > 200) this.packetLog.pop();

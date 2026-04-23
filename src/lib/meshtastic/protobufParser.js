@@ -34,12 +34,35 @@ export function parseFromRadio(bytes) {
     } else if (fields[4]) {
       result.type = 'nodeInfo';
       result.nodeInfo = parseNodeInfo(fields[4]);
+    } else if (fields[6]) {
+      result.type = 'config';
+      result.config = parseConfig(fields[6]);
+    } else if (fields[7]) {
+      result.type = 'logRecord';
+      result.logRecord = parseLogRecord(fields[7]);
     } else if (fields[8] !== undefined) {
       result.type = 'configComplete';
       result.configCompleteId = fields[8];
+    } else if (fields[9]) {
+      result.type = 'moduleConfig';
+      result.moduleConfig = parseModuleConfig(fields[9]);
+    } else if (fields[10]) {
+      result.type = 'channel';
+      result.channel = parseChannel(fields[10]);
+    } else if (fields[11]) {
+      result.type = 'queueStatus';
+      result.queueStatus = parseQueueStatus(fields[11]);
+    } else if (fields[12]) {
+      result.type = 'xmodemPacket';
     } else if (fields[13]) {
       result.type = 'metadata';
       result.metadata = parseDeviceMetadata(fields[13]);
+    } else if (fields[14]) {
+      result.type = 'mqttClientProxyMessage';
+    } else if (fields[15]) {
+      result.type = 'fileInfo';
+    } else if (fields[16]) {
+      result.type = 'clientNotification';
     }
 
     return result;
@@ -232,6 +255,82 @@ function parsePowerMetrics(bytes) {
     ch2Current: fields[4] ? int32ToFloat(fields[4]) : null,
     ch3Voltage: fields[5] ? int32ToFloat(fields[5]) : null,
     ch3Current: fields[6] ? int32ToFloat(fields[6]) : null,
+  };
+}
+
+// Config names for display
+const CONFIG_NAMES = {
+  1: 'Device', 2: 'Position', 3: 'Power', 4: 'Network',
+  5: 'Display', 6: 'LoRa', 7: 'Bluetooth', 8: 'Security',
+  9: 'SessionKey',
+};
+
+const MODULE_CONFIG_NAMES = {
+  1: 'MQTT', 2: 'Serial', 3: 'ExternalNotification', 4: 'StoreForward',
+  5: 'RangeTest', 6: 'Telemetry', 7: 'CannedMessage', 8: 'Audio',
+  9: 'RemoteHardware', 10: 'NeighborInfo', 11: 'AmbientLighting',
+  12: 'DetectionSensor', 13: 'Paxcounter',
+};
+
+function parseConfig(bytes) {
+  const fields = parseMessage(bytes);
+  // Config is a oneof - find which config type is present
+  for (const [fieldNum, name] of Object.entries(CONFIG_NAMES)) {
+    if (fields[fieldNum]) {
+      return { type: name, raw: fields[fieldNum] };
+    }
+  }
+  return { type: 'Unknown' };
+}
+
+function parseModuleConfig(bytes) {
+  const fields = parseMessage(bytes);
+  for (const [fieldNum, name] of Object.entries(MODULE_CONFIG_NAMES)) {
+    if (fields[fieldNum]) {
+      return { type: name, raw: fields[fieldNum] };
+    }
+  }
+  return { type: 'Unknown' };
+}
+
+function parseChannel(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    index: fields[1] || 0,
+    settings: fields[2] ? parseChannelSettings(fields[2]) : null,
+    role: fields[3] || 0, // 0=DISABLED, 1=PRIMARY, 2=SECONDARY
+  };
+}
+
+function parseChannelSettings(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    channelNum: fields[1] || 0,
+    psk: fields[2] || null,
+    name: fields[3] ? new TextDecoder().decode(fields[3]) : '',
+    id: fields[4] || 0,
+    uplinkEnabled: fields[5] || false,
+    downlinkEnabled: fields[6] || false,
+  };
+}
+
+function parseQueueStatus(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    res: fields[1] || 0,
+    free: fields[2] || 0,
+    maxlen: fields[3] || 0,
+    meshPacketId: fields[4] || 0,
+  };
+}
+
+function parseLogRecord(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    message: fields[1] ? new TextDecoder().decode(fields[1]) : '',
+    time: fields[2] || 0,
+    source: fields[3] ? new TextDecoder().decode(fields[3]) : '',
+    level: fields[4] || 0, // 0=UNSET, 1=CRITICAL, 5=DEBUG, 10=TRACE, 50=INFO, 100=WARNING, 200=ERROR
   };
 }
 
