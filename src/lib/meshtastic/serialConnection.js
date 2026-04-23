@@ -162,6 +162,7 @@ export class MeshtasticSerial {
   }
 
   async sendTextMessage(text, destination = 0xffffffff, channel = 0, wantAck = false) {
+    console.log('[sendTextMessage] dest=0x' + destination.toString(16) + ' ch=' + channel + ' wantAck=' + wantAck);
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
     const packet = buildTextPacket(textBytes, destination, channel, wantAck);

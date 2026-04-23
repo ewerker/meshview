@@ -41,11 +41,13 @@ export function parseFromRadio(bytes) {
     // field 3  (0x1a) = my_info (MyNodeInfo)       — wire2
     // field 4  (0x22) = node_info (NodeInfo)        — wire2
     // field 7  (0x38) = config_complete_id (uint32) — varint
+    // field 11 (0x5a) = queueStatus               — wire2
     // field 15 (0x7a) = fileInfo (xmodem)           — wire2 (ignored)
     if (fields[2]) results.push({ type: 'packet', packet: parseMeshPacket(fields[2]) });
     if (fields[3]) results.push({ type: 'myInfo', myInfo: parseMyNodeInfo(fields[3]) });
     if (fields[4]) results.push({ type: 'nodeInfo', nodeInfo: parseNodeInfo(fields[4]) });
     if (fields[7] !== undefined) results.push({ type: 'configComplete', configCompleteId: fields[7] });
+    if (fields[11]) results.push({ type: 'queueStatus', queueStatus: parseQueueStatus(fields[11]) });
 
     if (results.length === 0) return [{ type: 'unknown', raw: fields }];
     return results;
@@ -250,6 +252,16 @@ function parsePowerMetrics(bytes) {
     ch2Current: fields[4] ? int32ToFloat(fields[4]) : null,
     ch3Voltage: fields[5] ? int32ToFloat(fields[5]) : null,
     ch3Current: fields[6] ? int32ToFloat(fields[6]) : null,
+  };
+}
+
+function parseQueueStatus(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    res: fields[1] || 0,       // error code (0=ok)
+    free: fields[2] || 0,      // free slots
+    maxlen: fields[3] || 0,    // max queue length
+    meshPacketId: fields[4] || 0, // id of the packet that triggered this
   };
 }
 
