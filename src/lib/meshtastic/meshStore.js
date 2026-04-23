@@ -219,6 +219,7 @@ class MeshStore {
   async sendTextMessage(text, destNum, channel = 0, wantAck = false) {
     if (!this.connected) throw new Error('Not connected');
     const packet = this._buildTextPacket(text, destNum, channel, wantAck);
+    this._logSerial('tx', packet);
     await this.serial.sendToRadio(packet);
     this.sendLog.unshift({
       time: new Date(),
