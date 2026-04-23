@@ -178,24 +178,31 @@ export default function Dashboard() {
 
                 {/* Center: Map + Serial Log + Packets Table */}
                 <Panel defaultSize={55} minSize={30}>
-                  <div className="flex flex-col h-full">
-                    <div className="flex-1 p-4 overflow-hidden">
-                      <NodeMap
-                        nodes={nodes}
-                        myNodeNum={myNodeNum}
-                        selectedNodeNum={selectedNodeNum}
-                        onSelectNode={setSelectedNodeNum}
-                      />
-                    </div>
-                    <div className="border-t flex flex-col h-40 bg-card dark:bg-slate-800">
-                      <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700">
-                        Empfangene Pakete
+                  <PanelGroup direction="vertical" className="h-full">
+                    <Panel defaultSize={60} minSize={20}>
+                      <div className="h-full p-4 overflow-hidden">
+                        <NodeMap
+                          nodes={nodes}
+                          myNodeNum={myNodeNum}
+                          selectedNodeNum={selectedNodeNum}
+                          onSelectNode={setSelectedNodeNum}
+                        />
                       </div>
-                      <div className="flex-1 overflow-y-auto">
-                        <ReceivedPacketsTable />
+                    </Panel>
+
+                    <PanelResizeHandle className="h-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize" />
+
+                    <Panel defaultSize={40} minSize={15}>
+                      <div className="border-t flex flex-col h-full bg-card dark:bg-slate-800">
+                        <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700">
+                          Empfangene Pakete
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          <ReceivedPacketsTable />
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </Panel>
+                  </PanelGroup>
                 </Panel>
 
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
