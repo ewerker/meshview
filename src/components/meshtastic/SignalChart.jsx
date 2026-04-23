@@ -12,7 +12,7 @@ export default function SignalChart({ node, packetLog }) {
 
   if (relevantPackets.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border text-slate-400">
+      <div className="flex items-center justify-center h-64 bg-slate-50 dark:bg-slate-800 rounded-lg border text-slate-400">
         <div className="text-center">
           <p className="text-sm">Keine Signaldaten für die letzten 2 Stunden</p>
         </div>
@@ -30,7 +30,7 @@ export default function SignalChart({ node, packetLog }) {
   return (
     <div className="space-y-4">
       {/* SNR Chart */}
-      <div className="bg-white border rounded-lg p-3">
+      <div className="bg-card dark:bg-slate-800 border rounded-lg p-3">
         <h4 className="text-xs font-semibold text-slate-600 mb-2">SNR-Verlauf (dB)</h4>
         <ResponsiveContainer width="100%" height={150}>
           <LineChart data={data} margin={{ top: 5, right: 10, left: -30, bottom: 5 }}>
@@ -65,7 +65,7 @@ export default function SignalChart({ node, packetLog }) {
       </div>
 
       {/* RSSI Chart */}
-      <div className="bg-white border rounded-lg p-3">
+      <div className="bg-card dark:bg-slate-800 border rounded-lg p-3">
         <h4 className="text-xs font-semibold text-slate-600 mb-2">RSSI-Verlauf (dBm)</h4>
         <ResponsiveContainer width="100%" height={150}>
           <LineChart data={data} margin={{ top: 5, right: 10, left: -30, bottom: 5 }}>
@@ -99,7 +99,7 @@ export default function SignalChart({ node, packetLog }) {
         </ResponsiveContainer>
       </div>
 
-      <div className="text-xs text-slate-400 bg-slate-50 rounded-lg p-2">
+      <div className="text-xs text-slate-400 bg-slate-50 dark:bg-slate-700 rounded-lg p-2">
         {relevantPackets.length} Datenpunkt{relevantPackets.length !== 1 ? 'e' : ''} in den letzten 2 Stunden
       </div>
     </div>

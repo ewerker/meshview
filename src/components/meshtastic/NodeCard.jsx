@@ -39,7 +39,7 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
 
   return (
     <Card
-      className={`cursor-pointer transition-all hover:shadow-md ${selected ? 'ring-2 ring-blue-500' : ''} ${isMyNode ? 'border-green-400' : ''}`}
+      className={`cursor-pointer transition-all hover:shadow-md bg-card dark:bg-slate-800 ${selected ? 'ring-2 ring-blue-500' : ''} ${isMyNode ? 'border-green-400' : ''}`}
       onClick={onClick}
     >
       <CardHeader className="pb-2">

@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 
 export default function NodeListControls({ search, onSearch, sort, onSort, filter, onFilter }) {
   return (
-    <div className="px-3 py-2 border-b bg-white space-y-2">
+    <div className="px-3 py-2 border-b bg-card dark:bg-slate-800 space-y-2">
       <div className="relative">
         <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
         <Input

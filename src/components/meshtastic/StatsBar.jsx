@@ -21,9 +21,9 @@ export default function StatsBar({ nodes, messages, connected }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 p-4 bg-white border-b">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 p-4 bg-card dark:bg-slate-800 border-b">
       {stats.map(s => (
-        <div key={s.label} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+        <div key={s.label} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
           <s.icon className={`w-5 h-5 ${s.color}`} />
           <div>
             <div className="text-lg font-bold leading-none">{s.value}</div>

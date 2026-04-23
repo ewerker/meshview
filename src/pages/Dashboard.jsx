@@ -142,8 +142,8 @@ export default function Dashboard() {
               <PanelGroup direction="horizontal" className="h-full w-full">
                 {/* Left: Node list */}
                 <Panel defaultSize={20} minSize={12} maxSize={40}>
-                  <div className="border-r bg-white flex flex-col h-full">
-                    <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
+                  <div className="border-r bg-card dark:bg-slate-900 flex flex-col h-full">
+                    <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
                     </div>
                     <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filter={filter} onFilter={setFilter} />
@@ -181,8 +181,8 @@ export default function Dashboard() {
 
                 {/* Right: Node detail */}
                 <Panel defaultSize={25} minSize={15} maxSize={45}>
-                  <div className="border-l bg-white flex flex-col h-full">
-                    <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
+                  <div className="border-l bg-card dark:bg-slate-900 flex flex-col h-full">
+                    <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">
                         {selectedNode ? selectedNode.user?.longName || 'Node Detail' : 'Node auswählen'}
                       </h3>

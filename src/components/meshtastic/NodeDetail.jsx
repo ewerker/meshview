@@ -51,7 +51,7 @@ export default function NodeDetail({ node }) {
 
   return (
     <div className="h-full overflow-auto">
-      <div className="p-4 border-b bg-slate-50">
+      <div className="p-4 border-b bg-slate-50 dark:bg-slate-800">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-bold text-lg">{longName}</h2>
