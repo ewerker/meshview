@@ -66,7 +66,12 @@ function formatTime(timestamp) {
 export default function ReceivedPacketsTable() {
   const { packetLog } = useMeshStore();
 
-  console.log('ReceivedPacketsTable rendered, packetLog:', packetLog);
+  if (packetLog.length > 0) {
+    console.log('PacketLog count:', packetLog.length);
+    console.log('First packet FULL:', JSON.stringify(packetLog[0], (key, val) => val instanceof Uint8Array ? `[Uint8Array(${val.length})]` : val, 2));
+    console.log('First packet raw keys:', packetLog[0]?.raw ? Object.keys(packetLog[0].raw) : 'no raw');
+    console.log('First packet raw.raw keys:', packetLog[0]?.raw?.raw ? Object.keys(packetLog[0].raw.raw) : 'no raw.raw');
+  }
 
   if (packetLog.length === 0) {
     return (
