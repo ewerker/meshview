@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
-import LoadingBar from '@/components/meshtastic/LoadingBar.jsx';
 import StatsBar from '@/components/meshtastic/StatsBar.jsx';
 import NodeCard from '@/components/meshtastic/NodeCard.jsx';
 import NodeMap from '@/components/meshtastic/NodeMap.jsx';
@@ -74,7 +73,6 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
-      <LoadingBar connected={connected} isLoading={isLoading} />
       <ConnectionBar />
 
       {!connected ? (
@@ -112,16 +110,6 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4">
-                  <div className="w-full h-full border-4 border-slate-300 dark:border-slate-700 border-t-slate-800 dark:border-t-slate-400 rounded-full animate-spin"></div>
-                </div>
-                <p className="text-slate-700 dark:text-slate-300 font-medium">Lade Nodes...</p>
-              </div>
-            </div>
-          )}
           <StatsBar nodes={nodes} messages={messages} connected={connected} />
 
           <div className="flex-1 overflow-hidden">
