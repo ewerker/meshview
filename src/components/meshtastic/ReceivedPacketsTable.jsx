@@ -20,6 +20,9 @@ const TYPE_ICONS = {
   mqttClientProxyMessage: <Radio className="w-3 h-3 text-teal-500" />,
   fileInfo: <FileText className="w-3 h-3 text-slate-400" />,
   clientNotification: <AlertTriangle className="w-3 h-3 text-yellow-500" />,
+  rebooted: <Radio className="w-3 h-3 text-red-500" />,
+  ack: <Radio className="w-3 h-3 text-green-300" />,
+  error: <AlertTriangle className="w-3 h-3 text-red-500" />,
 };
 
 function getPacketIcon(packet) {
@@ -66,6 +69,9 @@ function getPacketLabel(packet) {
   if (packet.type === 'mqttClientProxyMessage') return 'MQTT Proxy';
   if (packet.type === 'fileInfo') return 'Datei-Info';
   if (packet.type === 'clientNotification') return 'Benachrichtigung';
+  if (packet.type === 'rebooted') return 'Neustart (Reboot)';
+  if (packet.type === 'ack') return `ACK (ID: ${packet.id})`;
+  if (packet.type === 'error') return `Fehler: ${packet.raw?.error || 'Parse-Fehler'}`;
   if (decoded?.portnumName) return `${decoded.portnumName}`;
   return `${packet.type || 'unbekannt'}`;
 }

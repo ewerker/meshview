@@ -25,24 +25,26 @@ export function parseFromRadio(bytes) {
 
     const result = { type: 'unknown', raw: fields };
 
-    if (fields[1]) {
+    if (fields[2]) {
       result.type = 'packet';
-      result.packet = parseMeshPacket(fields[1]);
+      result.packet = parseMeshPacket(fields[2]);
     } else if (fields[3]) {
       result.type = 'myInfo';
       result.myInfo = parseMyNodeInfo(fields[3]);
     } else if (fields[4]) {
       result.type = 'nodeInfo';
       result.nodeInfo = parseNodeInfo(fields[4]);
-    } else if (fields[6]) {
+    } else if (fields[5]) {
       result.type = 'config';
-      result.config = parseConfig(fields[6]);
-    } else if (fields[7]) {
+      result.config = parseConfig(fields[5]);
+    } else if (fields[6]) {
       result.type = 'logRecord';
-      result.logRecord = parseLogRecord(fields[7]);
-    } else if (fields[8] !== undefined) {
+      result.logRecord = parseLogRecord(fields[6]);
+    } else if (fields[7] !== undefined) {
       result.type = 'configComplete';
-      result.configCompleteId = fields[8];
+      result.configCompleteId = fields[7];
+    } else if (fields[8] !== undefined) {
+      result.type = 'rebooted';
     } else if (fields[9]) {
       result.type = 'moduleConfig';
       result.moduleConfig = parseModuleConfig(fields[9]);
@@ -63,6 +65,12 @@ export function parseFromRadio(bytes) {
       result.type = 'fileInfo';
     } else if (fields[16]) {
       result.type = 'clientNotification';
+    } else if (fields[1]) {
+      result.type = 'ack';
+    }
+    
+    if (fields[1] !== undefined) {
+      result.id = fields[1];
     }
 
     return result;
