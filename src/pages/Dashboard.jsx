@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
 import LoadingBar from '@/components/meshtastic/LoadingBar.jsx';
@@ -18,6 +18,12 @@ export default function Dashboard() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
   const [filter, setFilter] = useState('all');
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitializing(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
@@ -67,7 +73,18 @@ export default function Dashboard() {
       <LoadingBar connected={connected} isLoading={isLoading} />
       <ConnectionBar />
 
-      {!connected ? (
+      {isInitializing && !connected && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4">
+              <div className="w-full h-full border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin"></div>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400">Initialisiere Dashboard...</p>
+          </div>
+        </div>
+      )}
+
+      {!isInitializing && !connected ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-md px-4">
             <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
