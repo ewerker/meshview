@@ -36,7 +36,7 @@ const LS_CHANNEL_KEY = 'meshtastic_last_channel';
 export default function MessageInput({ nodes, selectedNodeNum }) {
   const [text, setText] = useState('');
   const [destination, setDestination] = useState(() => localStorage.getItem(LS_KEY) || 'broadcast');
-  const [channel, setChannel] = useState(() => parseInt(localStorage.getItem(LS_CHANNEL_KEY) || '0'));
+  const [channel, setChannel] = useState(() => parseInt(localStorage.getItem(LS_CHANNEL_KEY) || '1'));
   const [wantAck, setWantAck] = useState(false);
   const [sending, setSending] = useState(false);
   const { progress, start, finish } = useSendProgress();
