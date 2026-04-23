@@ -132,9 +132,9 @@ class MeshStore {
       if (this.messages.length > 200) this.messages.pop();
 
       // Autoresponder: only reply to messages not from myself
-      if (fromNum !== this.myNodeNum) {
-        this.runAutoresponder(feedEntry, existingNode);
-      }
+      // if (fromNum !== this.myNodeNum) {
+      //   this.runAutoresponder(feedEntry, existingNode);
+      // }
     } else if (decoded.position) {
       feedEntry.position = decoded.position;
       this.messages.unshift(feedEntry);
