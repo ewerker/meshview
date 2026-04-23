@@ -45,7 +45,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
     setSending(true);
     start();
     try {
-      await meshStore.serial.sendTextMessage(msg, destNum, 0, wantAck);
+      await meshStore.sendTextMessage(msg, destNum, 0, wantAck);
       setText('');
       finish(true);
     } catch (e) {

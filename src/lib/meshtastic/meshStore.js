@@ -14,6 +14,7 @@ class MeshStore {
     this.listeners = new Set();
     this.connected = false;
     this.packetLog = [];
+    this.sendLog = [];
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -176,6 +177,30 @@ class MeshStore {
     this.listeners.forEach(l => l());
   }
 
+  async sendTextMessage(text, destNum, channel = 0, wantAck = false) {
+    const entry = {
+      time: new Date(),
+      text,
+      destNum,
+      wantAck,
+      status: 'sending',
+      error: null,
+    };
+    this.sendLog.unshift(entry);
+    if (this.sendLog.length > 50) this.sendLog.pop();
+    this.notify();
+    try {
+      await this.serial.sendTextMessage(text, destNum, channel, wantAck);
+      entry.status = 'ok';
+    } catch (e) {
+      entry.status = 'error';
+      entry.error = e.message;
+      throw e;
+    } finally {
+      this.notify();
+    }
+  }
+
   async connect() {
     await this.serial.connect();
   }
@@ -187,6 +212,7 @@ class MeshStore {
     this.myNodeNum = null;
     this.metadata = null;
     this.packetLog = [];
+    this.sendLog = [];
     this.notify();
   }
 

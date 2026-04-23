@@ -163,11 +163,9 @@ export class MeshtasticSerial {
   }
 }
 
-// Minimal protobuf encoding for ToRadio { want_config_id: uint32 }
+// ToRadio { want_config_id (field 3): tag 0x18, varint }
 function ToRadio_encode_wantConfigId(id) {
-  // Field 3 (want_config_id), wire type 0 (varint)
-  // Tag = (3 << 3) | 0 = 24 = 0x18
-  const bytes = [0x18, ...encodeVarint(id)];
+  const bytes = [0x18, ...encodeVarint(id >>> 0)];
   return new Uint8Array(bytes);
 }
 
@@ -182,12 +180,28 @@ function encodeVarint(value) {
 }
 
 function buildTextPacket(textBytes, destination, channel, wantAck = false) {
-  // Minimal protobuf: MeshPacket with to, decoded.payload, decoded.portnum=1
-  // Field 1 (to): tag 0x08, varint destination
-  // Field 6 (want_ack): tag 0x30, varint 1 if true
-  // Field 3 (decoded): tag 0x1a, length-delimited
-  const bytes = [0x08, ...encodeVarint(destination)];
-  if (wantAck) bytes.push(0x30, 0x01);
-  bytes.push(0x1a, textBytes.length, ...textBytes);
-  return new Uint8Array(bytes);
+  // Data { portnum=1 (TEXT_MESSAGE_APP), payload=textBytes }
+  // Field 1 (portnum): tag 0x08, varint 1
+  // Field 2 (payload): tag 0x12, length-delimited
+  const dataBytes = [0x08, 0x01, 0x12, textBytes.length, ...textBytes];
+
+  // MeshPacket {
+  //   field 1 (to):      tag 0x08, varint destination
+  //   field 3 (decoded): tag 0x1a, length-delimited Data
+  //   field 6 (channel): tag 0x30, varint channel
+  //   field 8 (want_ack):tag 0x40, varint 1 if true
+  //   field 9 (id):      tag 0x48, varint random id
+  // }
+  const packetId = Math.floor(Math.random() * 0xffffffff);
+  const meshBytes = [
+    0x08, ...encodeVarint(destination >>> 0),
+    0x1a, dataBytes.length, ...dataBytes,
+    0x30, channel & 0x07,
+  ];
+  if (wantAck) meshBytes.push(0x40, 0x01);
+  meshBytes.push(0x48, ...encodeVarint(packetId));
+
+  // ToRadio { packet (field 1): tag 0x0a, length-delimited MeshPacket }
+  const toRadioBytes = [0x0a, meshBytes.length, ...meshBytes];
+  return new Uint8Array(toRadioBytes);
 }
