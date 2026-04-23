@@ -1,8 +1,32 @@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Search, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
-export default function NodeListControls({ search, onSearch, sort, onSort, filter, onFilter }) {
+export default function NodeListControls({ search, onSearch, sort, onSort, filters, onFiltersChange }) {
+  const [showFilters, setShowFilters] = useState(false);
+
+  const handleFilterChange = (key) => {
+    onFiltersChange({
+      ...filters,
+      [key]: !filters[key]
+    });
+  };
+
+  const activeCount = Object.values(filters).filter(Boolean).length;
+
+  const filterOptions = [
+    { key: 'active', label: 'Aktiv (letzte 15 min)' },
+    { key: 'direct', label: 'Nur direkte Verbindungen' },
+    { key: 'withGps', label: 'Mit GPS-Position' },
+    { key: 'withTelemetry', label: 'Mit Geräte-Telemetrie' },
+    { key: 'withEnv', label: 'Mit Umgebungssensoren' },
+    { key: 'lowBattery', label: 'Akku kritisch (<20%)' },
+    { key: 'highBattery', label: 'Akku gut (>60%)' },
+  ];
+
   return (
     <div className="px-3 py-2 border-b bg-card dark:bg-slate-800 space-y-2">
       <div className="relative">
@@ -14,10 +38,11 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
           onChange={e => onSearch(e.target.value)}
         />
       </div>
+
       <div className="flex gap-2">
         <Select value={sort} onValueChange={onSort}>
           <SelectTrigger className="flex-1 h-7 text-xs">
-            <SelectValue />
+            <SelectValue placeholder="Sortierung" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="myFirst">Mein Gerät zuerst</SelectItem>
@@ -25,23 +50,35 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
             <SelectItem value="name">Name (A–Z)</SelectItem>
             <SelectItem value="snr">SNR (beste zuerst)</SelectItem>
             <SelectItem value="battery">Akku (höchste zuerst)</SelectItem>
-            <SelectItem value="hops">Hops (direkt zuerst)</SelectItem>
+            <SelectItem value="distance">Entfernung (nächste zuerst)</SelectItem>
           </SelectContent>
         </Select>
 
-        <Select value={filter} onValueChange={onFilter}>
-          <SelectTrigger className="flex-1 h-7 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alle Nodes</SelectItem>
-            <SelectItem value="active">Aktiv (15 min)</SelectItem>
-            <SelectItem value="direct">Direkt erreichbar</SelectItem>
-            <SelectItem value="lowBattery">Akku kritisch (&lt;20%)</SelectItem>
-            <SelectItem value="gps">Mit GPS</SelectItem>
-          </SelectContent>
-        </Select>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-1 px-2 h-7 text-xs bg-slate-200 dark:bg-slate-700 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+        >
+          Filter {activeCount > 0 && <span className="bg-blue-600 text-white px-1.5 rounded-full text-[10px] leading-none">{activeCount}</span>}
+          <ChevronDown className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+        </button>
       </div>
+
+      {showFilters && (
+        <div className="grid grid-cols-1 gap-2 pt-2 border-t">
+          {filterOptions.map(option => (
+            <div key={option.key} className="flex items-center gap-2">
+              <Checkbox
+                id={`filter-${option.key}`}
+                checked={filters[option.key] || false}
+                onCheckedChange={() => handleFilterChange(option.key)}
+              />
+              <Label htmlFor={`filter-${option.key}`} className="text-xs cursor-pointer font-normal">
+                {option.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

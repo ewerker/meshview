@@ -17,7 +17,15 @@ export default function Dashboard() {
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
-  const [filter, setFilter] = useState('all');
+  const [filters, setFilters] = useState({
+    active: false,
+    direct: false,
+    withGps: false,
+    withTelemetry: false,
+    withEnv: false,
+    lowBattery: false,
+    highBattery: false,
+  });
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
@@ -31,19 +39,14 @@ export default function Dashboard() {
       if (!name.toLowerCase().includes(q)) return false;
     }
 
-    // Status filter
-    if (filter === 'active') {
-      return (now - (n.lastHeard || 0)) < 900; // 15 minutes
-    }
-    if (filter === 'direct') {
-      return n.hopsAway === 0;
-    }
-    if (filter === 'lowBattery') {
-      return n.deviceMetrics?.batteryLevel > 0 && n.deviceMetrics.batteryLevel < 20;
-    }
-    if (filter === 'gps') {
-      return n.position?.latitude && n.position?.longitude && n.position.latitude !== 0;
-    }
+    // Additive filters - all active filters must match
+    if (filters.active && (now - (n.lastHeard || 0)) >= 900) return false;
+    if (filters.direct && n.hopsAway !== 0) return false;
+    if (filters.withGps && (!n.position?.latitude || !n.position?.longitude || n.position.latitude === 0)) return false;
+    if (filters.withTelemetry && !n.deviceMetrics) return false;
+    if (filters.withEnv && !n.environmentMetrics) return false;
+    if (filters.lowBattery && !(n.deviceMetrics?.batteryLevel > 0 && n.deviceMetrics.batteryLevel < 20)) return false;
+    if (filters.highBattery && !(n.deviceMetrics?.batteryLevel > 60)) return false;
 
     return true;
   });
@@ -58,7 +61,13 @@ export default function Dashboard() {
     if (sort === 'name') return (a.user?.longName || '').localeCompare(b.user?.longName || '');
     if (sort === 'snr') return (b.snr ?? -999) - (a.snr ?? -999);
     if (sort === 'battery') return (b.deviceMetrics?.batteryLevel ?? -1) - (a.deviceMetrics?.batteryLevel ?? -1);
-    if (sort === 'hops') return (a.hopsAway ?? 999) - (b.hopsAway ?? 999);
+    if (sort === 'distance') {
+      const distA = myNode?.position && a.position?.latitude ? 
+        Math.sqrt(Math.pow(a.position.latitude - myNode.position.latitude, 2) + Math.pow(a.position.longitude - myNode.position.longitude, 2)) : Infinity;
+      const distB = myNode?.position && b.position?.latitude ? 
+        Math.sqrt(Math.pow(b.position.latitude - myNode.position.latitude, 2) + Math.pow(b.position.longitude - myNode.position.longitude, 2)) : Infinity;
+      return distA - distB;
+    }
     return 0;
   });
 
@@ -127,7 +136,7 @@ export default function Dashboard() {
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
-                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filter={filter} onFilter={setFilter} />
+                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
                     <div className="flex-1 overflow-auto p-4 grid gap-3">
                     {sortedNodes.map(node => (
                       <NodeCard
@@ -158,7 +167,7 @@ export default function Dashboard() {
                     <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
                     </div>
-                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filter={filter} onFilter={setFilter} />
+                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
                     <div className="flex-1 overflow-y-auto min-h-0">
                       <div className="p-3 space-y-2">
                         {sortedNodes.map(node => (
