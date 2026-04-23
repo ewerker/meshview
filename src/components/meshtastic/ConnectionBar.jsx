@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Usb, Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
+import { Usb, Wifi, WifiOff, Loader2, Radio, Bot } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 
 export default function ConnectionBar() {
@@ -55,6 +56,13 @@ export default function ConnectionBar() {
             </div>
           )}
         </div>
+
+        <Link to="/autoresponder">
+          <Button size="sm" variant="ghost" className="gap-2 text-slate-300 hover:text-white">
+            <Bot className="w-4 h-4" />
+            Autoresponder
+          </Button>
+        </Link>
 
         {!isSupported ? (
           <span className="text-red-400 text-sm">Web Serial nicht unterstützt (Chrome/Edge erforderlich)</span>
