@@ -41,7 +41,7 @@ class MeshStore {
 
     // Log all packets - extract from/to based on type
     const logEntry = {
-      time: Math.floor(Date.now() / 1000),
+      time: Date.now(),
       type: parsed.type,
       from: null,
       to: null,

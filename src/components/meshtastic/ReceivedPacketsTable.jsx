@@ -1,8 +1,9 @@
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle } from 'lucide-react';
 
-function getDecoded(packet) {
-  return packet.raw?.packet?.decoded || null;
+function getDecoded(logEntry) {
+  // raw is the parsed FromRadio object: { type, packet: { from, to, decoded: {...} }, ... }
+  return logEntry.raw?.packet?.decoded || null;
 }
 
 const TYPE_ICONS = {
@@ -71,8 +72,11 @@ function getPacketLabel(packet) {
 
 function formatTime(timestamp) {
   if (!timestamp) return '-';
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  // timestamp is now in ms (Date.now())
+  const date = new Date(timestamp);
+  const hms = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const ms = String(date.getMilliseconds()).padStart(3, '0');
+  return `${hms}.${ms}`;
 }
 
 export default function ReceivedPacketsTable() {
