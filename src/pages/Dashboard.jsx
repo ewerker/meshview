@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import SerialLog from '@/components/meshtastic/SerialLog.jsx';
+import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
@@ -175,7 +176,7 @@ export default function Dashboard() {
 
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
-                {/* Center: Map + Serial Log */}
+                {/* Center: Map + Serial Log + Packets Table */}
                 <Panel defaultSize={55} minSize={30}>
                   <div className="flex flex-col h-full">
                     <div className="flex-1 p-4 overflow-hidden">
@@ -186,8 +187,13 @@ export default function Dashboard() {
                         onSelectNode={setSelectedNodeNum}
                       />
                     </div>
-                    <div className="border-t px-4 py-3 bg-card dark:bg-slate-800 shrink-0">
-                      <SerialLog />
+                    <div className="border-t flex flex-col h-40 bg-card dark:bg-slate-800">
+                      <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700">
+                        Empfangene Pakete
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        <ReceivedPacketsTable />
+                      </div>
                     </div>
                   </div>
                 </Panel>
