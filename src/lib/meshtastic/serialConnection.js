@@ -101,7 +101,10 @@ export class MeshtasticSerial {
       // Find START1 START2 sequence
       const s1 = this.buffer.indexOf(START1);
       if (s1 === -1) {
-        this.buffer = [];
+        // Keep last 3 bytes in case START sequence is split across reads
+        if (this.buffer.length > 3) {
+          this.buffer = this.buffer.slice(-3);
+        }
         return;
       }
       if (s1 > 0) {
@@ -120,7 +123,7 @@ export class MeshtasticSerial {
       const packetLen = (msb << 8) | lsb;
 
       if (packetLen > 512) {
-        // Invalid length, skip
+        // Invalid length, skip this START2 and continue
         this.buffer = this.buffer.slice(2);
         continue;
       }
