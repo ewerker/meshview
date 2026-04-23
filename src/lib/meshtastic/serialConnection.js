@@ -9,11 +9,33 @@ export class MeshtasticSerial {
     this.reader = null;
     this.writer = null;
     this.running = false;
-    this.onPacket = null;
-    this.onConnect = null;
-    this.onDisconnect = null;
     this.buffer = [];
     this.readLoopPromise = null;
+    this.packetQueue = [];
+    this.queueWaiters = [];
+    this.onConnect = null;
+    this.onDisconnect = null;
+    this.onError = null;
+  }
+
+  // Async method to get next packet
+  async nextPacket() {
+    if (this.packetQueue.length > 0) {
+      return this.packetQueue.shift();
+    }
+    return new Promise(resolve => {
+      this.queueWaiters.push(resolve);
+    });
+  }
+
+  // Internal: enqueue packet and notify waiters
+  _enqueuePacket(packet) {
+    if (this.queueWaiters.length > 0) {
+      const resolve = this.queueWaiters.shift();
+      resolve(packet);
+    } else {
+      this.packetQueue.push(packet);
+    }
   }
 
   isSupported() {
@@ -78,8 +100,6 @@ export class MeshtasticSerial {
         const { value, done } = await reader.read();
         if (done) break;
         if (value) {
-          // Log raw RX bytes before parsing
-          if (this.onRawRx) this.onRawRx(value);
           for (const byte of value) {
             this.buffer.push(byte);
           }
@@ -135,9 +155,7 @@ export class MeshtasticSerial {
       const packetData = this.buffer.slice(4, 4 + packetLen);
       this.buffer = this.buffer.slice(4 + packetLen);
 
-      if (this.onPacket) {
-        this.onPacket(new Uint8Array(packetData));
-      }
+      this._enqueuePacket(new Uint8Array(packetData));
     }
   }
 

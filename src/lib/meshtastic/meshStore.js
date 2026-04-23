@@ -18,18 +18,6 @@ class MeshStore {
 
     this.serialLog = []; // raw byte log for debugging
 
-    this.serial.onPacket = (data) => {
-      this._logSerial('rx', data);
-      this.handlePacket(data);
-    };
-    this.serial.onRawRx = (data) => {
-      this._logSerial('raw', data, `RAW ${data.length}b`);
-      this.notify();
-    };
-    this.serial.onSent = (data) => {
-      this._logSerial('tx', data);
-      this.notify();
-    };
     this.serial.onError = (msg) => {
       this._logSerial('event', null, '❌ ' + msg);
       this.notify();
@@ -37,6 +25,7 @@ class MeshStore {
     this.serial.onConnect = () => {
       this.connected = true;
       this._logSerial('event', null, '✅ CONNECTED');
+      this.startPacketLoop();
       this.notify();
     };
     this.serial.onDisconnect = () => {
@@ -44,6 +33,21 @@ class MeshStore {
       this._logSerial('event', null, '🔌 DISCONNECTED');
       this.notify();
     };
+  }
+
+  async startPacketLoop() {
+    while (this.connected) {
+      try {
+        const packet = await this.serial.nextPacket();
+        this._logSerial('rx', packet);
+        this.handlePacket(packet);
+      } catch (e) {
+        if (this.connected) {
+          console.error('Packet loop error:', e);
+        }
+        break;
+      }
+    }
   }
 
   handlePacket(rawBytes) {
