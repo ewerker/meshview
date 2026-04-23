@@ -215,6 +215,68 @@ class MeshStore {
   isSupported() {
     return this.serial.isSupported();
   }
+
+  async sendTextMessage(text, destNum, channel = 0, wantAck = false) {
+    if (!this.connected) throw new Error('Not connected');
+    const packet = this._buildTextPacket(text, destNum, channel, wantAck);
+    await this.serial.sendToRadio(packet);
+    this.sendLog.unshift({
+      time: new Date(),
+      to: destNum,
+      text,
+      channel,
+      wantAck,
+      status: 'sent'
+    });
+    if (this.sendLog.length > 100) this.sendLog.pop();
+    this.notify();
+  }
+
+  _buildTextPacket(text, destNum, channel, wantAck) {
+    // MeshPacket with Data portnum=1 (TEXT_MESSAGE_APP)
+    const payload = new TextEncoder().encode(text);
+    const dataFields = {
+      1: 1, // portnum = TEXT_MESSAGE_APP
+      2: payload // payload
+    };
+    const dataBytes = this._encodeMessage(dataFields);
+    const meshFields = {
+      2: destNum, // to
+      3: channel, // channel
+      5: dataBytes, // decoded
+    };
+    if (wantAck) meshFields[13] = 1; // want_ack
+    return this._encodeMessage(meshFields);
+  }
+
+  _encodeMessage(fields) {
+    const bytes = [];
+    for (const [fieldNum, value] of Object.entries(fields)) {
+      const fn = parseInt(fieldNum);
+      if (value === undefined || value === null) continue;
+      if (typeof value === 'number') {
+        bytes.push((fn << 3) | 0); // varint wire type
+        bytes.push(...this._encodeVarint(value));
+      } else if (value instanceof Uint8Array) {
+        bytes.push((fn << 3) | 2); // length-delimited
+        bytes.push(...this._encodeVarint(value.length));
+        bytes.push(...value);
+      }
+    }
+    return new Uint8Array(bytes);
+  }
+
+  _encodeVarint(value) {
+    value = value >>> 0;
+    const bytes = [];
+    do {
+      let byte = value & 0x7f;
+      value >>>= 7;
+      if (value !== 0) byte |= 0x80;
+      bytes.push(byte);
+    } while (value !== 0);
+    return bytes;
+  }
 }
 
 // Singleton
