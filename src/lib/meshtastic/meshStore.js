@@ -220,6 +220,7 @@ class MeshStore {
     if (!this.connected) throw new Error('Not connected');
     const packet = this._buildTextPacket(text, destNum, channel, wantAck);
     this._logSerial('tx', packet);
+    console.log('[MeshStore] Sending packet, writer:', !!this.serial.writer, 'packet len:', packet.length);
     await this.serial.sendToRadio(packet);
     this.sendLog.unshift({
       time: new Date(),
