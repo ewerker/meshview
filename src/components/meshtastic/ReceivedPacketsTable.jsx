@@ -14,22 +14,26 @@ function getPacketIcon(packet) {
   // Node info
   if (packet.raw?.nodeInfo) return <Radio className="w-3 h-3 text-blue-500" />;
   
-  return <Radio className="w-3 h-3 text-blue-500" />;
+  // My Info
+  if (packet.raw?.myInfo) return <Radio className="w-3 h-3 text-slate-400" />;
+  
+  return <Radio className="w-3 h-3 text-slate-400" />;
 }
 
 function getPacketLabel(packet) {
-  // Textnachrichten (from packet.decoded.text)
+  // Textnachrichten
   if (packet.raw?.packet?.decoded?.text) {
-    return `Text: ${packet.raw.packet.decoded.text.slice(0, 50)}`;
+    const text = packet.raw.packet.decoded.text;
+    return `Text: ${text.slice(0, 50)}`;
   }
   
-  // GPS/Position (from packet.decoded.position)
+  // GPS/Position
   if (packet.raw?.packet?.decoded?.position) {
     const pos = packet.raw.packet.decoded.position;
     return `GPS: ${pos.latitude?.toFixed(4)}, ${pos.longitude?.toFixed(4)}`;
   }
   
-  // Telemetrie (from packet.decoded.telemetry)
+  // Telemetrie
   if (packet.raw?.packet?.decoded?.telemetry) {
     const tel = packet.raw.packet.decoded.telemetry;
     if (tel.deviceMetrics) return `Telemetrie: Bat ${tel.deviceMetrics.batteryLevel}%`;
@@ -48,8 +52,7 @@ function getPacketLabel(packet) {
     return `My Info`;
   }
   
-  // Fallback
-  return `Paket (Type: ${packet.type})`;
+  return `Paket`;
 }
 
 function formatTime(timestamp) {
