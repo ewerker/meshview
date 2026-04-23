@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Usb, WifiOff, Loader2, Radio, Bot, HelpCircle, Info, Moon, Sun } from 'lucide-react';
+import { Usb, WifiOff, Loader2, Radio, HelpCircle, Info, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useDarkMode } from '@/lib/DarkModeContext';
@@ -60,12 +60,6 @@ export default function ConnectionBar() {
           )}
         </div>
 
-        <Link to="/autoresponder">
-          <Button size="sm" variant="ghost" className="gap-2 text-slate-300 hover:text-white">
-            <Bot className="w-4 h-4" />
-            Autoresponder
-          </Button>
-        </Link>
         <Link to="/help">
           <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white px-2">
             <HelpCircle className="w-4 h-4" />

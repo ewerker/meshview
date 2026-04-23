@@ -1,7 +1,6 @@
 // Central state store for Meshtastic data
 import { MeshtasticSerial } from './serialConnection.js';
 import { parseFromRadio } from './protobufParser.js';
-import { loadRules, matchesRule, checkCooldown, updateCooldown, renderTemplate, haversineKm } from './autoresponder.js';
 
 class MeshStore {
   constructor() {
@@ -15,7 +14,6 @@ class MeshStore {
     this.connected = false;
     this.packetLog = [];
     this.isLoading = false;
-    this.lastPacketTime = Date.now();
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -31,7 +29,6 @@ class MeshStore {
   handlePacket(rawBytes) {
     // Show loading indicator while actively receiving packets
     this.isLoading = true;
-    this.lastPacketTime = Date.now();
     
     // Auto-hide loading after 1s of inactivity
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
@@ -118,48 +115,9 @@ class MeshStore {
       };
       this.messages.unshift(msg);
       if (this.messages.length > 100) this.messages.pop();
-
-      // Autoresponder: only reply to messages not from myself
-      if (fromNum !== this.myNodeNum) {
-        this.runAutoresponder(msg, existingNode);
-      }
     }
 
     this.nodes.set(fromNum, existingNode);
-  }
-
-  runAutoresponder(message, senderNode) {
-    const rules = loadRules().filter(r => r.enabled);
-    const myNode = this.getMyNode();
-
-    for (const rule of rules) {
-      if (!matchesRule(rule, message, senderNode, myNode)) continue;
-      if (!checkCooldown(rule, senderNode.num)) continue;
-
-      const dist = haversineKm(
-        myNode?.position?.latitude, myNode?.position?.longitude,
-        senderNode?.position?.latitude, senderNode?.position?.longitude
-      );
-
-      const text = renderTemplate(rule.template, {
-        senderNode,
-        myNode,
-        message,
-        distKm: dist,
-      });
-
-      const destination = rule.filters.replyTo === 'broadcast' ? 0xffffffff : senderNode.num;
-
-      updateCooldown(rule, senderNode.num);
-
-      // Delay reply slightly to avoid flooding
-      setTimeout(() => {
-        this.serial.sendTextMessage(text, destination).catch(e => console.error('Autoresponder send error:', e));
-      }, 500);
-
-      // Only first matching rule fires (break)
-      break;
-    }
   }
 
   mergeNode(num, data) {

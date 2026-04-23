@@ -8,7 +8,6 @@ import { DarkModeProvider } from '@/lib/DarkModeContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import Dashboard from './pages/Dashboard.jsx';
-import Autoresponder from './pages/Autoresponder.jsx';
 import Impressum from './pages/Impressum.jsx';
 import About from './pages/About.jsx';
 import Help from './pages/Help.jsx';
@@ -40,7 +39,6 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
-      <Route path="/autoresponder" element={<Autoresponder />} />
       <Route path="/impressum" element={<Impressum />} />
       <Route path="/about" element={<About />} />
       <Route path="/help" element={<Help />} />
