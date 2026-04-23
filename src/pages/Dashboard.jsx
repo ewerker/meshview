@@ -192,9 +192,9 @@ export default function Dashboard() {
 
                     <PanelResizeHandle className="h-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize" />
 
-                    <Panel defaultSize={40} minSize={15}>
-                      <div className="border-t flex flex-col h-full bg-card dark:bg-slate-800">
-                        <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700">
+                    <Panel defaultSize={40} minSize={15} className="flex flex-col">
+                      <div className="flex flex-col h-full bg-card dark:bg-slate-800">
+                        <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700 shrink-0">
                           Empfangene Pakete
                         </div>
                         <div className="flex-1 overflow-y-auto">

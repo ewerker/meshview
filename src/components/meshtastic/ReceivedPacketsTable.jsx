@@ -12,15 +12,54 @@ function getPacketIcon(packet) {
 }
 
 function getPacketLabel(packet) {
-  if (packet.raw?.decoded) {
-    const { portnum, text, latitude, longitude } = packet.raw.decoded;
-    if (portnum === 1) return `Text: ${text?.slice(0, 40) || ''}`;
-    if (portnum === 3) return `GPS: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`;
-    if (portnum === 67) return 'Telemetrie';
+  // Textnachrichten
+  if (packet.raw?.decoded?.text) {
+    return `Text: ${packet.raw.decoded.text.slice(0, 50)}`;
   }
-  if (packet.raw?.nodeInfo) return 'Node Info';
-  if (packet.raw?.myInfo) return 'My Info';
-  return 'Paket';
+  
+  // GPS/Position
+  if (packet.raw?.position) {
+    const pos = packet.raw.position;
+    return `GPS: ${pos.latitude?.toFixed(4)}, ${pos.longitude?.toFixed(4)}`;
+  }
+  if (packet.raw?.decoded?.latitude) {
+    const { latitude, longitude } = packet.raw.decoded;
+    return `GPS: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`;
+  }
+  
+  // Telemetrie/Device Metrics
+  if (packet.raw?.deviceMetrics) {
+    const dm = packet.raw.deviceMetrics;
+    return `Telemetrie: Bat ${dm.batteryLevel}% SNR ${dm.numOnlineNodes || '-'}`;
+  }
+  if (packet.raw?.decoded?.portnum === 67) {
+    return 'Telemetrie';
+  }
+  
+  // Umgebungssensoren
+  if (packet.raw?.environmentMetrics) {
+    const em = packet.raw.environmentMetrics;
+    return `Umgebung: ${em.temperature?.toFixed(1)}°C ${em.relativeHumidity?.toFixed(0)}%`;
+  }
+  
+  // Node Info
+  if (packet.raw?.nodeInfo) {
+    const ni = packet.raw.nodeInfo;
+    return `Node: ${ni.user?.longName || 'Unbekannt'}`;
+  }
+  
+  // My Info
+  if (packet.raw?.myInfo) {
+    return `My Info`;
+  }
+  
+  // Admin Messages
+  if (packet.raw?.decoded?.portnum === 160) {
+    return 'Admin Message';
+  }
+  
+  // Fallback
+  return `Paket (portnum: ${packet.raw?.decoded?.portnum || '?'})`;
 }
 
 function timeAgo(timestamp) {
