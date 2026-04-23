@@ -30,9 +30,11 @@ function useSendProgress() {
   return { progress, start, finish };
 }
 
+const LS_KEY = 'meshtastic_last_destination';
+
 export default function MessageInput({ nodes, selectedNodeNum }) {
   const [text, setText] = useState('');
-  const [destination, setDestination] = useState('broadcast');
+  const [destination, setDestination] = useState(() => localStorage.getItem(LS_KEY) || 'broadcast');
   const [wantAck, setWantAck] = useState(false);
   const [sending, setSending] = useState(false);
   const { progress, start, finish } = useSendProgress();
@@ -65,7 +67,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
   return (
     <div className="border-t bg-white p-3 flex flex-col gap-2 shrink-0">
       {/* Destination selector */}
-      <Select value={destination} onValueChange={setDestination}>
+      <Select value={destination} onValueChange={v => { setDestination(v); localStorage.setItem(LS_KEY, v); }}>
         <SelectTrigger className="h-8 text-xs">
           <SelectValue />
         </SelectTrigger>

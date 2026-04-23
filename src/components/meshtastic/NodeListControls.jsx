@@ -31,10 +31,10 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
   const reset = () => onFilters(DEFAULT_FILTERS);
 
   return (
-    <div className="px-3 py-2 border-b bg-white space-y-2">
+    <div className="px-3 py-2 border-b bg-white space-y-2 shrink-0">
       {/* Search + filter toggle */}
-      <div className="flex gap-1.5">
-        <div className="relative flex-1">
+      <div className="flex gap-1.5 items-center">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <Input
             className="pl-7 h-7 text-xs"
@@ -45,7 +45,7 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
         </div>
         <button
           onClick={() => setExpanded(o => !o)}
-          className={`flex items-center gap-1 px-2 h-7 rounded-md border text-xs transition-colors ${
+          className={`flex-shrink-0 flex items-center gap-1 px-2 h-7 rounded-md border text-xs transition-colors ${
             expanded || activeCount > 0
               ? 'bg-blue-50 border-blue-300 text-blue-700'
               : 'border-slate-200 text-slate-500 hover:bg-slate-50'
