@@ -104,8 +104,8 @@ export default function ReceivedPacketsTable() {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-700">
-          {packetLog.slice().reverse().slice(0, 30).map((packet, idx) => (
-            <tr key={idx} className="hover:bg-slate-750">
+          {packetLog.slice(-50).reverse().map((packet) => (
+            <tr key={packet.seq} className="hover:bg-slate-750">
               <td className="px-3 py-2 font-mono text-slate-300">
                 {packet.from?.toString(16).toUpperCase() || '-'}
               </td>

@@ -13,6 +13,7 @@ class MeshStore {
     this.listeners = new Set();
     this.connected = false;
     this.packetLog = [];
+    this.packetSeq = 0;
     this.isLoading = false;
 
     this.serial.onPacket = (data) => this.handlePacket(data);
@@ -41,6 +42,7 @@ class MeshStore {
 
     // Log all packets - extract from/to based on type
     const logEntry = {
+      seq: ++this.packetSeq,
       time: Date.now(),
       type: parsed.type,
       from: null,
@@ -55,8 +57,8 @@ class MeshStore {
     } else if (parsed.type === 'myInfo' && parsed.myInfo) {
       logEntry.from = parsed.myInfo.myNodeNum;
     }
-    this.packetLog.unshift(logEntry);
-    if (this.packetLog.length > 200) this.packetLog.pop();
+    this.packetLog.push(logEntry);
+    if (this.packetLog.length > 200) this.packetLog.shift();
 
     if (parsed.type === 'myInfo') {
       this.myNodeNum = parsed.myInfo.myNodeNum;
@@ -169,6 +171,7 @@ class MeshStore {
     this.myNodeNum = null;
     this.metadata = null;
     this.packetLog = [];
+    this.packetSeq = 0;
     this.isLoading = false;
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.notify();
