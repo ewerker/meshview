@@ -41,8 +41,10 @@ class MeshStore {
 
     // Log all packets
     this.packetLog.unshift({
-      time: new Date(),
+      time: Math.floor(Date.now() / 1000),
       type: parsed.type,
+      from: parsed.packet?.from || null,
+      to: parsed.packet?.to || null,
       raw: parsed,
     });
     if (this.packetLog.length > 200) this.packetLog.pop();
