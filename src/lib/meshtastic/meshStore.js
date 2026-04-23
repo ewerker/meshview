@@ -30,12 +30,12 @@ class MeshStore {
     // Show loading indicator while actively receiving packets
     this.isLoading = true;
     
-    // Auto-hide loading after 1s of inactivity
+    // Auto-hide loading after 30s of inactivity
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.loadingTimeout = setTimeout(() => {
       this.isLoading = false;
       this.notify();
-    }, 1000);
+    }, 30000);
 
     const parsed = parseFromRadio(rawBytes);
 
