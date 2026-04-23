@@ -39,14 +39,21 @@ class MeshStore {
 
     const parsed = parseFromRadio(rawBytes);
 
-    // Log all packets
-    this.packetLog.unshift({
+    // Log all packets - extract from/to based on type
+    const logEntry = {
       time: Math.floor(Date.now() / 1000),
       type: parsed.type,
-      from: parsed.packet?.from || null,
-      to: parsed.packet?.to || null,
+      from: null,
+      to: null,
       raw: parsed,
-    });
+    };
+    if (parsed.type === 'packet' && parsed.packet) {
+      logEntry.from = parsed.packet.from;
+      logEntry.to = parsed.packet.to;
+    } else if (parsed.type === 'nodeInfo' && parsed.nodeInfo) {
+      logEntry.from = parsed.nodeInfo.num;
+    }
+    this.packetLog.unshift(logEntry);
     if (this.packetLog.length > 200) this.packetLog.pop();
 
     if (parsed.type === 'myInfo') {

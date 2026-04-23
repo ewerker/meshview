@@ -1,60 +1,39 @@
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { Clock, MessageSquare, MapPin, Zap, Radio } from 'lucide-react';
 
+function getDecoded(packet) {
+  return packet.raw?.packet?.decoded || null;
+}
+
 function getPacketIcon(packet) {
-  // Text message
-  if (packet.raw?.packet?.decoded?.text) return <MessageSquare className="w-3 h-3 text-green-500" />;
-  
-  // Position
-  if (packet.raw?.packet?.decoded?.position) return <MapPin className="w-3 h-3 text-red-500" />;
-  
-  // Telemetry
-  if (packet.raw?.packet?.decoded?.telemetry) return <Zap className="w-3 h-3 text-yellow-500" />;
-  
-  // Node info
-  if (packet.raw?.nodeInfo) return <Radio className="w-3 h-3 text-blue-500" />;
-  
-  // My Info
-  if (packet.raw?.myInfo) return <Radio className="w-3 h-3 text-slate-400" />;
-  
+  const decoded = getDecoded(packet);
+  if (decoded?.text) return <MessageSquare className="w-3 h-3 text-green-500" />;
+  if (decoded?.position) return <MapPin className="w-3 h-3 text-red-500" />;
+  if (decoded?.telemetry) return <Zap className="w-3 h-3 text-yellow-500" />;
+  if (decoded?.user) return <Radio className="w-3 h-3 text-blue-500" />;
+  if (packet.type === 'nodeInfo') return <Radio className="w-3 h-3 text-blue-500" />;
+  if (packet.type === 'myInfo') return <Radio className="w-3 h-3 text-green-400" />;
+  if (packet.type === 'metadata') return <Radio className="w-3 h-3 text-purple-500" />;
+  if (packet.type === 'configComplete') return <Radio className="w-3 h-3 text-slate-400" />;
+  if (decoded?.portnum) return <Radio className="w-3 h-3 text-orange-400" />;
   return <Radio className="w-3 h-3 text-slate-400" />;
 }
 
 function getPacketLabel(packet) {
-  console.log('Packet structure:', packet, 'Type:', packet.type, 'Raw:', packet.raw);
+  const decoded = getDecoded(packet);
   
-  // Textnachrichten
-  if (packet.raw?.packet?.decoded?.text) {
-    const text = packet.raw.packet.decoded.text;
-    return `Text: ${text.slice(0, 50)}`;
-  }
-  
-  // GPS/Position
-  if (packet.raw?.packet?.decoded?.position) {
-    const pos = packet.raw.packet.decoded.position;
-    return `GPS: ${pos.latitude?.toFixed(4)}, ${pos.longitude?.toFixed(4)}`;
-  }
-  
-  // Telemetrie
-  if (packet.raw?.packet?.decoded?.telemetry) {
-    const tel = packet.raw.packet.decoded.telemetry;
-    if (tel.deviceMetrics) return `Telemetrie: Bat ${tel.deviceMetrics.batteryLevel}%`;
-    if (tel.environmentMetrics) return `Umgebung: ${tel.environmentMetrics.temperature?.toFixed(1)}°C`;
-    return 'Telemetrie';
-  }
-  
-  // Node Info
-  if (packet.raw?.nodeInfo) {
-    const ni = packet.raw.nodeInfo;
-    return `Node: ${ni.user?.longName || 'Unbekannt'}`;
-  }
-  
-  // My Info
-  if (packet.raw?.myInfo) {
-    return `My Info`;
-  }
-  
-  return `Paket (Type: ${packet.type})`;
+  if (decoded?.text) return `Text: ${decoded.text.slice(0, 50)}`;
+  if (decoded?.position) return `GPS: ${decoded.position.latitude?.toFixed(4)}, ${decoded.position.longitude?.toFixed(4)}`;
+  if (decoded?.telemetry?.deviceMetrics) return `Telemetrie: Bat ${decoded.telemetry.deviceMetrics.batteryLevel}%`;
+  if (decoded?.telemetry?.environmentMetrics) return `Umgebung: ${decoded.telemetry.environmentMetrics.temperature?.toFixed(1)}°C`;
+  if (decoded?.telemetry) return 'Telemetrie';
+  if (decoded?.user) return `Node: ${decoded.user.longName || 'Unbekannt'}`;
+  if (packet.type === 'nodeInfo') return `Node: ${packet.raw?.nodeInfo?.user?.longName || 'Unbekannt'}`;
+  if (packet.type === 'myInfo') return `My Info: #${packet.raw?.myInfo?.myNodeNum}`;
+  if (packet.type === 'metadata') return `Metadata: FW ${packet.raw?.metadata?.firmwareVersion || '?'}`;
+  if (packet.type === 'configComplete') return 'Config komplett';
+  if (decoded?.portnumName) return `${decoded.portnumName}`;
+  return `${packet.type || 'unbekannt'}`;
 }
 
 function formatTime(timestamp) {
@@ -66,12 +45,7 @@ function formatTime(timestamp) {
 export default function ReceivedPacketsTable() {
   const { packetLog } = useMeshStore();
 
-  if (packetLog.length > 0) {
-    console.log('PacketLog count:', packetLog.length);
-    console.log('First packet FULL:', JSON.stringify(packetLog[0], (key, val) => val instanceof Uint8Array ? `[Uint8Array(${val.length})]` : val, 2));
-    console.log('First packet raw keys:', packetLog[0]?.raw ? Object.keys(packetLog[0].raw) : 'no raw');
-    console.log('First packet raw.raw keys:', packetLog[0]?.raw?.raw ? Object.keys(packetLog[0].raw.raw) : 'no raw.raw');
-  }
+
 
   if (packetLog.length === 0) {
     return (
