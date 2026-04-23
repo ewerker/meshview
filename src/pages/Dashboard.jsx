@@ -1,5 +1,4 @@
-import { useState, useRef } from 'react';
-import { haversineKm } from '@/lib/meshtastic/autoresponder.js';
+import { useState } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
 import StatsBar from '@/components/meshtastic/StatsBar.jsx';
@@ -10,9 +9,7 @@ import MessageLog from '@/components/meshtastic/MessageLog.jsx';
 import MessageInput from '@/components/meshtastic/MessageInput.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
-import NodeListControls, { DEFAULT_FILTERS } from '@/components/meshtastic/NodeListControls.jsx';
-import SendLog from '@/components/meshtastic/SendLog.jsx';
-import SerialLog from '@/components/meshtastic/SerialLog.jsx';
+import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import { Radio, Map, MessageSquare, List } from 'lucide-react';
 
 export default function Dashboard() {
@@ -20,41 +17,14 @@ export default function Dashboard() {
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const mapRef = useRef(null);
-
-  const handleFlyTo = (lat, lng) => mapRef.current?.flyTo(lat, lng);
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
   const filteredNodes = nodes.filter(n => {
-    // Text search
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const name = (n.user?.longName || '') + ' ' + (n.user?.shortName || '') + ' ' + (n.user?.id || '');
-      if (!name.toLowerCase().includes(q)) return false;
-    }
-    // GPS
-    if (filters.hasGps && !(n.position?.latitude && n.position.latitude !== 0)) return false;
-    // Device telemetry
-    if (filters.hasTelemetry && !n.deviceMetrics) return false;
-    // Environment sensors
-    if (filters.hasEnvironment && !n.environmentMetrics) return false;
-    // Max hops
-    if (filters.maxHops !== '' && (n.hopsAway === undefined || n.hopsAway > Number(filters.maxHops))) return false;
-    // Min battery
-    if (filters.minBattery !== '' && (!(n.deviceMetrics?.batteryLevel > 0) || n.deviceMetrics.batteryLevel < Number(filters.minBattery))) return false;
-    // Min SNR
-    if (filters.minSnr !== '' && (n.snr === undefined || n.snr < Number(filters.minSnr))) return false;
-    // Max distance
-    if (filters.maxDistKm !== '' && myNode?.position?.latitude) {
-      const d = haversineKm(
-        myNode.position.latitude, myNode.position.longitude,
-        n.position?.latitude, n.position?.longitude
-      );
-      if (d === null || d > Number(filters.maxDistKm)) return false;
-    }
-    return true;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    const name = (n.user?.longName || '') + ' ' + (n.user?.shortName || '') + ' ' + (n.user?.id || '');
+    return name.toLowerCase().includes(q);
   });
 
   const sortedNodes = [...filteredNodes].sort((a, b) => {
@@ -127,7 +97,7 @@ export default function Dashboard() {
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
-                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFilters={setFilters} myNode={myNode} />
+                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} />
                   <div className="flex-1 overflow-auto p-4 grid gap-3">
                     {sortedNodes.map(node => (
                       <NodeCard
@@ -144,16 +114,14 @@ export default function Dashboard() {
                   </div>
                 </TabsContent>
                 <TabsContent value="detail" className="flex-1 overflow-auto">
-                  <NodeDetail node={selectedNode} onFlyTo={handleFlyTo} />
+                  <NodeDetail node={selectedNode} />
                 </TabsContent>
                 <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden bg-slate-50">
                   <div className="flex-1 overflow-auto">
-                    <MessageLog messages={messages} nodes={nodes} myNodeNum={myNodeNum} />
-                    </div>
-                    <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
-                    <SendLog />
-                    <SerialLog />
-                    </TabsContent>
+                    <MessageLog messages={messages} nodes={nodes} />
+                  </div>
+                  <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
+                </TabsContent>
               </Tabs>
             </div>
 
@@ -166,7 +134,7 @@ export default function Dashboard() {
                     <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
                     </div>
-                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFilters={setFilters} myNode={myNode} />
+                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} />
                     <div className="flex-1 overflow-y-auto min-h-0">
                       <div className="p-3 space-y-2">
                         {sortedNodes.map(node => (
@@ -191,7 +159,6 @@ export default function Dashboard() {
                     <Panel defaultSize={65} minSize={25}>
                       <div className="p-4 h-full">
                         <NodeMap
-                          ref={mapRef}
                           nodes={nodes}
                           myNodeNum={myNodeNum}
                           selectedNodeNum={selectedNodeNum}
@@ -208,11 +175,9 @@ export default function Dashboard() {
                           <h3 className="font-semibold text-sm text-slate-600">Nachrichten ({messages.length})</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto min-h-0">
-                          <MessageLog messages={messages} nodes={nodes} myNodeNum={myNodeNum} />
+                          <MessageLog messages={messages} nodes={nodes} />
                         </div>
                         <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
-                        <SendLog />
-                        <SerialLog />
                       </div>
                     </Panel>
                   </PanelGroup>
@@ -229,7 +194,7 @@ export default function Dashboard() {
                       </h3>
                     </div>
                     <div className="flex-1 overflow-hidden">
-                      <NodeDetail node={selectedNode} onFlyTo={handleFlyTo} />
+                      <NodeDetail node={selectedNode} />
                     </div>
                   </div>
                 </Panel>

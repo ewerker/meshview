@@ -9,33 +9,11 @@ export class MeshtasticSerial {
     this.reader = null;
     this.writer = null;
     this.running = false;
-    this.buffer = [];
-    this.readLoopPromise = null;
-    this.packetQueue = [];
-    this.queueWaiters = [];
+    this.onPacket = null;
     this.onConnect = null;
     this.onDisconnect = null;
-    this.onError = null;
-  }
-
-  // Async method to get next packet
-  async nextPacket() {
-    if (this.packetQueue.length > 0) {
-      return this.packetQueue.shift();
-    }
-    return new Promise(resolve => {
-      this.queueWaiters.push(resolve);
-    });
-  }
-
-  // Internal: enqueue packet and notify waiters
-  _enqueuePacket(packet) {
-    if (this.queueWaiters.length > 0) {
-      const resolve = this.queueWaiters.shift();
-      resolve(packet);
-    } else {
-      this.packetQueue.push(packet);
-    }
+    this.buffer = [];
+    this.readLoopPromise = null;
   }
 
   isSupported() {
@@ -108,7 +86,7 @@ export class MeshtasticSerial {
       }
     } catch (e) {
       if (this.running) {
-        if (this.onError) this.onError('Read error: ' + e.message);
+        console.error('Serial read error:', e);
         if (this.onDisconnect) this.onDisconnect();
       }
     } finally {
@@ -121,12 +99,7 @@ export class MeshtasticSerial {
       // Find START1 START2 sequence
       const s1 = this.buffer.indexOf(START1);
       if (s1 === -1) {
-        // Keep last 3 bytes in case START sequence is split across reads
-        if (this.buffer.length > 3) {
-          this.buffer = this.buffer.slice(-3);
-        } else {
-          this.buffer = [];
-        }
+        this.buffer = [];
         return;
       }
       if (s1 > 0) {
@@ -155,7 +128,9 @@ export class MeshtasticSerial {
       const packetData = this.buffer.slice(4, 4 + packetLen);
       this.buffer = this.buffer.slice(4 + packetLen);
 
-      this._enqueuePacket(new Uint8Array(packetData));
+      if (this.onPacket) {
+        this.onPacket(new Uint8Array(packetData));
+      }
     }
   }
 
@@ -166,10 +141,7 @@ export class MeshtasticSerial {
   }
 
   async sendToRadio(data) {
-    if (!this.writer) {
-      console.error('[Serial] sendToRadio: no writer!');
-      return;
-    }
+    if (!this.writer) return;
     const header = new Uint8Array([
       START1,
       START2,
@@ -180,25 +152,37 @@ export class MeshtasticSerial {
     packet.set(header, 0);
     packet.set(data, header.length);
     await this.writer.write(packet);
-    if (this.onSent) this.onSent(packet);
   }
 
+  async sendTextMessage(text, destination = 0xffffffff, channel = 0) {
+    const encoder = new TextEncoder();
+    const textBytes = encoder.encode(text);
+    // Build a minimal MeshPacket for text message
+    const packet = buildTextPacket(textBytes, destination, channel);
+    await this.sendToRadio(packet);
+  }
 }
 
-// ToRadio { want_config_id (field 3): tag 0x18, varint }
+// Minimal protobuf encoding for ToRadio { want_config_id: uint32 }
 function ToRadio_encode_wantConfigId(id) {
-  const bytes = [0x18, ...encodeVarint(id >>> 0)];
+  // Field 3 (want_config_id), wire type 0 (varint)
+  // Tag = (3 << 3) | 0 = 24 = 0x18
+  const bytes = [0x18, ...encodeVarint(id)];
   return new Uint8Array(bytes);
 }
 
 function encodeVarint(value) {
-  value = value >>> 0; // treat as unsigned 32-bit
   const bytes = [];
-  do {
-    let byte = value & 0x7f;
+  while (value > 0x7f) {
+    bytes.push((value & 0x7f) | 0x80);
     value >>>= 7;
-    if (value !== 0) byte |= 0x80;
-    bytes.push(byte);
-  } while (value !== 0);
+  }
+  bytes.push(value & 0x7f);
   return bytes;
+}
+
+function buildTextPacket(textBytes, destination, channel) {
+  // Minimal protobuf: MeshPacket with to, decoded.payload, decoded.portnum=1
+  // This is a simplified placeholder - full implementation would need complete protobuf
+  return new Uint8Array([0x08, ...encodeVarint(destination), 0x1a, textBytes.length, ...textBytes]);
 }

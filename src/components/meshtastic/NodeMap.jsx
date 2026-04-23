@@ -1,5 +1,5 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -28,16 +28,6 @@ function createNodeIcon(shortName, isMyNode, isSelected) {
   });
 }
 
-function FlyToController({ flyToRef }) {
-  const map = useMap();
-  useEffect(() => {
-    flyToRef.current = (lat, lng) => {
-      map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { duration: 1 });
-    };
-  }, [map]);
-  return null;
-}
-
 function AutoFitBounds({ nodes }) {
   const map = useMap();
   useEffect(() => {
@@ -62,13 +52,7 @@ function timeAgo(timestamp) {
   return `vor ${Math.floor(diff / 86400)}d`;
 }
 
-const NodeMap = forwardRef(function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNode }, ref) {
-  const flyToRef = useRef(null);
-
-  useImperativeHandle(ref, () => ({
-    flyTo: (lat, lng) => flyToRef.current?.(lat, lng),
-  }));
-
+export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNode }) {
   const nodesWithPos = nodes.filter(n =>
     n.position?.latitude && n.position?.longitude &&
     n.position.latitude !== 0 && n.position.longitude !== 0
@@ -91,7 +75,6 @@ const NodeMap = forwardRef(function NodeMap({ nodes, myNodeNum, selectedNodeNum,
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <AutoFitBounds nodes={nodesWithPos} />
-        <FlyToController flyToRef={flyToRef} />
 
         {nodesWithPos.map(node => {
           const isMyNode = node.num === myNodeNum;
@@ -128,6 +111,4 @@ const NodeMap = forwardRef(function NodeMap({ nodes, myNodeNum, selectedNodeNum,
       </MapContainer>
     </div>
   );
-});
-
-export default NodeMap;
+}

@@ -26,7 +26,7 @@ function timeAgo(timestamp) {
   return `vor ${Math.floor(diff / 86400)}d`;
 }
 
-export default function NodeDetail({ node, onFlyTo }) {
+export default function NodeDetail({ node }) {
   if (!node) return (
     <div className="flex items-center justify-center h-full text-slate-400">
       <div className="text-center">
@@ -120,16 +120,6 @@ export default function NodeDetail({ node, onFlyTo }) {
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">GPS-Position</CardTitle></CardHeader>
               <CardContent className="space-y-0">
-                {onFlyTo && (
-                  <button
-                    onClick={() => onFlyTo(pos.latitude, pos.longitude)}
-                    className="w-full flex items-center gap-2 py-1.5 mb-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded px-1 transition-colors"
-                  >
-                    <MapPin className="w-4 h-4 shrink-0" />
-                    <span className="font-mono">{pos.latitude.toFixed(5)}, {pos.longitude.toFixed(5)}</span>
-                    <span className="text-xs text-slate-400 ml-auto">Karte zentrieren ↗</span>
-                  </button>
-                )}
                 <Row label="Breitengrad" value={pos.latitude.toFixed(6)} unit="°" />
                 <Row label="Längengrad" value={pos.longitude.toFixed(6)} unit="°" />
                 <Row label="Höhe (MSL)" value={pos.altitude !== 0 ? pos.altitude : null} unit="m" />

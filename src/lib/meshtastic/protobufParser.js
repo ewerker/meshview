@@ -12,7 +12,6 @@ const WIRE_32BIT = 5;
 export function parseFromRadio(bytes) {
   try {
     const fields = parseMessage(bytes);
-    console.log('[Parser] FromRadio fields:', JSON.stringify(Object.fromEntries(Object.entries(fields).map(([k,v]) => [k, v instanceof Uint8Array ? `bytes(${v.length})` : v]))), '| first byte hex:', (bytes[0]||0).toString(16));
     // FromRadio oneof packet field
     // field 1 = packet (MeshPacket)
     // field 3 = my_info
@@ -24,33 +23,26 @@ export function parseFromRadio(bytes) {
     // field 11 = queueStatus
     // field 13 = metadata
 
-    // FromRadio field numbers (Meshtastic protobuf):
-    // field 1 (0x0a) = packet (MeshPacket)
-    // field 2 (0x12) = my_info (MyNodeInfo)
-    // field 4 (0x22) = node_info (NodeInfo)
-    // field 8 (0x42) = config_complete_id (uint32)
-    // field 13 (0x6a) = metadata (DeviceMetadata)
-    // A single FromRadio message can contain multiple fields — emit one result per field.
-    const results = [];
+    const result = { type: 'unknown', raw: fields };
 
-    // Log all parsed fields for debugging
-    console.log('[FromRadio] field keys:', Object.keys(fields).join(','), '| types:', Object.entries(fields).map(([k,v]) => `${k}:${v instanceof Uint8Array ? 'bytes('+v.length+')' : v}`).join(' '));
+    if (fields[1]) {
+      result.type = 'packet';
+      result.packet = parseMeshPacket(fields[1]);
+    } else if (fields[3]) {
+      result.type = 'myInfo';
+      result.myInfo = parseMyNodeInfo(fields[3]);
+    } else if (fields[4]) {
+      result.type = 'nodeInfo';
+      result.nodeInfo = parseNodeInfo(fields[4]);
+    } else if (fields[8] !== undefined) {
+      result.type = 'configComplete';
+      result.configCompleteId = fields[8];
+    } else if (fields[13]) {
+      result.type = 'metadata';
+      result.metadata = parseDeviceMetadata(fields[13]);
+    }
 
-    // Verified FromRadio field numbers from byte analysis:
-    // field 2  (0x12) = packet (MeshPacket)       — wire2
-    // field 3  (0x1a) = my_info (MyNodeInfo)       — wire2
-    // field 4  (0x22) = node_info (NodeInfo)        — wire2
-    // field 7  (0x38) = config_complete_id (uint32) — varint
-    // field 11 (0x5a) = queueStatus               — wire2
-    // field 15 (0x7a) = fileInfo (xmodem)           — wire2 (ignored)
-    if (fields[2]) results.push({ type: 'packet', packet: parseMeshPacket(fields[2]) });
-    if (fields[3]) results.push({ type: 'myInfo', myInfo: parseMyNodeInfo(fields[3]) });
-    if (fields[4]) results.push({ type: 'nodeInfo', nodeInfo: parseNodeInfo(fields[4]) });
-    if (fields[7] !== undefined) results.push({ type: 'configComplete', configCompleteId: fields[7] });
-    if (fields[11]) results.push({ type: 'queueStatus', queueStatus: parseQueueStatus(fields[11]) });
-
-    if (results.length === 0) return [{ type: 'unknown', raw: fields }];
-    return results;
+    return result;
   } catch (e) {
     return { type: 'error', error: e.message };
   }
@@ -58,32 +50,20 @@ export function parseFromRadio(bytes) {
 
 function parseMeshPacket(bytes) {
   const fields = parseMessage(bytes);
-  // MeshPacket OTA fields (verified from byte analysis):
-  // field 1  (wire5/fixed32) = from
-  // field 2  (wire5/fixed32) = to
-  // field 3  (wire0/varint)  = channel (OTA channel index)
-  // field 4  (wire2)         = encrypted payload
-  // field 5  (wire2)         = decoded Data (unencrypted)
-  // field 6  (wire0/varint)  = id
-  // field 7  (wire0/varint)  = rx_time
-  // field 8  (wire5/float32) = rx_snr
-  // field 9  (wire0/varint)  = hop_limit
-  // field 11 (wire0/varint)  = rx_rssi
   const packet = {
     from: fields[1] || 0,
     to: fields[2] || 0,
     id: fields[6] || 0,
-    rxTime: fields[7] || 0,
-    rxSnr: fields[8] ? int32ToFloat(fields[8]) : 0,
-    hopLimit: fields[9] || 0,
-    channel: fields[3] || 0,
-    rxRssi: signedInt(fields[11] || 0),
+    rxTime: fields[9] || 0,
+    rxSnr: fields[13] ? int32ToFloat(fields[13]) : 0,
+    hopLimit: fields[10] || 0,
+    rxRssi: signedInt(fields[14] || 0),
+    viaMqtt: fields[15] || false,
     decoded: null,
   };
 
-  // field 5 = decoded Data (unencrypted), field 4 = encrypted (skip)
-  if (fields[5]) {
-    packet.decoded = parseData(fields[5]);
+  if (fields[3]) {
+    packet.decoded = parseData(fields[3]);
   }
 
   return packet;
@@ -252,16 +232,6 @@ function parsePowerMetrics(bytes) {
     ch2Current: fields[4] ? int32ToFloat(fields[4]) : null,
     ch3Voltage: fields[5] ? int32ToFloat(fields[5]) : null,
     ch3Current: fields[6] ? int32ToFloat(fields[6]) : null,
-  };
-}
-
-function parseQueueStatus(bytes) {
-  const fields = parseMessage(bytes);
-  return {
-    res: fields[1] || 0,       // error code (0=ok)
-    free: fields[2] || 0,      // free slots
-    maxlen: fields[3] || 0,    // max queue length
-    meshPacketId: fields[4] || 0, // id of the packet that triggered this
   };
 }
 
