@@ -12,6 +12,7 @@ const WIRE_32BIT = 5;
 export function parseFromRadio(bytes) {
   try {
     const fields = parseMessage(bytes);
+    console.log('[Parser] FromRadio fields:', Object.keys(fields), '| bytes:', bytes.length, '| hex:', Array.from(bytes).slice(0,16).map(b=>b.toString(16).padStart(2,'0')).join(' ') + (bytes.length > 16 ? '...' : ''));
     // FromRadio oneof packet field
     // field 1 = packet (MeshPacket)
     // field 3 = my_info

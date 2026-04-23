@@ -159,7 +159,6 @@ export class MeshtasticSerial {
     console.log('[Serial TX]', Array.from(packet).map(b => b.toString(16).padStart(2,'0')).join(' '));
     await this.writer.write(packet);
     if (this.onSent) this.onSent(packet);
-    else if (this.onRawTx) this.onRawTx(packet);
   }
 
   async sendTextMessage(text, destination = 0xffffffff, channel = 0, wantAck = false) {
