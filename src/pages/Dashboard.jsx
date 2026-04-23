@@ -16,14 +16,35 @@ export default function Dashboard() {
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
+  const [filter, setFilter] = useState('all');
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
+  const now = Math.floor(Date.now() / 1000);
+
   const filteredNodes = nodes.filter(n => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    const name = (n.user?.longName || '') + ' ' + (n.user?.shortName || '') + ' ' + (n.user?.id || '');
-    return name.toLowerCase().includes(q);
+    // Search filter
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const name = (n.user?.longName || '') + ' ' + (n.user?.shortName || '') + ' ' + (n.user?.id || '');
+      if (!name.toLowerCase().includes(q)) return false;
+    }
+
+    // Status filter
+    if (filter === 'active') {
+      return (now - (n.lastHeard || 0)) < 900; // 15 minutes
+    }
+    if (filter === 'direct') {
+      return n.hopsAway === 0;
+    }
+    if (filter === 'lowBattery') {
+      return n.deviceMetrics?.batteryLevel > 0 && n.deviceMetrics.batteryLevel < 20;
+    }
+    if (filter === 'gps') {
+      return n.position?.latitude && n.position?.longitude && n.position.latitude !== 0;
+    }
+
+    return true;
   });
 
   const sortedNodes = [...filteredNodes].sort((a, b) => {
@@ -94,8 +115,8 @@ export default function Dashboard() {
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
-                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} />
-                  <div className="flex-1 overflow-auto p-4 grid gap-3">
+                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filter={filter} onFilter={setFilter} />
+                    <div className="flex-1 overflow-auto p-4 grid gap-3">
                     {sortedNodes.map(node => (
                       <NodeCard
                         key={node.num}
@@ -125,7 +146,7 @@ export default function Dashboard() {
                     <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
                     </div>
-                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} />
+                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filter={filter} onFilter={setFilter} />
                     <div className="flex-1 overflow-y-auto min-h-0">
                       <div className="p-3 space-y-2">
                         {sortedNodes.map(node => (
