@@ -154,11 +154,11 @@ export class MeshtasticSerial {
     await this.writer.write(packet);
   }
 
-  async sendTextMessage(text, destination = 0xffffffff, channel = 0) {
+  async sendTextMessage(text, destination = 0xffffffff, channel = 0, wantAck = false) {
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
     // Build a minimal MeshPacket for text message
-    const packet = buildTextPacket(textBytes, destination, channel);
+    const packet = buildTextPacket(textBytes, destination, channel, wantAck);
     await this.sendToRadio(packet);
   }
 }
@@ -181,8 +181,13 @@ function encodeVarint(value) {
   return bytes;
 }
 
-function buildTextPacket(textBytes, destination, channel) {
+function buildTextPacket(textBytes, destination, channel, wantAck = false) {
   // Minimal protobuf: MeshPacket with to, decoded.payload, decoded.portnum=1
-  // This is a simplified placeholder - full implementation would need complete protobuf
-  return new Uint8Array([0x08, ...encodeVarint(destination), 0x1a, textBytes.length, ...textBytes]);
+  // Field 1 (to): tag 0x08, varint destination
+  // Field 6 (want_ack): tag 0x30, varint 1 if true
+  // Field 3 (decoded): tag 0x1a, length-delimited
+  const bytes = [0x08, ...encodeVarint(destination)];
+  if (wantAck) bytes.push(0x30, 0x01);
+  bytes.push(0x1a, textBytes.length, ...textBytes);
+  return new Uint8Array(bytes);
 }

@@ -1,19 +1,41 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Send, CheckCheck } from 'lucide-react';
 import { meshStore } from '@/lib/meshtastic/meshStore.js';
+
+// Simulated send progress: ramps to 80% quickly, holds, then completes on resolve
+function useSendProgress() {
+  const [progress, setProgress] = useState(0);
+  const timerRef = useRef(null);
+
+  const start = () => {
+    setProgress(5);
+    let p = 5;
+    timerRef.current = setInterval(() => {
+      p = p + (80 - p) * 0.18;
+      setProgress(Math.min(p, 79));
+    }, 80);
+  };
+
+  const finish = (success = true) => {
+    clearInterval(timerRef.current);
+    setProgress(success ? 100 : 0);
+    setTimeout(() => setProgress(0), 700);
+  };
+
+  return { progress, start, finish };
+}
 
 export default function MessageInput({ nodes, selectedNodeNum }) {
   const [text, setText] = useState('');
   const [destination, setDestination] = useState('broadcast');
+  const [wantAck, setWantAck] = useState(false);
   const [sending, setSending] = useState(false);
-
-  // Pre-select the currently selected node if available
-  const destValue = selectedNodeNum && destination !== 'broadcast'
-    ? destination
-    : destination;
+  const { progress, start, finish } = useSendProgress();
 
   const handleSend = async () => {
     const msg = text.trim();
@@ -21,10 +43,13 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
 
     const destNum = destination === 'broadcast' ? 0xffffffff : parseInt(destination);
     setSending(true);
+    start();
     try {
-      await meshStore.serial.sendTextMessage(msg, destNum);
+      await meshStore.serial.sendTextMessage(msg, destNum, 0, wantAck);
       setText('');
+      finish(true);
     } catch (e) {
+      finish(false);
       alert('Fehler beim Senden: ' + e.message);
     }
     setSending(false);
@@ -39,6 +64,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
 
   return (
     <div className="border-t bg-white p-3 flex flex-col gap-2 shrink-0">
+      {/* Destination selector */}
       <Select value={destination} onValueChange={setDestination}>
         <SelectTrigger className="h-8 text-xs">
           <SelectValue />
@@ -55,6 +81,8 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
           })}
         </SelectContent>
       </Select>
+
+      {/* Input row */}
       <div className="flex gap-2">
         <Input
           className="flex-1 h-8 text-sm"
@@ -67,6 +95,31 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
         <Button size="sm" onClick={handleSend} disabled={sending || !text.trim()} className="px-3">
           <Send className="w-4 h-4" />
         </Button>
+      </div>
+
+      {/* ACK toggle + progress bar row */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <Switch
+            id="want-ack"
+            checked={wantAck}
+            onCheckedChange={setWantAck}
+            disabled={sending}
+            className="scale-75 origin-left"
+          />
+          <Label htmlFor="want-ack" className="text-xs text-slate-500 flex items-center gap-1 cursor-pointer select-none">
+            <CheckCheck className="w-3 h-3" />
+            ACK erwünscht
+          </Label>
+        </div>
+
+        {/* Progress bar */}
+        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-100 ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
     </div>
   );
