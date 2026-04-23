@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator, SelectLabel, SelectGroup } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Send, CheckCheck } from 'lucide-react';
@@ -31,10 +31,12 @@ function useSendProgress() {
 }
 
 const LS_KEY = 'meshtastic_last_destination';
+const LS_CHANNEL_KEY = 'meshtastic_last_channel';
 
 export default function MessageInput({ nodes, selectedNodeNum }) {
   const [text, setText] = useState('');
   const [destination, setDestination] = useState(() => localStorage.getItem(LS_KEY) || 'broadcast');
+  const [channel, setChannel] = useState(() => parseInt(localStorage.getItem(LS_CHANNEL_KEY) || '0'));
   const [wantAck, setWantAck] = useState(false);
   const [sending, setSending] = useState(false);
   const { progress, start, finish } = useSendProgress();
@@ -47,7 +49,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
     setSending(true);
     start();
     try {
-      await meshStore.sendTextMessage(msg, destNum, 0, wantAck);
+      await meshStore.sendTextMessage(msg, destNum, channel, wantAck);
       setText('');
       finish(true);
     } catch (e) {
@@ -66,23 +68,44 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
 
   return (
     <div className="border-t bg-white p-3 flex flex-col gap-2 shrink-0">
-      {/* Destination selector */}
-      <Select value={destination} onValueChange={v => { setDestination(v); localStorage.setItem(LS_KEY, v); }}>
-        <SelectTrigger className="h-8 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="broadcast">📢 Broadcast (alle Nodes)</SelectItem>
-          {nodes.map(node => {
-            const label = node.user?.longName || node.user?.shortName || `!${node.num?.toString(16).padStart(8, '0')}`;
-            return (
-              <SelectItem key={node.num} value={String(node.num)}>
-                📡 {label}
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
+      {/* Destination + Channel selectors */}
+      <div className="flex gap-1.5">
+        <Select value={destination} onValueChange={v => { setDestination(v); localStorage.setItem(LS_KEY, v); }}>
+          <SelectTrigger className="h-8 text-xs flex-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel className="text-xs text-slate-400">Ziel</SelectLabel>
+              <SelectItem value="broadcast">📢 Broadcast (alle Nodes)</SelectItem>
+              {nodes.map(node => {
+                const label = node.user?.longName || node.user?.shortName || `!${node.num?.toString(16).padStart(8, '0')}`;
+                return (
+                  <SelectItem key={node.num} value={String(node.num)}>
+                    📡 {label}
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Select value={String(channel)} onValueChange={v => { setChannel(parseInt(v)); localStorage.setItem(LS_CHANNEL_KEY, v); }}>
+          <SelectTrigger className="h-8 text-xs w-24">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel className="text-xs text-slate-400">Kanal</SelectLabel>
+              {[0,1,2,3,4,5,6,7,8,9].map(ch => (
+                <SelectItem key={ch} value={String(ch)}>
+                  📻 Kanal {ch}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Input row */}
       <div className="flex gap-2">
