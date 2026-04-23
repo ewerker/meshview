@@ -94,23 +94,39 @@ class MeshStore {
         existingNode.environmentMetrics = decoded.telemetry.environmentMetrics;
       }
     }
+    // Build a unified feed entry for all packet types
+    const feedEntry = {
+      id: packet.id || Math.random(),
+      from: fromNum,
+      to: packet.to,
+      time: packet.rxTime ? new Date(packet.rxTime * 1000) : new Date(),
+      rxSnr: packet.rxSnr,
+      rxRssi: packet.rxRssi,
+      channel: packet.channel,
+      type: decoded.portnumName || 'UNKNOWN',
+    };
+
     if (decoded.text) {
-      const msg = {
-        id: packet.id,
-        from: fromNum,
-        to: packet.to,
-        text: decoded.text,
-        time: packet.rxTime ? new Date(packet.rxTime * 1000) : new Date(),
-        rxSnr: packet.rxSnr,
-        rxRssi: packet.rxRssi,
-      };
-      this.messages.unshift(msg);
-      if (this.messages.length > 100) this.messages.pop();
+      feedEntry.text = decoded.text;
+      this.messages.unshift(feedEntry);
+      if (this.messages.length > 200) this.messages.pop();
 
       // Autoresponder: only reply to messages not from myself
       if (fromNum !== this.myNodeNum) {
-        this.runAutoresponder(msg, existingNode);
+        this.runAutoresponder(feedEntry, existingNode);
       }
+    } else if (decoded.position) {
+      feedEntry.position = decoded.position;
+      this.messages.unshift(feedEntry);
+      if (this.messages.length > 200) this.messages.pop();
+    } else if (decoded.telemetry) {
+      feedEntry.telemetry = decoded.telemetry;
+      this.messages.unshift(feedEntry);
+      if (this.messages.length > 200) this.messages.pop();
+    } else if (decoded.user) {
+      feedEntry.userInfo = decoded.user;
+      this.messages.unshift(feedEntry);
+      if (this.messages.length > 200) this.messages.pop();
     }
 
     this.nodes.set(fromNum, existingNode);
@@ -192,6 +208,20 @@ class MeshStore {
     try {
       await this.serial.sendTextMessage(text, destNum, channel, wantAck);
       entry.status = 'ok';
+
+      // Add sent message to the feed as "own" message
+      const feedEntry = {
+        id: Date.now(),
+        from: this.myNodeNum,
+        to: destNum,
+        time: new Date(),
+        type: 'TEXT_MESSAGE_APP',
+        text,
+        channel,
+        isSent: true,
+      };
+      this.messages.unshift(feedEntry);
+      if (this.messages.length > 200) this.messages.pop();
     } catch (e) {
       entry.status = 'error';
       entry.error = e.message;

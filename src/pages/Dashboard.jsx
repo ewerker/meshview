@@ -147,11 +147,11 @@ export default function Dashboard() {
                 </TabsContent>
                 <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden bg-slate-50">
                   <div className="flex-1 overflow-auto">
-                    <MessageLog messages={messages} nodes={nodes} />
-                  </div>
-                  <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
-                  <SendLog />
-                </TabsContent>
+                    <MessageLog messages={messages} nodes={nodes} myNodeNum={myNodeNum} />
+                    </div>
+                    <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
+                    <SendLog />
+                    </TabsContent>
               </Tabs>
             </div>
 
@@ -206,7 +206,7 @@ export default function Dashboard() {
                           <h3 className="font-semibold text-sm text-slate-600">Nachrichten ({messages.length})</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto min-h-0">
-                          <MessageLog messages={messages} nodes={nodes} />
+                          <MessageLog messages={messages} nodes={nodes} myNodeNum={myNodeNum} />
                         </div>
                         <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
                         <SendLog />
