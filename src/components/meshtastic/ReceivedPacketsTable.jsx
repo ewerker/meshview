@@ -21,6 +21,8 @@ function getPacketIcon(packet) {
 }
 
 function getPacketLabel(packet) {
+  console.log('Packet structure:', packet, 'Type:', packet.type, 'Raw:', packet.raw);
+  
   // Textnachrichten
   if (packet.raw?.packet?.decoded?.text) {
     const text = packet.raw.packet.decoded.text;
@@ -52,7 +54,7 @@ function getPacketLabel(packet) {
     return `My Info`;
   }
   
-  return `Paket`;
+  return `Paket (Type: ${packet.type})`;
 }
 
 function formatTime(timestamp) {
