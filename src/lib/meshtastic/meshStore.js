@@ -1,7 +1,7 @@
 // Central state store for Meshtastic data
 import { MeshtasticSerial } from './serialConnection.js';
 import { parseFromRadio } from './protobufParser.js';
-import { loadRules, matchesRule, checkCooldown, updateCooldown, renderTemplate, haversineKm } from './autoresponder.js';
+
 
 class MeshStore {
   constructor() {
@@ -148,39 +148,7 @@ class MeshStore {
     this.nodes.set(fromNum, existingNode);
   }
 
-  runAutoresponder(message, senderNode) {
-    const rules = loadRules().filter(r => r.enabled);
-    const myNode = this.getMyNode();
 
-    for (const rule of rules) {
-      if (!matchesRule(rule, message, senderNode, myNode)) continue;
-      if (!checkCooldown(rule, senderNode.num)) continue;
-
-      const dist = haversineKm(
-        myNode?.position?.latitude, myNode?.position?.longitude,
-        senderNode?.position?.latitude, senderNode?.position?.longitude
-      );
-
-      const text = renderTemplate(rule.template, {
-        senderNode,
-        myNode,
-        message,
-        distKm: dist,
-      });
-
-      const destination = rule.filters.replyTo === 'broadcast' ? 0xffffffff : senderNode.num;
-
-      updateCooldown(rule, senderNode.num);
-
-      // Delay reply slightly to avoid flooding
-      setTimeout(() => {
-        this.serial.sendTextMessage(text, destination).catch(e => console.error('Autoresponder send error:', e));
-      }, 500);
-
-      // Only first matching rule fires (break)
-      break;
-    }
-  }
 
   _logSerial(direction, bytes, label = null) {
     const hex = bytes ? Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ') : '';
@@ -222,43 +190,7 @@ class MeshStore {
     this.listeners.forEach(l => l());
   }
 
-  async sendTextMessage(text, destNum, channel = 0, wantAck = false) {
-    const entry = {
-      time: new Date(),
-      text,
-      destNum,
-      wantAck,
-      status: 'sending',
-      error: null,
-    };
-    this.sendLog.unshift(entry);
-    if (this.sendLog.length > 50) this.sendLog.pop();
-    this.notify();
-    try {
-      await this.serial.sendTextMessage(text, destNum, channel, wantAck);
-      entry.status = 'ok';
 
-      // Add sent message to the feed as "own" message
-      const feedEntry = {
-        id: Date.now(),
-        from: this.myNodeNum,
-        to: destNum,
-        time: new Date(),
-        type: 'TEXT_MESSAGE_APP',
-        text,
-        channel,
-        isSent: true,
-      };
-      this.messages.unshift(feedEntry);
-      if (this.messages.length > 200) this.messages.pop();
-    } catch (e) {
-      entry.status = 'error';
-      entry.error = e.message;
-      throw e;
-    } finally {
-      this.notify();
-    }
-  }
 
   async connect() {
     await this.serial.connect();

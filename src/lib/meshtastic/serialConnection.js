@@ -102,22 +102,18 @@ export class MeshtasticSerial {
       const s1 = this.buffer.indexOf(START1);
       if (s1 === -1) {
         // Keep last 3 bytes in case START sequence is split across reads
-        const discarded = this.buffer.length;
         if (this.buffer.length > 3) {
           this.buffer = this.buffer.slice(-3);
         } else {
           this.buffer = [];
         }
-        console.log(`[processBuffer] No START1 found, discarded ${discarded}b, kept ${this.buffer.length}b`);
         return;
       }
       if (s1 > 0) {
-        console.log(`[processBuffer] Found START1 at offset ${s1}, discarding ${s1}b`);
         this.buffer = this.buffer.slice(s1);
       }
       if (this.buffer.length < 2) return;
       if (this.buffer[1] !== START2) {
-        console.log(`[processBuffer] No START2 at [1], byte is 0x${this.buffer[1].toString(16).padStart(2,'0')}, skipping`);
         this.buffer = this.buffer.slice(1);
         continue;
       }
@@ -129,17 +125,13 @@ export class MeshtasticSerial {
       const packetLen = (msb << 8) | lsb;
 
       if (packetLen > 512) {
-        console.log(`[processBuffer] Invalid length ${packetLen}, skipping`);
+        // Invalid length, skip
         this.buffer = this.buffer.slice(2);
         continue;
       }
 
-      if (this.buffer.length < 4 + packetLen) {
-        console.log(`[processBuffer] Incomplete packet: have ${this.buffer.length}b, need ${4 + packetLen}b`);
-        return;
-      }
+      if (this.buffer.length < 4 + packetLen) return;
 
-      console.log(`[processBuffer] Valid packet: ${packetLen}b, total ${4 + packetLen}b`);
       const packetData = this.buffer.slice(4, 4 + packetLen);
       this.buffer = this.buffer.slice(4 + packetLen);
 
@@ -169,19 +161,10 @@ export class MeshtasticSerial {
     const packet = new Uint8Array(header.length + data.length);
     packet.set(header, 0);
     packet.set(data, header.length);
-    console.log('[Serial TX]', Array.from(packet).map(b => b.toString(16).padStart(2,'0')).join(' '));
     await this.writer.write(packet);
     if (this.onSent) this.onSent(packet);
   }
 
-  async sendTextMessage(text, destination = 0xffffffff, channel = 0, wantAck = false) {
-    console.log('[sendTextMessage] dest=0x' + destination.toString(16) + ' ch=' + channel + ' wantAck=' + wantAck);
-    const encoder = new TextEncoder();
-    const textBytes = encoder.encode(text);
-    const packet = buildTextPacket(textBytes, destination, channel, wantAck);
-    console.log('[sendTextMessage] dest=0x' + destination.toString(16) + ' ch=' + channel + ' wantAck=' + wantAck + ' textLen=' + textBytes.length);
-    await this.sendToRadio(packet);
-  }
 }
 
 // ToRadio { want_config_id (field 3): tag 0x18, varint }
@@ -200,26 +183,4 @@ function encodeVarint(value) {
     bytes.push(byte);
   } while (value !== 0);
   return bytes;
-}
-
-function buildTextPacket(textBytes, destination, channel, wantAck = false) {
-  // Data { portnum=1 (TEXT_MESSAGE_APP), payload=textBytes }
-  const dataBytes = [
-    0x08, 0x01,                                           // field 1 (portnum) = 1 (TEXT_MESSAGE_APP)
-    0x12, ...encodeVarint(textBytes.length), ...textBytes // field 2 (payload)
-  ];
-
-  const packetId = (Math.random() * 0xffffffff) >>> 0;
-  const meshBytes = [
-    0x08, ...encodeVarint(destination >>> 0),              // field 1  (to)
-    0x1a, ...encodeVarint(dataBytes.length), ...dataBytes, // field 3  (decoded)
-    0x30, ...encodeVarint(packetId),                       // field 6  (id) — varint
-    0x48, 0x03,                                            // field 9  (hop_limit = 3)
-    0x50, ...encodeVarint(wantAck ? 1 : 0),               // field 10 (want_ack)
-    0x70, ...encodeVarint(channel),                        // field 14 (channel) — varint
-  ];
-
-  // ToRadio { field 1 (packet): MeshPacket }
-  const toRadioBytes = [0x0a, ...encodeVarint(meshBytes.length), ...meshBytes];
-  return new Uint8Array(toRadioBytes);
 }
