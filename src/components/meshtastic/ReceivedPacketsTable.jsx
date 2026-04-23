@@ -2,50 +2,39 @@ import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { Clock, MessageSquare, MapPin, Zap, Radio } from 'lucide-react';
 
 function getPacketIcon(packet) {
-  // Text message (portnum 1)
-  if (packet.raw?.decoded?.portnum === 1) return <MessageSquare className="w-3 h-3 text-green-500" />;
-  if (packet.raw?.decoded?.text) return <MessageSquare className="w-3 h-3 text-green-500" />;
+  // Text message
+  if (packet.raw?.packet?.decoded?.text) return <MessageSquare className="w-3 h-3 text-green-500" />;
   
-  // Position (portnum 3)
-  if (packet.raw?.decoded?.portnum === 3) return <MapPin className="w-3 h-3 text-red-500" />;
-  if (packet.raw?.position) return <MapPin className="w-3 h-3 text-red-500" />;
+  // Position
+  if (packet.raw?.packet?.decoded?.position) return <MapPin className="w-3 h-3 text-red-500" />;
   
-  // Telemetry (portnum 67)
-  if (packet.raw?.decoded?.portnum === 67) return <Zap className="w-3 h-3 text-yellow-500" />;
-  if (packet.raw?.deviceMetrics || packet.raw?.environmentMetrics) return <Zap className="w-3 h-3 text-yellow-500" />;
+  // Telemetry
+  if (packet.raw?.packet?.decoded?.telemetry) return <Zap className="w-3 h-3 text-yellow-500" />;
+  
+  // Node info
+  if (packet.raw?.nodeInfo) return <Radio className="w-3 h-3 text-blue-500" />;
   
   return <Radio className="w-3 h-3 text-blue-500" />;
 }
 
 function getPacketLabel(packet) {
-  // Textnachrichten
-  if (packet.raw?.decoded?.text) {
-    return `Text: ${packet.raw.decoded.text.slice(0, 50)}`;
+  // Textnachrichten (from packet.decoded.text)
+  if (packet.raw?.packet?.decoded?.text) {
+    return `Text: ${packet.raw.packet.decoded.text.slice(0, 50)}`;
   }
   
-  // GPS/Position
-  if (packet.raw?.position) {
-    const pos = packet.raw.position;
+  // GPS/Position (from packet.decoded.position)
+  if (packet.raw?.packet?.decoded?.position) {
+    const pos = packet.raw.packet.decoded.position;
     return `GPS: ${pos.latitude?.toFixed(4)}, ${pos.longitude?.toFixed(4)}`;
   }
-  if (packet.raw?.decoded?.latitude) {
-    const { latitude, longitude } = packet.raw.decoded;
-    return `GPS: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`;
-  }
   
-  // Telemetrie/Device Metrics
-  if (packet.raw?.deviceMetrics) {
-    const dm = packet.raw.deviceMetrics;
-    return `Telemetrie: Bat ${dm.batteryLevel}% SNR ${dm.numOnlineNodes || '-'}`;
-  }
-  if (packet.raw?.decoded?.portnum === 67) {
+  // Telemetrie (from packet.decoded.telemetry)
+  if (packet.raw?.packet?.decoded?.telemetry) {
+    const tel = packet.raw.packet.decoded.telemetry;
+    if (tel.deviceMetrics) return `Telemetrie: Bat ${tel.deviceMetrics.batteryLevel}%`;
+    if (tel.environmentMetrics) return `Umgebung: ${tel.environmentMetrics.temperature?.toFixed(1)}°C`;
     return 'Telemetrie';
-  }
-  
-  // Umgebungssensoren
-  if (packet.raw?.environmentMetrics) {
-    const em = packet.raw.environmentMetrics;
-    return `Umgebung: ${em.temperature?.toFixed(1)}°C ${em.relativeHumidity?.toFixed(0)}%`;
   }
   
   // Node Info
@@ -59,13 +48,8 @@ function getPacketLabel(packet) {
     return `My Info`;
   }
   
-  // Admin Messages
-  if (packet.raw?.decoded?.portnum === 160) {
-    return 'Admin Message';
-  }
-  
   // Fallback
-  return `Paket (portnum: ${packet.raw?.decoded?.portnum || '?'})`;
+  return `Paket (Type: ${packet.type})`;
 }
 
 function formatTime(timestamp) {
