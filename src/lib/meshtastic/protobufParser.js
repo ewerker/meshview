@@ -12,7 +12,7 @@ const WIRE_32BIT = 5;
 export function parseFromRadio(bytes) {
   try {
     const fields = parseMessage(bytes);
-    console.log('[Parser] FromRadio fields:', Object.keys(fields), '| bytes:', bytes.length, '| hex:', Array.from(bytes).slice(0,16).map(b=>b.toString(16).padStart(2,'0')).join(' ') + (bytes.length > 16 ? '...' : ''));
+    console.log('[Parser] FromRadio fields:', JSON.stringify(Object.fromEntries(Object.entries(fields).map(([k,v]) => [k, v instanceof Uint8Array ? `bytes(${v.length})` : v]))), '| first byte hex:', (bytes[0]||0).toString(16));
     // FromRadio oneof packet field
     // field 1 = packet (MeshPacket)
     // field 3 = my_info
@@ -26,12 +26,21 @@ export function parseFromRadio(bytes) {
 
     const result = { type: 'unknown', raw: fields };
 
+    // FromRadio field numbers (Meshtastic protobuf):
+    // field 1 (0x0a) = packet (MeshPacket)
+    // field 2 (0x12) = my_info (MyNodeInfo)
+    // field 4 (0x22) = node_info (NodeInfo)
+    // field 6 (0x32) = config
+    // field 8 (0x42) = config_complete_id (uint32)
+    // field 11 (0x5a) = channel
+    // field 12 (0x62) = queueStatus
+    // field 13 (0x6a) = metadata (DeviceMetadata)
     if (fields[1]) {
       result.type = 'packet';
       result.packet = parseMeshPacket(fields[1]);
-    } else if (fields[3]) {
+    } else if (fields[2]) {
       result.type = 'myInfo';
-      result.myInfo = parseMyNodeInfo(fields[3]);
+      result.myInfo = parseMyNodeInfo(fields[2]);
     } else if (fields[4]) {
       result.type = 'nodeInfo';
       result.nodeInfo = parseNodeInfo(fields[4]);
