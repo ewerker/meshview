@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
 import StatsBar from '@/components/meshtastic/StatsBar.jsx';
@@ -17,6 +17,9 @@ export default function Dashboard() {
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
+  const mapRef = useRef(null);
+
+  const handleFlyTo = (lat, lng) => mapRef.current?.flyTo(lat, lng);
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
@@ -114,7 +117,7 @@ export default function Dashboard() {
                   </div>
                 </TabsContent>
                 <TabsContent value="detail" className="flex-1 overflow-auto">
-                  <NodeDetail node={selectedNode} />
+                  <NodeDetail node={selectedNode} onFlyTo={handleFlyTo} />
                 </TabsContent>
                 <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden bg-slate-50">
                   <div className="flex-1 overflow-auto">
@@ -159,6 +162,7 @@ export default function Dashboard() {
                     <Panel defaultSize={65} minSize={25}>
                       <div className="p-4 h-full">
                         <NodeMap
+                          ref={mapRef}
                           nodes={nodes}
                           myNodeNum={myNodeNum}
                           selectedNodeNum={selectedNodeNum}
@@ -194,7 +198,7 @@ export default function Dashboard() {
                       </h3>
                     </div>
                     <div className="flex-1 overflow-hidden">
-                      <NodeDetail node={selectedNode} />
+                      <NodeDetail node={selectedNode} onFlyTo={handleFlyTo} />
                     </div>
                   </div>
                 </Panel>
