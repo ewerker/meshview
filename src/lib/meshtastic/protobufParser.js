@@ -33,11 +33,14 @@ export function parseFromRadio(bytes) {
     // A single FromRadio message can contain multiple fields — emit one result per field.
     const results = [];
 
-    if (fields[1]) results.push({ type: 'packet', packet: parseMeshPacket(fields[1]) });
-    if (fields[2]) results.push({ type: 'myInfo', myInfo: parseMyNodeInfo(fields[2]) });
+    // Log all parsed fields for debugging
+    console.log('[FromRadio] field keys:', Object.keys(fields).join(','), '| types:', Object.entries(fields).map(([k,v]) => `${k}:${v instanceof Uint8Array ? 'bytes('+v.length+')' : v}`).join(' '));
+
+    if (fields[2]) results.push({ type: 'packet', packet: parseMeshPacket(fields[2]) });
+    if (fields[3]) results.push({ type: 'myInfo', myInfo: parseMyNodeInfo(fields[3]) });
     if (fields[4]) results.push({ type: 'nodeInfo', nodeInfo: parseNodeInfo(fields[4]) });
-    if (fields[8] !== undefined) results.push({ type: 'configComplete', configCompleteId: fields[8] });
-    if (fields[13]) results.push({ type: 'metadata', metadata: parseDeviceMetadata(fields[13]) });
+    if (fields[6]) results.push({ type: 'configComplete', configCompleteId: fields[6] });
+    if (fields[11]) results.push({ type: 'metadata', metadata: parseDeviceMetadata(fields[11]) });
 
     if (results.length === 0) return [{ type: 'unknown', raw: fields }];
     return results;
