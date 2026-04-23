@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Usb, WifiOff, Loader2, Radio, Bot, HelpCircle, Info } from 'lucide-react';
+import { Usb, WifiOff, Loader2, Radio, Bot, HelpCircle, Info, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
+import { useDarkMode } from '@/lib/DarkModeContext';
 
 export default function ConnectionBar() {
   const { connected, isSupported, connect, disconnect, nodes, myNode, metadata } = useMeshStore();
+  const { isDark, toggleDark } = useDarkMode();
   const [connecting, setConnecting] = useState(false);
 
   const handleConnect = async () => {
@@ -74,6 +76,10 @@ export default function ConnectionBar() {
             <Info className="w-4 h-4" />
           </Button>
         </Link>
+
+        <Button size="sm" variant="ghost" onClick={toggleDark} className="text-slate-300 hover:text-white px-2">
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </Button>
 
         {!isSupported ? (
           <span className="text-red-400 text-sm">Web Serial nicht unterstützt (Chrome/Edge erforderlich)</span>
