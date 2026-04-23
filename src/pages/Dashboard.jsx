@@ -103,11 +103,11 @@ export default function Dashboard() {
             {/* Desktop: 3-column layout */}
             <div className="hidden lg:grid lg:grid-cols-[280px_1fr_320px] h-full gap-0">
               {/* Left: Node list */}
-              <div className="border-r bg-white flex flex-col">
-                <div className="px-4 py-3 border-b bg-slate-50">
+              <div className="border-r bg-white flex flex-col min-h-0">
+                <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
                   <h3 className="font-semibold text-sm text-slate-600">Nodes ({nodes.length})</h3>
                 </div>
-                <ScrollArea className="flex-1">
+                <div className="flex-1 overflow-y-auto min-h-0">
                   <div className="p-3 space-y-2">
                     {sortedNodes.map(node => (
                       <NodeCard
@@ -119,7 +119,7 @@ export default function Dashboard() {
                       />
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
 
               {/* Center: Map + Messages */}
