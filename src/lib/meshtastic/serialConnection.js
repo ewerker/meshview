@@ -30,17 +30,19 @@ export class MeshtasticSerial {
       await this.port.open({ baudRate: MESHTASTIC_BAUD_RATE });
 
       // Listen for USB disconnect
-      this._onPortDisconnect = () => {
-        console.warn('USB device physically disconnected');
-        this.running = false;
-        if (this.onDisconnect) this.onDisconnect();
+      this._onPortDisconnect = (event) => {
+        // Nur trennen, wenn genau dieser Port entfernt wird
+        if (event.target === this.port || !event.target) {
+          console.warn('USB device physically disconnected');
+          this.running = false;
+          if (this.onDisconnect) this.onDisconnect();
+        }
       };
       navigator.serial.addEventListener('disconnect', this._onPortDisconnect);
 
       this.running = true;
       this.buffer = [];
-      this.writer = this.port.writable.getWriter();
-
+      
       if (this.onConnect) this.onConnect();
 
       // Start read loop
@@ -72,12 +74,7 @@ export class MeshtasticSerial {
       }
     } catch (_) {}
 
-    try {
-      if (this.writer) {
-        await this.writer.close().catch(() => {});
-        this.writer = null;
-      }
-    } catch (_) {}
+    this.writer = null;
 
     // Wait for read loop to finish
     if (this.readLoopPromise) {
@@ -97,37 +94,48 @@ export class MeshtasticSerial {
   }
 
   async readLoop() {
-    while (this.running && this.port?.readable) {
-      const reader = this.port.readable.getReader();
-      this.reader = reader;
-      try {
-        while (this.running) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (value) {
-            for (const byte of value) {
-              this.buffer.push(byte);
-            }
-            this.processBuffer();
-          }
+    try {
+      while (this.running && this.port?.readable) {
+        let reader;
+        try {
+          reader = this.port.readable.getReader();
+        } catch (e) {
+          console.warn('Failed to get reader, port might be dead:', e.message);
+          break; // Exit the loop if we can't get a reader
         }
-      } catch (e) {
-        console.warn('Serial read error, attempting recovery:', e.message);
-      } finally {
-        try { reader.releaseLock(); } catch (_) {}
-        this.reader = null;
-      }
+        
+        this.reader = reader;
+        try {
+          while (this.running) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+              for (const byte of value) {
+                this.buffer.push(byte);
+              }
+              this.processBuffer();
+            }
+          }
+        } catch (e) {
+          console.warn('Serial read error, attempting recovery:', e.message);
+        } finally {
+          try { reader.releaseLock(); } catch (_) {}
+          this.reader = null;
+        }
 
-      // If still running, wait briefly and retry the read loop
-      if (this.running && this.port?.readable) {
-        await new Promise(r => setTimeout(r, 500));
+        // If still running, wait briefly and retry the read loop
+        if (this.running && this.port?.readable) {
+          await new Promise(r => setTimeout(r, 500));
+        }
       }
-    }
-
-    // If we exited the loop unexpectedly while running, trigger disconnect
-    if (this.running) {
-      this.running = false;
-      if (this.onDisconnect) this.onDisconnect();
+    } catch (e) {
+      console.warn('Fatal error in readLoop:', e.message);
+    } finally {
+      // If we exited the loop unexpectedly while running, trigger disconnect
+      if (this.running) {
+        this.running = false;
+        if (this.onDisconnect) this.onDisconnect();
+      }
     }
   }
 
@@ -178,17 +186,22 @@ export class MeshtasticSerial {
   }
 
   async sendToRadio(data) {
-    if (!this.writer) return;
-    const header = new Uint8Array([
-      START1,
-      START2,
-      (data.length >> 8) & 0xff,
-      data.length & 0xff,
-    ]);
-    const packet = new Uint8Array(header.length + data.length);
-    packet.set(header, 0);
-    packet.set(data, header.length);
-    await this.writer.write(packet);
+    if (!this.port || !this.port.writable) return;
+    const writer = this.port.writable.getWriter();
+    try {
+      const header = new Uint8Array([
+        START1,
+        START2,
+        (data.length >> 8) & 0xff,
+        data.length & 0xff,
+      ]);
+      const packet = new Uint8Array(header.length + data.length);
+      packet.set(header, 0);
+      packet.set(data, header.length);
+      await writer.write(packet);
+    } finally {
+      writer.releaseLock();
+    }
   }
 
   async sendTextMessage(text, destination = 0xffffffff, channel = 0) {
