@@ -13,7 +13,7 @@ import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
-  const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported, isLoading } = useMeshStore();
+  const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
