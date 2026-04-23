@@ -9,19 +9,36 @@ import MessageLog from '@/components/meshtastic/MessageLog.jsx';
 import MessageInput from '@/components/meshtastic/MessageInput.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
+import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import { Radio, Map, MessageSquare, List } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('myFirst');
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
-  // Sort nodes: my node first, then by last heard
-  const sortedNodes = [...nodes].sort((a, b) => {
-    if (a.num === myNodeNum) return -1;
-    if (b.num === myNodeNum) return 1;
-    return (b.lastHeard || 0) - (a.lastHeard || 0);
+  const filteredNodes = nodes.filter(n => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    const name = (n.user?.longName || '') + ' ' + (n.user?.shortName || '') + ' ' + (n.user?.id || '');
+    return name.toLowerCase().includes(q);
+  });
+
+  const sortedNodes = [...filteredNodes].sort((a, b) => {
+    if (sort === 'myFirst') {
+      if (a.num === myNodeNum) return -1;
+      if (b.num === myNodeNum) return 1;
+      return (b.lastHeard || 0) - (a.lastHeard || 0);
+    }
+    if (sort === 'lastHeard') return (b.lastHeard || 0) - (a.lastHeard || 0);
+    if (sort === 'name') return (a.user?.longName || '').localeCompare(b.user?.longName || '');
+    if (sort === 'snr') return (b.snr ?? -999) - (a.snr ?? -999);
+    if (sort === 'battery') return (b.deviceMetrics?.batteryLevel ?? -1) - (a.deviceMetrics?.batteryLevel ?? -1);
+    if (sort === 'hops') return (a.hopsAway ?? 999) - (b.hopsAway ?? 999);
+    return 0;
   });
 
   return (
@@ -79,8 +96,9 @@ export default function Dashboard() {
                 <TabsContent value="map" className="flex-1 p-4 overflow-hidden">
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
                 </TabsContent>
-                <TabsContent value="nodes" className="flex-1 overflow-auto p-4">
-                  <div className="grid gap-3">
+                <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
+                  <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} />
+                  <div className="flex-1 overflow-auto p-4 grid gap-3">
                     {sortedNodes.map(node => (
                       <NodeCard
                         key={node.num}
@@ -90,6 +108,9 @@ export default function Dashboard() {
                         onClick={() => setSelectedNodeNum(node.num)}
                       />
                     ))}
+                    {sortedNodes.length === 0 && (
+                      <div className="text-center text-slate-400 text-sm py-6">Keine Nodes gefunden</div>
+                    )}
                   </div>
                 </TabsContent>
                 <TabsContent value="detail" className="flex-1 overflow-auto">
@@ -111,8 +132,9 @@ export default function Dashboard() {
                 <Panel defaultSize={20} minSize={12} maxSize={40}>
                   <div className="border-r bg-white flex flex-col h-full">
                     <div className="px-4 py-3 border-b bg-slate-50 shrink-0">
-                      <h3 className="font-semibold text-sm text-slate-600">Nodes ({nodes.length})</h3>
+                      <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
                     </div>
+                    <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} />
                     <div className="flex-1 overflow-y-auto min-h-0">
                       <div className="p-3 space-y-2">
                         {sortedNodes.map(node => (
