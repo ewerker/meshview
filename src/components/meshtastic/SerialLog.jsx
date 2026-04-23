@@ -54,7 +54,7 @@ export default function SerialLog() {
       </button>
 
       {open && (
-        <div className="max-h-56 overflow-y-auto border-t bg-slate-950 font-mono text-xs">
+        <div className="h-64 overflow-y-auto border-t bg-slate-950 font-mono text-xs">
           {serialLog.length === 0 ? (
             <div className="px-3 py-2 text-slate-500">Keine Daten.</div>
           ) : (

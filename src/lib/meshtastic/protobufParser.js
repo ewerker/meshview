@@ -53,15 +53,18 @@ function parseMeshPacket(bytes) {
   const packet = {
     from: fields[1] || 0,
     to: fields[2] || 0,
-    id: fields[6] || 0,
-    rxTime: fields[9] || 0,
-    rxSnr: fields[13] ? int32ToFloat(fields[13]) : 0,
-    hopLimit: fields[10] || 0,
-    rxRssi: signedInt(fields[14] || 0),
-    viaMqtt: fields[15] || false,
+    // field 3 = decoded (length-delimited) OR field 4 = encrypted (length-delimited)
+    id: fields[4] || 0,
+    rxTime: fields[5] || 0,
+    rxSnr: fields[7] ? int32ToFloat(fields[7]) : 0,
+    hopLimit: fields[8] || 0,
+    channel: fields[10] || 0,
+    rxRssi: signedInt(fields[11] || 0),
+    viaMqtt: fields[12] || false,
     decoded: null,
   };
 
+  // field 3 = decoded Data (unencrypted channel)
   if (fields[3]) {
     packet.decoded = parseData(fields[3]);
   }

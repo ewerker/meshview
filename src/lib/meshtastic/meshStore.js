@@ -24,9 +24,11 @@ class MeshStore {
     };
     this.serial.onRawRx = (data) => {
       this._logSerial('raw', data, `RAW ${data.length}b`);
+      this.notify();
     };
     this.serial.onSent = (data) => {
       this._logSerial('tx', data);
+      this.notify();
     };
     this.serial.onError = (msg) => {
       this._logSerial('event', null, '❌ ' + msg);
