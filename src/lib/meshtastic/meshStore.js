@@ -14,6 +14,8 @@ class MeshStore {
     this.listeners = new Set();
     this.connected = false;
     this.packetLog = [];
+    this.isLoading = false;
+    this.lastPacketTime = Date.now();
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -27,6 +29,17 @@ class MeshStore {
   }
 
   handlePacket(rawBytes) {
+    // Show loading indicator while actively receiving packets
+    this.isLoading = true;
+    this.lastPacketTime = Date.now();
+    
+    // Auto-hide loading after 1s of inactivity
+    if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
+    this.loadingTimeout = setTimeout(() => {
+      this.isLoading = false;
+      this.notify();
+    }, 1000);
+
     const parsed = parseFromRadio(rawBytes);
 
     // Log all packets
@@ -187,6 +200,8 @@ class MeshStore {
     this.myNodeNum = null;
     this.metadata = null;
     this.packetLog = [];
+    this.isLoading = false;
+    if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.notify();
   }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
+import LoadingBar from '@/components/meshtastic/LoadingBar.jsx';
 import StatsBar from '@/components/meshtastic/StatsBar.jsx';
 import NodeCard from '@/components/meshtastic/NodeCard.jsx';
 import NodeMap from '@/components/meshtastic/NodeMap.jsx';
@@ -12,7 +13,7 @@ import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
-  const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
+  const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported, isLoading } = useMeshStore();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('myFirst');
@@ -62,7 +63,8 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="h-screen flex flex-col bg-slate-100">
+    <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
+      <LoadingBar connected={connected} isLoading={isLoading} />
       <ConnectionBar />
 
       {!connected ? (
