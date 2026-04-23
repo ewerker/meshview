@@ -8,6 +8,9 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import Dashboard from './pages/Dashboard.jsx';
 import Autoresponder from './pages/Autoresponder.jsx';
+import Impressum from './pages/Impressum.jsx';
+import About from './pages/About.jsx';
+import Help from './pages/Help.jsx';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -37,6 +40,9 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/autoresponder" element={<Autoresponder />} />
+      <Route path="/impressum" element={<Impressum />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/help" element={<Help />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

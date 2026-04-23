@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Usb, Wifi, WifiOff, Loader2, Radio, Bot } from 'lucide-react';
+import { Usb, WifiOff, Loader2, Radio, Bot, HelpCircle, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 
@@ -62,6 +62,16 @@ export default function ConnectionBar() {
           <Button size="sm" variant="ghost" className="gap-2 text-slate-300 hover:text-white">
             <Bot className="w-4 h-4" />
             Autoresponder
+          </Button>
+        </Link>
+        <Link to="/help">
+          <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white px-2">
+            <HelpCircle className="w-4 h-4" />
+          </Button>
+        </Link>
+        <Link to="/about">
+          <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white px-2">
+            <Info className="w-4 h-4" />
           </Button>
         </Link>
 
