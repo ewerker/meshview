@@ -29,7 +29,16 @@ export class MeshtasticSerial {
       this.port = await navigator.serial.requestPort();
       await this.port.open({ baudRate: MESHTASTIC_BAUD_RATE });
 
+      // Listen for USB disconnect
+      this._onPortDisconnect = () => {
+        console.warn('USB device physically disconnected');
+        this.running = false;
+        if (this.onDisconnect) this.onDisconnect();
+      };
+      navigator.serial.addEventListener('disconnect', this._onPortDisconnect);
+
       this.running = true;
+      this.buffer = [];
       this.writer = this.port.writable.getWriter();
 
       if (this.onConnect) this.onConnect();
@@ -49,48 +58,76 @@ export class MeshtasticSerial {
 
   async disconnect() {
     this.running = false;
+
+    // Remove USB disconnect listener
+    if (this._onPortDisconnect) {
+      navigator.serial.removeEventListener('disconnect', this._onPortDisconnect);
+      this._onPortDisconnect = null;
+    }
+
     try {
       if (this.reader) {
-        await this.reader.cancel();
+        await this.reader.cancel().catch(() => {});
         this.reader = null;
       }
+    } catch (_) {}
+
+    try {
       if (this.writer) {
-        await this.writer.close();
+        await this.writer.close().catch(() => {});
         this.writer = null;
       }
-      if (this.port && this.port.readable === null && this.port.writable === null) {
-        // already closed
-      } else if (this.port) {
-        await this.port.close();
-      }
-    } catch (e) {
-      // ignore close errors
+    } catch (_) {}
+
+    // Wait for read loop to finish
+    if (this.readLoopPromise) {
+      await this.readLoopPromise.catch(() => {});
+      this.readLoopPromise = null;
     }
+
+    try {
+      if (this.port) {
+        await this.port.close().catch(() => {});
+      }
+    } catch (_) {}
+
     this.port = null;
+    this.buffer = [];
     if (this.onDisconnect) this.onDisconnect();
   }
 
   async readLoop() {
-    const reader = this.port.readable.getReader();
-    this.reader = reader;
-    try {
-      while (this.running) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        if (value) {
-          for (const byte of value) {
-            this.buffer.push(byte);
+    while (this.running && this.port?.readable) {
+      const reader = this.port.readable.getReader();
+      this.reader = reader;
+      try {
+        while (this.running) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) {
+            for (const byte of value) {
+              this.buffer.push(byte);
+            }
+            this.processBuffer();
           }
-          this.processBuffer();
         }
+      } catch (e) {
+        console.warn('Serial read error, attempting recovery:', e.message);
+      } finally {
+        try { reader.releaseLock(); } catch (_) {}
+        this.reader = null;
       }
-    } catch (e) {
-      if (this.running) {
-        console.error('Serial read error:', e);
-        if (this.onDisconnect) this.onDisconnect();
+
+      // If still running, wait briefly and retry the read loop
+      if (this.running && this.port?.readable) {
+        await new Promise(r => setTimeout(r, 500));
       }
-    } finally {
-      reader.releaseLock();
+    }
+
+    // If we exited the loop unexpectedly while running, trigger disconnect
+    if (this.running) {
+      this.running = false;
+      if (this.onDisconnect) this.onDisconnect();
     }
   }
 
