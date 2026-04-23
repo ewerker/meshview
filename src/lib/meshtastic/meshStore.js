@@ -22,17 +22,24 @@ class MeshStore {
       this._logSerial('rx', data);
       this.handlePacket(data);
     };
+    this.serial.onRawRx = (data) => {
+      this._logSerial('raw', data, `RAW ${data.length}b`);
+    };
     this.serial.onSent = (data) => {
       this._logSerial('tx', data);
     };
+    this.serial.onError = (msg) => {
+      this._logSerial('event', null, '❌ ' + msg);
+      this.notify();
+    };
     this.serial.onConnect = () => {
       this.connected = true;
-      this._logSerial('event', null, 'CONNECTED');
+      this._logSerial('event', null, '✅ CONNECTED');
       this.notify();
     };
     this.serial.onDisconnect = () => {
       this.connected = false;
-      this._logSerial('event', null, 'DISCONNECTED');
+      this._logSerial('event', null, '🔌 DISCONNECTED');
       this.notify();
     };
   }

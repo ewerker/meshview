@@ -78,6 +78,8 @@ export class MeshtasticSerial {
         const { value, done } = await reader.read();
         if (done) break;
         if (value) {
+          // Log raw RX bytes before parsing
+          if (this.onRawRx) this.onRawRx(value);
           for (const byte of value) {
             this.buffer.push(byte);
           }
@@ -86,7 +88,7 @@ export class MeshtasticSerial {
       }
     } catch (e) {
       if (this.running) {
-        console.error('Serial read error:', e);
+        if (this.onError) this.onError('Read error: ' + e.message);
         if (this.onDisconnect) this.onDisconnect();
       }
     } finally {

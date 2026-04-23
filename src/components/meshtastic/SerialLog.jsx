@@ -6,7 +6,7 @@ import { meshStore } from '@/lib/meshtastic/meshStore.js';
 
 export default function SerialLog() {
   const { serialLog } = useMeshStore();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [showHex, setShowHex] = useState(false);
 
   const clear = (e) => {
@@ -63,15 +63,17 @@ export default function SerialLog() {
                 key={i}
                 className={`flex items-start gap-2 px-3 py-1 border-b border-slate-800 ${
                   entry.direction === 'rx' ? 'text-green-300' :
-                  entry.direction === 'tx' ? 'text-yellow-300' : 'text-blue-300'
+                  entry.direction === 'tx' ? 'text-yellow-300' :
+                  entry.direction === 'raw' ? 'text-slate-400' : 'text-blue-300'
                 }`}
               >
                 <span className="shrink-0 text-slate-500">{format(entry.time, 'HH:mm:ss.SSS')}</span>
-                <span className={`shrink-0 font-bold w-8 ${
+                <span className={`shrink-0 font-bold w-10 ${
                   entry.direction === 'rx' ? 'text-green-400' :
-                  entry.direction === 'tx' ? 'text-yellow-400' : 'text-blue-400'
+                  entry.direction === 'tx' ? 'text-yellow-400' :
+                  entry.direction === 'raw' ? 'text-slate-500' : 'text-blue-400'
                 }`}>
-                  {entry.direction === 'rx' ? '← RX' : entry.direction === 'tx' ? '→ TX' : '⚡'}
+                  {entry.direction === 'rx' ? '← RX' : entry.direction === 'tx' ? '→ TX' : entry.direction === 'raw' ? '≈ RAW' : '⚡'}
                 </span>
                 {entry.label ? (
                   <span>{entry.label}</span>
