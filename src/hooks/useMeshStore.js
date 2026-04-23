@@ -18,6 +18,7 @@ export function useMeshStore() {
     metadata: meshStore.metadata,
     packetLog: meshStore.packetLog,
     sendLog: meshStore.sendLog,
+    serialLog: meshStore.serialLog,
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),
     disconnect: () => meshStore.disconnect(),

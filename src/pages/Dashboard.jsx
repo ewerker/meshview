@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls, { DEFAULT_FILTERS } from '@/components/meshtastic/NodeListControls.jsx';
 import SendLog from '@/components/meshtastic/SendLog.jsx';
+import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import { Radio, Map, MessageSquare, List } from 'lucide-react';
 
 export default function Dashboard() {
@@ -151,6 +152,7 @@ export default function Dashboard() {
                     </div>
                     <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
                     <SendLog />
+                    <SerialLog />
                     </TabsContent>
               </Tabs>
             </div>
@@ -210,6 +212,7 @@ export default function Dashboard() {
                         </div>
                         <MessageInput nodes={sortedNodes} selectedNodeNum={selectedNodeNum} />
                         <SendLog />
+                        <SerialLog />
                       </div>
                     </Panel>
                   </PanelGroup>

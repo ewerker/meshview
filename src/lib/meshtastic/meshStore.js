@@ -16,13 +16,23 @@ class MeshStore {
     this.packetLog = [];
     this.sendLog = [];
 
-    this.serial.onPacket = (data) => this.handlePacket(data);
+    this.serialLog = []; // raw byte log for debugging
+
+    this.serial.onPacket = (data) => {
+      this._logSerial('rx', data);
+      this.handlePacket(data);
+    };
+    this.serial.onSent = (data) => {
+      this._logSerial('tx', data);
+    };
     this.serial.onConnect = () => {
       this.connected = true;
+      this._logSerial('event', null, 'CONNECTED');
       this.notify();
     };
     this.serial.onDisconnect = () => {
       this.connected = false;
+      this._logSerial('event', null, 'DISCONNECTED');
       this.notify();
     };
   }
@@ -166,6 +176,19 @@ class MeshStore {
     }
   }
 
+  _logSerial(direction, bytes, label = null) {
+    const hex = bytes ? Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ') : '';
+    const entry = {
+      time: new Date(),
+      direction, // 'rx' | 'tx' | 'event'
+      hex,
+      label,
+      byteLen: bytes ? bytes.length : 0,
+    };
+    this.serialLog.unshift(entry);
+    if (this.serialLog.length > 100) this.serialLog.pop();
+  }
+
   mergeNode(num, data) {
     const existing = this.nodes.get(num) || {};
     this.nodes.set(num, { ...existing, ...data });
@@ -243,6 +266,7 @@ class MeshStore {
     this.metadata = null;
     this.packetLog = [];
     this.sendLog = [];
+    this.serialLog = [];
     this.notify();
   }
 

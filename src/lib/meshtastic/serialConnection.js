@@ -141,7 +141,10 @@ export class MeshtasticSerial {
   }
 
   async sendToRadio(data) {
-    if (!this.writer) return;
+    if (!this.writer) {
+      console.error('[Serial] sendToRadio: no writer!');
+      return;
+    }
     const header = new Uint8Array([
       START1,
       START2,
@@ -151,14 +154,16 @@ export class MeshtasticSerial {
     const packet = new Uint8Array(header.length + data.length);
     packet.set(header, 0);
     packet.set(data, header.length);
+    console.log('[Serial TX]', Array.from(packet).map(b => b.toString(16).padStart(2,'0')).join(' '));
     await this.writer.write(packet);
+    if (this.onSent) this.onSent(packet);
   }
 
   async sendTextMessage(text, destination = 0xffffffff, channel = 0, wantAck = false) {
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
-    // Build a minimal MeshPacket for text message
     const packet = buildTextPacket(textBytes, destination, channel, wantAck);
+    console.log('[sendTextMessage] dest=0x' + destination.toString(16) + ' ch=' + channel + ' wantAck=' + wantAck + ' textLen=' + textBytes.length);
     await this.sendToRadio(packet);
   }
 }
@@ -170,38 +175,34 @@ function ToRadio_encode_wantConfigId(id) {
 }
 
 function encodeVarint(value) {
+  value = value >>> 0; // treat as unsigned 32-bit
   const bytes = [];
-  while (value > 0x7f) {
-    bytes.push((value & 0x7f) | 0x80);
+  do {
+    let byte = value & 0x7f;
     value >>>= 7;
-  }
-  bytes.push(value & 0x7f);
+    if (value !== 0) byte |= 0x80;
+    bytes.push(byte);
+  } while (value !== 0);
   return bytes;
 }
 
 function buildTextPacket(textBytes, destination, channel, wantAck = false) {
   // Data { portnum=1 (TEXT_MESSAGE_APP), payload=textBytes }
-  // Field 1 (portnum): tag 0x08, varint 1
-  // Field 2 (payload): tag 0x12, length-delimited
-  const dataBytes = [0x08, 0x01, 0x12, textBytes.length, ...textBytes];
+  const dataBytes = [
+    0x08, 0x01,                                           // field 1 (portnum) = 1 (TEXT_MESSAGE_APP)
+    0x12, ...encodeVarint(textBytes.length), ...textBytes // field 2 (payload)
+  ];
 
-  // MeshPacket {
-  //   field 1 (to):      tag 0x08, varint destination
-  //   field 3 (decoded): tag 0x1a, length-delimited Data
-  //   field 6 (channel): tag 0x30, varint channel
-  //   field 8 (want_ack):tag 0x40, varint 1 if true
-  //   field 9 (id):      tag 0x48, varint random id
-  // }
   const packetId = Math.floor(Math.random() * 0xffffffff);
   const meshBytes = [
-    0x08, ...encodeVarint(destination >>> 0),
-    0x1a, dataBytes.length, ...dataBytes,
-    0x30, channel & 0x07,
+    0x08, ...encodeVarint(destination >>> 0),            // field 1 (to)
+    0x1a, ...encodeVarint(dataBytes.length), ...dataBytes, // field 3 (decoded)
+    0x30, ...encodeVarint(channel),                      // field 6 (channel)
+    0x48, ...encodeVarint(packetId),                     // field 9 (id)
   ];
-  if (wantAck) meshBytes.push(0x40, 0x01);
-  meshBytes.push(0x48, ...encodeVarint(packetId));
+  if (wantAck) meshBytes.push(0x40, 0x01);               // field 8 (want_ack)
 
-  // ToRadio { packet (field 1): tag 0x0a, length-delimited MeshPacket }
-  const toRadioBytes = [0x0a, meshBytes.length, ...meshBytes];
+  // ToRadio { field 1 (packet): MeshPacket }
+  const toRadioBytes = [0x0a, ...encodeVarint(meshBytes.length), ...meshBytes];
   return new Uint8Array(toRadioBytes);
 }
