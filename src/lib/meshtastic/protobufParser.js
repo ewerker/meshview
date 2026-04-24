@@ -91,6 +91,7 @@ function parseMeshPacket(bytes) {
     rxRssi: signedInt(fields[14] || 0),
     viaMqtt: fields[15] || false,
     decoded: null,
+    encrypted: !!fields[5],
   };
 
   if (fields[4]) {

@@ -43,7 +43,7 @@ function getPacketLabel(packet) {
   if (decoded?.position) return `GPS: ${decoded.position.latitude?.toFixed(4)}, ${decoded.position.longitude?.toFixed(4)}`;
   if (decoded?.telemetry?.deviceMetrics) return `Telemetrie: Bat ${decoded.telemetry.deviceMetrics.batteryLevel}%`;
   if (decoded?.telemetry?.environmentMetrics) return `Umgebung: ${decoded.telemetry.environmentMetrics.temperature?.toFixed(1)}°C`;
-  if (decoded?.telemetry) return 'Telemetrie';
+  if (decoded?.telemetry) return 'Telemetrie: -';
   if (decoded?.user) return `Node: ${decoded.user.longName || 'Unbekannt'}`;
   if (packet.type === 'nodeInfo') return `Node: ${packet.raw?.nodeInfo?.user?.longName || 'Unbekannt'}`;
   if (packet.type === 'myInfo') return `My Info: #${packet.raw?.myInfo?.myNodeNum}`;
@@ -65,15 +65,16 @@ function getPacketLabel(packet) {
     const lr = packet.raw?.logRecord;
     return `Log: ${lr?.message?.slice(0, 60) || '?'}`;
   }
-  if (packet.type === 'xmodemPacket') return 'XModem-Paket';
-  if (packet.type === 'mqttClientProxyMessage') return 'MQTT Proxy';
-  if (packet.type === 'fileInfo') return 'Datei-Info';
-  if (packet.type === 'clientNotification') return 'Benachrichtigung';
-  if (packet.type === 'rebooted') return 'Neustart (Reboot)';
-  if (packet.type === 'ack') return `ACK (ID: ${packet.id})`;
+  if (packet.type === 'xmodemPacket') return 'XModem: Paket';
+  if (packet.type === 'mqttClientProxyMessage') return 'MQTT: Proxy';
+  if (packet.type === 'fileInfo') return 'Datei: Info';
+  if (packet.type === 'clientNotification') return 'Benachrichtigung: -';
+  if (packet.type === 'rebooted') return 'Neustart: Reboot';
+  if (packet.type === 'ack') return `ACK: ID ${packet.id}`;
   if (packet.type === 'error') return `Fehler: ${packet.raw?.error || 'Parse-Fehler'}`;
-  if (decoded?.portnumName) return `${decoded.portnumName}`;
-  return `${packet.type || 'unbekannt'}`;
+  if (packet.type === 'packet' && packet.raw?.packet?.encrypted) return 'Paket: Verschlüsselt';
+  if (decoded?.portnumName) return `App: ${decoded.portnumName}`;
+  return `${packet.type || 'Unbekannt'}: -`;
 }
 
 function formatTime(timestamp) {
@@ -101,32 +102,37 @@ export default function ReceivedPacketsTable() {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
-        <thead className="bg-slate-700 sticky top-0">
+        <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 text-slate-600 dark:text-slate-300 shadow-sm">
           <tr>
-            <th className="px-3 py-2 text-left">Von</th>
-            <th className="px-3 py-2 text-left">Typ</th>
-            <th className="px-3 py-2 text-left">Details</th>
-            <th className="px-3 py-2 text-left">Zeit</th>
+            <th className="px-3 py-2 text-left font-semibold">Von</th>
+            <th className="px-3 py-2 text-left font-semibold">Typ</th>
+            <th className="px-3 py-2 text-left font-semibold">Details</th>
+            <th className="px-3 py-2 text-left font-semibold">Zeit</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-700">
-          {packetLog.slice(-50).reverse().map((packet) => (
-            <tr key={packet.seq} className="hover:bg-slate-750">
-              <td className="px-3 py-2 font-mono text-slate-300">
-                {packet.from?.toString(16).toUpperCase() || '-'}
-              </td>
-              <td className="px-3 py-2 flex items-center gap-2">
-                {getPacketIcon(packet)}
-                <span>{getPacketLabel(packet).split(':')[0]}</span>
-              </td>
-              <td className="px-3 py-2 text-slate-400 truncate max-w-xs">
-                {getPacketLabel(packet).split(':')[1] || '-'}
-              </td>
-              <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
-                {formatTime(packet.time)}
-              </td>
-            </tr>
-          ))}
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-700 border-t border-slate-200 dark:border-slate-700">
+          {packetLog.slice(-50).reverse().map((packet) => {
+            const labelParts = getPacketLabel(packet).split(':');
+            const typ = labelParts[0];
+            const details = labelParts.slice(1).join(':').trim() || '-';
+            return (
+              <tr key={packet.seq} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">
+                  {packet.from?.toString(16).toUpperCase() || '-'}
+                </td>
+                <td className="px-3 py-2 flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  {getPacketIcon(packet)}
+                  <span>{typ}</span>
+                </td>
+                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-xs" title={details !== '-' ? details : undefined}>
+                  {details}
+                </td>
+                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  {formatTime(packet.time)}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
