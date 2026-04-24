@@ -93,8 +93,8 @@ function parseMeshPacket(bytes) {
     decoded: null,
   };
 
-  if (fields[3]) {
-    packet.decoded = parseData(fields[3]);
+  if (fields[4]) {
+    packet.decoded = parseData(fields[4]);
   }
 
   return packet;
