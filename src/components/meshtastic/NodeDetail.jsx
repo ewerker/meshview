@@ -8,6 +8,7 @@ import SignalChart from './SignalChart.jsx';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 
 function Row({ label, value, unit }) {
   if (value === null || value === undefined) return null;
@@ -48,6 +49,13 @@ export default function NodeDetail({ node }) {
   const nodeId = user?.id || `!${node.num?.toString(16).padStart(8, '0')}`;
   const longName = user?.longName || nodeId;
   const shortName = user?.shortName || nodeId.slice(-4);
+
+  const fifteenMinsAgo = Date.now() - 15 * 60 * 1000;
+  const recentSignalData = (packetLog || [])
+    .filter(p => p.from === node.num && p.time > fifteenMinsAgo)
+    .map(p => ({ snr: p.rxSnr, rssi: p.rxRssi }))
+    .filter(p => p.snr !== undefined || p.rssi !== undefined)
+    .slice(-20);
 
   return (
     <div className="h-full overflow-auto">
@@ -100,6 +108,26 @@ export default function NodeDetail({ node }) {
             <CardContent className="space-y-0">
               <Row label="SNR" value={node.snr?.toFixed(1)} unit="dB" />
               <Row label="RSSI" value={node.rssi} unit="dBm" />
+              {recentSignalData.length > 1 && (
+                <div className="flex gap-2 h-10 mt-2 pt-2 border-t border-slate-50 dark:border-slate-800/50">
+                  <div className="flex-1 h-full" title="SNR Verlauf (letzte 15 Min)">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={recentSignalData}>
+                        <YAxis domain={['dataMin - 1', 'dataMax + 1']} hide />
+                        <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 h-full" title="RSSI Verlauf (letzte 15 Min)">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={recentSignalData}>
+                        <YAxis domain={['dataMin - 2', 'dataMax + 2']} hide />
+                        <Line type="monotone" dataKey="rssi" stroke="#f97316" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
