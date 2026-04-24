@@ -111,7 +111,7 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <StatsBar nodes={nodes} messages={messages} connected={connected} />
+          <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 overflow-hidden">
             {/* Mobile: Tabs layout */}
