@@ -111,21 +111,6 @@ export default function NodeDetail({ node }) {
             </CardContent>
           </Card>
 
-          {dm && (
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Gerätemetriken</CardTitle></CardHeader>
-              <CardContent className="space-y-0">
-                <Row label="Akku" value={dm.batteryLevel > 0 ? `${Math.min(dm.batteryLevel, 100)}${dm.batteryLevel > 100 ? ' ⚡ (Netzbetrieb)' : ''}` : null} unit={dm.batteryLevel > 0 && dm.batteryLevel <= 100 ? '%' : (dm.batteryLevel > 100 ? '%' : null)} />
-                <Row label="Spannung" value={dm.voltage > 0 ? dm.voltage.toFixed(2) : null} unit="V" />
-                <Row label="Kanal-Auslastung" value={dm.channelUtilization > 0 ? dm.channelUtilization.toFixed(1) : null} unit="%" />
-                <Row label="TX Air-Zeit" value={dm.airUtilTx > 0 ? dm.airUtilTx.toFixed(1) : null} unit="%" />
-                <Row label="Uptime" value={dm.uptimeSeconds > 0 ? `${Math.floor(dm.uptimeSeconds / 3600)}h ${Math.floor((dm.uptimeSeconds % 3600) / 60)}min` : null} />
-                <Row label="Pakete TX" value={dm.numPacketsTx > 0 ? dm.numPacketsTx : null} />
-                <Row label="Pakete RX" value={dm.numPacketsRx > 0 ? dm.numPacketsRx : null} />
-                <Row label="Online Nodes" value={dm.numOnlineNodes > 0 ? dm.numOnlineNodes : null} />
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="signal" className="mt-4 space-y-4">
@@ -210,7 +195,22 @@ export default function NodeDetail({ node }) {
           )}
         </TabsContent>
 
-        <TabsContent value="telemetry" className="mt-4">
+        <TabsContent value="telemetry" className="mt-4 space-y-4">
+          {dm && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Gerätemetriken</CardTitle></CardHeader>
+              <CardContent className="space-y-0">
+                <Row label="Akku" value={dm.batteryLevel > 0 ? `${Math.min(dm.batteryLevel, 100)}${dm.batteryLevel > 100 ? ' ⚡ (Netzbetrieb)' : ''}` : null} unit={dm.batteryLevel > 0 && dm.batteryLevel <= 100 ? '%' : (dm.batteryLevel > 100 ? '%' : null)} />
+                <Row label="Spannung" value={dm.voltage > 0 ? dm.voltage.toFixed(2) : null} unit="V" />
+                <Row label="Kanal-Auslastung" value={dm.channelUtilization > 0 ? dm.channelUtilization.toFixed(1) : null} unit="%" />
+                <Row label="TX Air-Zeit" value={dm.airUtilTx > 0 ? dm.airUtilTx.toFixed(1) : null} unit="%" />
+                <Row label="Uptime" value={dm.uptimeSeconds > 0 ? `${Math.floor(dm.uptimeSeconds / 3600)}h ${Math.floor((dm.uptimeSeconds % 3600) / 60)}min` : null} />
+                <Row label="Pakete TX" value={dm.numPacketsTx > 0 ? dm.numPacketsTx : null} />
+                <Row label="Pakete RX" value={dm.numPacketsRx > 0 ? dm.numPacketsRx : null} />
+                <Row label="Online Nodes" value={dm.numOnlineNodes > 0 ? dm.numOnlineNodes : null} />
+              </CardContent>
+            </Card>
+          )}
           <TelemetryChart node={node} />
         </TabsContent>
 
