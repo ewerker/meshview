@@ -21,6 +21,6 @@ export function useMeshStore() {
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),
     disconnect: () => meshStore.disconnect(),
-    sendReboot: (seconds) => meshStore.sendReboot(seconds),
+    sendText: (text, destination, channel) => meshStore.sendText(text, destination, channel),
   };
 }

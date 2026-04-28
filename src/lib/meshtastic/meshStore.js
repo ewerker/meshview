@@ -196,10 +196,9 @@ class MeshStore {
     return this.serial.isSupported();
   }
 
-  async sendReboot(seconds = 5) {
+  async sendText(text, destination = 0xffffffff, channel = 0) {
     if (!this.connected) throw new Error('Nicht verbunden');
-    if (!this.myNodeNum) throw new Error('Eigene Node-Nummer unbekannt');
-    await this.serial.sendReboot(this.myNodeNum, seconds);
+    return await this.serial.sendTextMessage(text, destination, channel);
   }
 }
 
