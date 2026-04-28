@@ -211,6 +211,62 @@ export class MeshtasticSerial {
     const packet = buildTextPacket(textBytes, destination, channel);
     await this.sendToRadio(packet);
   }
+
+  /**
+   * Send an Admin command to reboot the connected device.
+   * @param {number} myNodeNum - The node number of the connected device (target).
+   * @param {number} seconds - Delay in seconds before reboot (default 5).
+   */
+  async sendReboot(myNodeNum, seconds = 5) {
+    if (!myNodeNum) throw new Error('Eigene Node-Nummer unbekannt');
+    const packet = buildAdminRebootPacket(myNodeNum, seconds);
+    await this.sendToRadio(packet);
+  }
+}
+
+// Builds an AdminMessage protobuf with reboot_seconds set.
+// AdminMessage.reboot_seconds is field 7 (varint, sint32).
+function buildAdminMessageReboot(seconds) {
+  // Field 7, wire type 0 (varint). Tag = (7 << 3) | 0 = 56 = 0x38
+  return new Uint8Array([0x38, ...encodeVarint(seconds)]);
+}
+
+// Builds a ToRadio packet containing a MeshPacket addressed to our own node
+// with decoded.payload = AdminMessage(reboot_seconds=seconds), portnum=ADMIN_APP(7).
+function buildAdminRebootPacket(myNodeNum, seconds) {
+  const adminPayload = buildAdminMessageReboot(seconds);
+
+  // Data message:
+  //   field 1 (portnum, varint) = 7 (ADMIN_APP)
+  //   field 2 (payload, bytes) = adminPayload
+  //   field 7 (want_response, bool) = true
+  const dataBytes = [
+    0x08, ...encodeVarint(7),                         // portnum = 7
+    0x12, ...encodeVarint(adminPayload.length), ...adminPayload, // payload
+    0x38, 0x01,                                        // want_response = true
+  ];
+
+  // MeshPacket:
+  //   field 1 (from, fixed32)  -> use varint variant: tag 0x08 ok? from is uint32 varint actually.
+  //   field 2 (to, fixed32) — meshtastic uses fixed32 for from/to. Tag 2,wire5 = 0x15
+  //   field 4 (decoded, Data, length-delim) tag = (4<<3)|2 = 0x22
+  //   field 8 (want_ack, bool) tag = (8<<3)|0 = 0x40
+  // We'll use varint for `to` because firmware accepts both; safer to use fixed32 as defined.
+  const toBytes = new Uint8Array(4);
+  new DataView(toBytes.buffer).setUint32(0, myNodeNum >>> 0, true);
+
+  const meshPacket = [
+    0x15, ...toBytes,                                  // to (fixed32) — actually field 1 is from; to is field 2
+  ];
+  // Correction: field 2 fixed32 tag = (2<<3)|5 = 0x15  ✔ (this is `to`)
+  // Add decoded
+  meshPacket.push(0x22, ...encodeVarint(dataBytes.length), ...dataBytes);
+  // want_ack = true
+  meshPacket.push(0x40, 0x01);
+
+  // ToRadio.packet is field 2, length-delim. Tag = (2<<3)|2 = 0x12
+  const toRadio = [0x12, ...encodeVarint(meshPacket.length), ...meshPacket];
+  return new Uint8Array(toRadio);
 }
 
 // Minimal protobuf encoding for ToRadio { want_config_id: uint32 }

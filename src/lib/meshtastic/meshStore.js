@@ -180,6 +180,12 @@ class MeshStore {
   isSupported() {
     return this.serial.isSupported();
   }
+
+  async sendReboot(seconds = 5) {
+    if (!this.connected) throw new Error('Nicht verbunden');
+    if (!this.myNodeNum) throw new Error('Eigene Node-Nummer unbekannt');
+    await this.serial.sendReboot(this.myNodeNum, seconds);
+  }
 }
 
 // Singleton
