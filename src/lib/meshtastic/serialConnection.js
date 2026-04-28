@@ -169,7 +169,10 @@ export class MeshtasticSerial {
   }
 
   async sendToRadio(data) {
-    if (!this.port || !this.port.writable) return;
+    if (!this.port || !this.port.writable) {
+      console.warn('[TX] port not writable');
+      return;
+    }
     const writer = this.port.writable.getWriter();
     try {
       const header = new Uint8Array([
@@ -181,7 +184,13 @@ export class MeshtasticSerial {
       const packet = new Uint8Array(header.length + data.length);
       packet.set(header, 0);
       packet.set(data, header.length);
+      const fullHex = Array.from(packet).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      console.log('[TX] writing', packet.length, 'bytes:', fullHex);
       await writer.write(packet);
+      console.log('[TX] write complete');
+    } catch (e) {
+      console.error('[TX] write failed:', e);
+      throw e;
     } finally {
       writer.releaseLock();
     }
