@@ -1,7 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Battery, Wifi, MapPin, Clock, Thermometer, Droplets, Gauge, Star, Radio } from 'lucide-react';
+import { Battery, Wifi, MapPin, Clock, Thermometer, Droplets, Gauge, Star, Radio, Ruler } from 'lucide-react';
 import { HardwareModel } from '@/lib/meshtastic/constants.js';
+import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
+import { useMeshStore } from '@/hooks/useMeshStore.js';
 
 function timeAgo(timestamp) {
   if (!timestamp) return 'Unbekannt';
@@ -27,10 +29,12 @@ function BatteryBar({ level }) {
 }
 
 export default function NodeCard({ node, isMyNode, onClick, selected }) {
+  const { myNode } = useMeshStore();
   const user = node.user;
   const pos = node.position;
   const dm = node.deviceMetrics;
   const em = node.environmentMetrics;
+  const distance = !isMyNode ? distanceToMyNode(node, myNode) : null;
 
   const nodeId = user?.id || `!${node.num?.toString(16).padStart(8, '0')}`;
   const longName = user?.longName || nodeId;
@@ -87,10 +91,16 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
 
         {/* Position */}
         {pos?.latitude !== 0 && pos?.longitude !== 0 && pos?.latitude && (
-          <div className="flex items-center gap-1 text-xs text-slate-600">
+          <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300 flex-wrap">
             <MapPin className="w-3 h-3 text-red-500" />
             <span>{pos.latitude.toFixed(5)}, {pos.longitude.toFixed(5)}</span>
             {pos.altitude ? <span className="text-slate-400">· {pos.altitude}m</span> : null}
+            {distance !== null && (
+              <span className="flex items-center gap-0.5 text-slate-500 dark:text-slate-400 ml-1">
+                <Ruler className="w-3 h-3" />
+                {formatDistance(distance)}
+              </span>
+            )}
           </div>
         )}
 

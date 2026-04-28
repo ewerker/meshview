@@ -25,6 +25,9 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
     { key: 'withEnv', label: 'Mit Umgebungssensoren' },
     { key: 'lowBattery', label: 'Akku kritisch (<20%)' },
     { key: 'highBattery', label: 'Akku gut (>60%)' },
+    { key: 'near1km', label: 'Abstand ≤ 1 km' },
+    { key: 'near5km', label: 'Abstand ≤ 5 km' },
+    { key: 'near25km', label: 'Abstand ≤ 25 km' },
   ];
 
   return (

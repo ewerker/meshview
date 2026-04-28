@@ -5,6 +5,8 @@ import { Battery, MapPin, Wifi, Thermometer, Droplets, Gauge, Wind, Clock, Cpu, 
 import { HardwareModel } from '@/lib/meshtastic/constants.js';
 import TelemetryChart from './TelemetryChart.jsx';
 import SignalChart from './SignalChart.jsx';
+import NodePositionMiniMap from './NodePositionMiniMap.jsx';
+import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -30,7 +32,8 @@ function timeAgo(timestamp) {
 }
 
 export default function NodeDetail({ node }) {
-  const { packetLog } = useMeshStore();
+  const { packetLog, myNode } = useMeshStore();
+  const distance = node && myNode && node.num !== myNode.num ? distanceToMyNode(node, myNode) : null;
 
   if (!node) return (
     <div className="flex items-center justify-center h-full text-slate-400">
@@ -152,28 +155,37 @@ export default function NodeDetail({ node }) {
           <SignalChart node={node} packetLog={packetLog} />
         </TabsContent>
 
-        <TabsContent value="position" className="mt-4">
+        <TabsContent value="position" className="mt-4 space-y-4">
           {pos?.latitude && pos.latitude !== 0 ? (
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">GPS-Position</CardTitle></CardHeader>
-              <CardContent className="space-y-0">
-                <Row label="Breitengrad" value={pos.latitude.toFixed(6)} unit="°" />
-                <Row label="Längengrad" value={pos.longitude.toFixed(6)} unit="°" />
-                <Row label="Höhe (MSL)" value={pos.altitude !== 0 ? pos.altitude : null} unit="m" />
-                <Row label="Höhe (HAE)" value={pos.altitudeHae !== 0 ? pos.altitudeHae : null} unit="m" />
-                <Row label="Satelliten" value={pos.numSatellites > 0 ? pos.numSatellites : null} />
-                <Row label="PDOP" value={pos.pdop > 0 ? (pos.pdop / 100).toFixed(2) : null} />
-                <Row label="HDOP" value={pos.hdop > 0 ? (pos.hdop / 100).toFixed(2) : null} />
-                <Row label="Geschwindigkeit" value={pos.groundSpeed > 0 ? pos.groundSpeed : null} unit="m/s" />
-                <Row label="Kurs" value={pos.groundTrack > 0 ? `${(pos.groundTrack / 100000).toFixed(0)}°` : null} />
-                {pos.time > 0 && (
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-sm text-slate-500">GPS-Zeit</span>
-                    <span className="text-sm font-medium">{format(new Date(pos.time * 1000), 'dd.MM.yyyy HH:mm:ss', { locale: de })}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Karte</CardTitle></CardHeader>
+                <CardContent>
+                  <NodePositionMiniMap node={node} myNode={myNode} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">GPS-Position</CardTitle></CardHeader>
+                <CardContent className="space-y-0">
+                  <Row label="Breitengrad" value={pos.latitude.toFixed(6)} unit="°" />
+                  <Row label="Längengrad" value={pos.longitude.toFixed(6)} unit="°" />
+                  <Row label="Höhe (MSL)" value={pos.altitude !== 0 ? pos.altitude : null} unit="m" />
+                  <Row label="Höhe (HAE)" value={pos.altitudeHae !== 0 ? pos.altitudeHae : null} unit="m" />
+                  <Row label="Abstand (eigenes Gerät)" value={formatDistance(distance)} />
+                  <Row label="Satelliten" value={pos.numSatellites > 0 ? pos.numSatellites : null} />
+                  <Row label="PDOP" value={pos.pdop > 0 ? (pos.pdop / 100).toFixed(2) : null} />
+                  <Row label="HDOP" value={pos.hdop > 0 ? (pos.hdop / 100).toFixed(2) : null} />
+                  <Row label="Geschwindigkeit" value={pos.groundSpeed > 0 ? pos.groundSpeed : null} unit="m/s" />
+                  <Row label="Kurs" value={pos.groundTrack > 0 ? `${(pos.groundTrack / 100000).toFixed(0)}°` : null} />
+                  {pos.time > 0 && (
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-sm text-slate-500">GPS-Zeit</span>
+                      <span className="text-sm font-medium">{format(new Date(pos.time * 1000), 'dd.MM.yyyy HH:mm:ss', { locale: de })}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           ) : (
             <div className="flex items-center justify-center h-32 text-slate-400">
               <div className="text-center">

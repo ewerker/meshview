@@ -11,6 +11,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
+import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
@@ -26,6 +27,9 @@ export default function Dashboard() {
     withEnv: false,
     lowBattery: false,
     highBattery: false,
+    near1km: false,
+    near5km: false,
+    near25km: false,
   });
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
@@ -49,6 +53,12 @@ export default function Dashboard() {
     if (filters.lowBattery && !(n.deviceMetrics?.batteryLevel > 0 && n.deviceMetrics.batteryLevel < 20)) return false;
     if (filters.highBattery && !(n.deviceMetrics?.batteryLevel > 60)) return false;
 
+    if (filters.near1km || filters.near5km || filters.near25km) {
+      const d = distanceToMyNode(n, myNode);
+      const limit = filters.near1km ? 1000 : filters.near5km ? 5000 : 25000;
+      if (d === null || d > limit) return false;
+    }
+
     return true;
   });
 
@@ -63,10 +73,8 @@ export default function Dashboard() {
     if (sort === 'snr') return (b.snr ?? -999) - (a.snr ?? -999);
     if (sort === 'battery') return (b.deviceMetrics?.batteryLevel ?? -1) - (a.deviceMetrics?.batteryLevel ?? -1);
     if (sort === 'distance') {
-      const distA = myNode?.position && a.position?.latitude ? 
-        Math.sqrt(Math.pow(a.position.latitude - myNode.position.latitude, 2) + Math.pow(a.position.longitude - myNode.position.longitude, 2)) : Infinity;
-      const distB = myNode?.position && b.position?.latitude ? 
-        Math.sqrt(Math.pow(b.position.latitude - myNode.position.latitude, 2) + Math.pow(b.position.longitude - myNode.position.longitude, 2)) : Infinity;
+      const distA = distanceToMyNode(a, myNode) ?? Infinity;
+      const distB = distanceToMyNode(b, myNode) ?? Infinity;
       return distA - distB;
     }
     return 0;
