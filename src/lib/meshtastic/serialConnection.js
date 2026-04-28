@@ -207,8 +207,7 @@ export class MeshtasticSerial {
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
     const packetId = (Math.floor(Math.random() * 0xfffffffe) + 1) >>> 0;
-    const isBroadcast = destination === 0xffffffff;
-    const packet = buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum, !isBroadcast);
+    const packet = buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum);
 
     const hex = Array.from(packet).map(b => b.toString(16).padStart(2, '0')).join(' ');
     if (this.onTx) this.onTx({ kind: 'text', from: fromNum, to: destination, channel, text, id: packetId, bytes: packet.length, hex });
@@ -247,11 +246,16 @@ function ToRadio_encode_wantConfigId(id) {
 }
 
 // Build ToRadio frame containing a MeshPacket with TEXT_MESSAGE_APP payload.
-function buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum, wantAck) {
-  // Data (decoded) = { portnum=1 (TEXT_MESSAGE_APP), payload=textBytes }
+// Mirrors the official meshtastic.js client (sendPacket): wantAck=true, wantResponse=true.
+function buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum) {
+  // Data (decoded) fields:
+  //   1 portnum (varint)
+  //   2 payload (bytes)
+  //   5 want_response (bool)
   const dataBytes = [
-    ...encodeTag(1, 0), ...encodeVarint(1),                                  // portnum = 1
+    ...encodeTag(1, 0), ...encodeVarint(1),                                  // portnum = TEXT_MESSAGE_APP
     ...encodeTag(2, 2), ...encodeVarint(textBytes.length), ...textBytes,     // payload
+    ...encodeTag(5, 0), 0x01,                                                // want_response = true
   ];
 
   // MeshPacket fields (in field-number order):
@@ -268,7 +272,7 @@ function buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum,
     ...encodeTag(3, 0), ...encodeVarint(channel),                              // channel
     ...encodeTag(4, 2), ...encodeVarint(dataBytes.length), ...dataBytes,       // decoded
     ...encodeTag(6, 5), ...fixed32(packetId),                                  // id
-    ...encodeTag(8, 0), wantAck ? 0x01 : 0x00,                                 // want_ack
+    ...encodeTag(8, 0), 0x01,                                                  // want_ack = true
     ...encodeTag(10, 0), ...encodeVarint(3),                                   // hop_limit = 3
   ];
 
