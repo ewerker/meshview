@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Battery, Wifi, MapPin, Clock, Thermometer, Droplets, Gauge, Star, Radio, Ruler } from 'lucide-react';
+import { Battery, Wifi, MapPin, Clock, Thermometer, Droplets, Gauge, Star, Radio, Ruler, Plug } from 'lucide-react';
 import { HardwareModel } from '@/lib/meshtastic/constants.js';
 import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
@@ -27,15 +27,18 @@ function formatAbsoluteTime(timestamp) {
 
 function BatteryBar({ level }) {
   if (level === undefined || level === null || level === 0) return null;
+  const isPowered = level > 100;
   const display = Math.min(level, 100);
-  const color = display > 60 ? 'bg-green-500' : display > 30 ? 'bg-yellow-500' : 'bg-red-500';
+  const color = isPowered ? 'bg-blue-500' : display > 60 ? 'bg-green-500' : display > 30 ? 'bg-yellow-500' : 'bg-red-500';
   return (
     <div className="flex items-center gap-2">
-      <Battery className="w-4 h-4 text-slate-400" />
+      {isPowered ? <Plug className="w-4 h-4 text-blue-500" /> : <Battery className="w-4 h-4 text-slate-400" />}
       <div className="flex-1 bg-slate-200 rounded-full h-2">
         <div className={`h-2 rounded-full ${color}`} style={{ width: `${display}%` }} />
       </div>
-      <span className="text-xs font-medium w-8">{display}%</span>
+      <span className="text-xs font-medium w-auto whitespace-nowrap">
+        {display}%{isPowered && <span className="text-blue-500 ml-1">⚡</span>}
+      </span>
     </div>
   );
 }

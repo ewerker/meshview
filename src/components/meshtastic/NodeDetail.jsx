@@ -72,13 +72,15 @@ export default function NodeDetail({ node }) {
             </div>
           </div>
           {dm?.batteryLevel > 0 && (() => {
+            const isPowered = dm.batteryLevel > 100;
             const display = Math.min(dm.batteryLevel, 100);
+            const colorClass = isPowered ? 'text-blue-600' : display > 60 ? 'text-green-600' : display > 30 ? 'text-yellow-600' : 'text-red-600';
             return (
               <div className="text-center">
-                <div className={`text-2xl font-bold ${display > 60 ? 'text-green-600' : display > 30 ? 'text-yellow-600' : 'text-red-600'}`}>
-                  {display}%
+                <div className={`text-2xl font-bold ${colorClass}`}>
+                  {display}%{isPowered && <span className="ml-1">⚡</span>}
                 </div>
-                <div className="text-xs text-slate-400">Akku</div>
+                <div className="text-xs text-slate-400">{isPowered ? 'Netzbetrieb' : 'Akku'}</div>
               </div>
             );
           })()}
@@ -113,7 +115,7 @@ export default function NodeDetail({ node }) {
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Gerätemetriken</CardTitle></CardHeader>
               <CardContent className="space-y-0">
-                <Row label="Akku" value={dm.batteryLevel > 0 ? Math.min(dm.batteryLevel, 100) : null} unit="%" />
+                <Row label="Akku" value={dm.batteryLevel > 0 ? `${Math.min(dm.batteryLevel, 100)}${dm.batteryLevel > 100 ? ' ⚡ (Netzbetrieb)' : ''}` : null} unit={dm.batteryLevel > 0 && dm.batteryLevel <= 100 ? '%' : (dm.batteryLevel > 100 ? '%' : null)} />
                 <Row label="Spannung" value={dm.voltage > 0 ? dm.voltage.toFixed(2) : null} unit="V" />
                 <Row label="Kanal-Auslastung" value={dm.channelUtilization > 0 ? dm.channelUtilization.toFixed(1) : null} unit="%" />
                 <Row label="TX Air-Zeit" value={dm.airUtilTx > 0 ? dm.airUtilTx.toFixed(1) : null} unit="%" />
