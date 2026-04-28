@@ -17,6 +17,7 @@ class MeshStore {
     this.isLoading = false;
 
     this.serial.onPacket = (data) => this.handlePacket(data);
+    this.serial.onTx = (info) => this.handleTx(info);
     this.serial.onConnect = () => {
       this.connected = true;
       this.notify();
@@ -25,6 +26,20 @@ class MeshStore {
       this.connected = false;
       this.notify();
     };
+  }
+
+  handleTx(info) {
+    const logEntry = {
+      seq: ++this.packetSeq,
+      time: Date.now(),
+      type: 'tx',
+      from: this.myNodeNum,
+      to: info.to ?? null,
+      raw: { tx: info },
+    };
+    this.packetLog.push(logEntry);
+    if (this.packetLog.length > 200) this.packetLog.shift();
+    this.notify();
   }
 
   handlePacket(rawBytes) {

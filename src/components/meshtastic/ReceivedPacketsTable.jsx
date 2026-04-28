@@ -21,6 +21,7 @@ const TYPE_ICONS = {
   fileInfo: <FileText className="w-3 h-3 text-slate-400" />,
   clientNotification: <AlertTriangle className="w-3 h-3 text-yellow-500" />,
   rebooted: <Radio className="w-3 h-3 text-red-500" />,
+  tx: <Radio className="w-3 h-3 text-pink-500" />,
   ack: <Radio className="w-3 h-3 text-green-300" />,
   error: <AlertTriangle className="w-3 h-3 text-red-500" />,
 };
@@ -70,6 +71,10 @@ function getPacketLabel(packet) {
   if (packet.type === 'fileInfo') return 'Datei: Info';
   if (packet.type === 'clientNotification') return 'Benachrichtigung: -';
   if (packet.type === 'rebooted') return 'Neustart: Reboot';
+  if (packet.type === 'tx') {
+    const tx = packet.raw?.tx;
+    return `TX ${tx?.kind || ''}: ${tx?.bytes || 0}B → ${tx?.to?.toString(16).toUpperCase() || '?'} | ${tx?.hex || ''}`;
+  }
   if (packet.type === 'ack') return `ACK: ID ${packet.id}`;
   if (packet.type === 'error') return `Fehler: ${packet.raw?.error || 'Parse-Fehler'}`;
   if (packet.type === 'packet' && packet.raw?.packet?.encrypted) return 'Paket: Verschlüsselt';
