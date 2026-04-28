@@ -12,6 +12,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
+import DisconnectedHero from '@/components/meshtastic/DisconnectedHero.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { Radio, Map, List } from 'lucide-react';
 
@@ -87,38 +88,7 @@ export default function Dashboard() {
       <ConnectionBar />
 
       {!connected ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-md px-4">
-            <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Radio className="w-12 h-12 text-slate-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-3">Meshtastic Dashboard</h2>
-            <p className="text-slate-500 mb-6">
-              Verbinde dein Meshtastic-Gerät per USB und klicke auf "Mit Gerät verbinden".
-            </p>
-            {!isSupported && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                ⚠️ Dein Browser unterstützt die Web Serial API nicht.<br />
-                Bitte <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong> verwenden.
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3 mt-6 text-left">
-              {[
-                ['📡', 'Node-Informationen', 'Namen, IDs, Hardware'],
-                ['🗺️', 'GPS-Karte', 'Alle Positionen visualisiert'],
-                ['📊', 'Telemetrie', 'Akku, Signal, Uptime'],
-                ['🌡️', 'Umgebung', 'Temp., Luftdruck, Feuchte'],
-                ['📶', 'Signal', 'SNR, RSSI, Hops'],
-              ].map(([icon, title, desc]) => (
-                <div key={title} className="bg-white rounded-lg p-3 border">
-                  <div className="text-xl mb-1">{icon}</div>
-                  <div className="font-semibold text-sm">{title}</div>
-                  <div className="text-xs text-slate-400">{desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <DisconnectedHero />
       ) : (
         <>
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
