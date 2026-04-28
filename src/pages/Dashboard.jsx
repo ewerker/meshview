@@ -187,9 +187,9 @@ export default function Dashboard() {
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
                 {/* Center: Map + Serial Log + Packets Table */}
-                <Panel defaultSize={53} minSize={30}>
+                <Panel defaultSize={52} minSize={30}>
                   <PanelGroup direction="vertical" className="h-full" autoSaveId="dashboard.layout.center">
-                    <Panel defaultSize={55} minSize={20}>
+                    <Panel defaultSize={45} minSize={20}>
                       <div className="h-full p-4 overflow-hidden">
                         <NodeMap
                           nodes={nodes}
@@ -202,7 +202,7 @@ export default function Dashboard() {
 
                     <PanelResizeHandle className="h-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize" />
 
-                    <Panel defaultSize={45} minSize={15} className="flex flex-col">
+                    <Panel defaultSize={55} minSize={15} className="flex flex-col">
                       <div className="flex flex-col h-full bg-card dark:bg-slate-800">
                         <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700 shrink-0 flex items-center justify-between">
                           <span>{filters.messagesOnly ? 'Empfangene Nachrichten' : 'Empfangene Pakete'}</span>
@@ -226,7 +226,7 @@ export default function Dashboard() {
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
                 {/* Right: Node detail */}
-                <Panel defaultSize={25} minSize={15} maxSize={45}>
+                <Panel defaultSize={26} minSize={15} maxSize={45}>
                   <div className="border-l bg-card dark:bg-slate-900 flex flex-col h-full">
                     <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">
