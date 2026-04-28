@@ -224,11 +224,16 @@ export class MeshtasticSerial {
   }
 }
 
+// Encodes a protobuf field tag.
+function encodeTag(fieldNumber, wireType) {
+  return encodeVarint((fieldNumber << 3) | wireType);
+}
+
 // Builds an AdminMessage protobuf with reboot_seconds set.
-// AdminMessage.reboot_seconds is field 7 (varint, sint32).
+// AdminMessage.reboot_seconds is field 97 (int32 varint).
 function buildAdminMessageReboot(seconds) {
-  // Field 7, wire type 0 (varint). Tag = (7 << 3) | 0 = 56 = 0x38
-  return new Uint8Array([0x38, ...encodeVarint(seconds)]);
+  // Field 97, wire type 0 (varint). Tag varint = (97 << 3) | 0 = 776 -> [0x88, 0x06]
+  return new Uint8Array([...encodeTag(97, 0), ...encodeVarint(seconds)]);
 }
 
 // Builds a ToRadio packet containing a MeshPacket addressed to our own node
@@ -236,36 +241,39 @@ function buildAdminMessageReboot(seconds) {
 function buildAdminRebootPacket(myNodeNum, seconds) {
   const adminPayload = buildAdminMessageReboot(seconds);
 
-  // Data message:
+  // Data message (mesh.proto):
   //   field 1 (portnum, varint) = 7 (ADMIN_APP)
   //   field 2 (payload, bytes) = adminPayload
   //   field 7 (want_response, bool) = true
   const dataBytes = [
-    0x08, ...encodeVarint(7),                         // portnum = 7
-    0x12, ...encodeVarint(adminPayload.length), ...adminPayload, // payload
-    0x38, 0x01,                                        // want_response = true
+    ...encodeTag(1, 0), ...encodeVarint(7),                                  // portnum = 7
+    ...encodeTag(2, 2), ...encodeVarint(adminPayload.length), ...adminPayload, // payload
+    ...encodeTag(7, 0), 0x01,                                                 // want_response = true
   ];
 
-  // MeshPacket:
-  //   field 1 (from, fixed32)  -> use varint variant: tag 0x08 ok? from is uint32 varint actually.
-  //   field 2 (to, fixed32) — meshtastic uses fixed32 for from/to. Tag 2,wire5 = 0x15
-  //   field 4 (decoded, Data, length-delim) tag = (4<<3)|2 = 0x22
-  //   field 8 (want_ack, bool) tag = (8<<3)|0 = 0x40
-  // We'll use varint for `to` because firmware accepts both; safer to use fixed32 as defined.
+  // MeshPacket (mesh.proto):
+  //   field 1 (from, fixed32) — omit, radio fills it in
+  //   field 2 (to, fixed32) = myNodeNum
+  //   field 3 (channel, varint) = 0 (admin uses primary channel)
+  //   field 4 (decoded, Data, length-delim)
+  //   field 6 (id, fixed32) = random non-zero packet id
+  //   field 8 (want_ack, bool) = true
   const toBytes = new Uint8Array(4);
   new DataView(toBytes.buffer).setUint32(0, myNodeNum >>> 0, true);
 
+  const packetId = (Math.floor(Math.random() * 0xfffffffe) + 1) >>> 0;
+  const idBytes = new Uint8Array(4);
+  new DataView(idBytes.buffer).setUint32(0, packetId, true);
+
   const meshPacket = [
-    0x15, ...toBytes,                                  // to (fixed32) — actually field 1 is from; to is field 2
+    ...encodeTag(2, 5), ...toBytes,                                       // to (fixed32)
+    ...encodeTag(4, 2), ...encodeVarint(dataBytes.length), ...dataBytes,  // decoded
+    ...encodeTag(6, 5), ...idBytes,                                       // id (fixed32)
+    ...encodeTag(8, 0), 0x01,                                             // want_ack
   ];
-  // Correction: field 2 fixed32 tag = (2<<3)|5 = 0x15  ✔ (this is `to`)
-  // Add decoded
-  meshPacket.push(0x22, ...encodeVarint(dataBytes.length), ...dataBytes);
-  // want_ack = true
-  meshPacket.push(0x40, 0x01);
 
   // ToRadio.packet is field 2, length-delim. Tag = (2<<3)|2 = 0x12
-  const toRadio = [0x12, ...encodeVarint(meshPacket.length), ...meshPacket];
+  const toRadio = [...encodeTag(2, 2), ...encodeVarint(meshPacket.length), ...meshPacket];
   return new Uint8Array(toRadio);
 }
 
