@@ -7,7 +7,7 @@ export default function SignalChart({ node, packetLog }) {
   // Filter packets from this node (last 50, last 2 hours)
   const twoHoursAgo = Date.now() - 2 * 3600 * 1000;
   const relevantPackets = (packetLog || [])
-    .filter(p => p.from === node.num && p.rxSnr !== undefined && p.time > twoHoursAgo)
+    .filter(p => p.from === node.num && p.time > twoHoursAgo && (p.rxSnr !== undefined || p.rxRssi !== undefined))
     .slice(-50);
 
   if (relevantPackets.length === 0) {
@@ -20,10 +20,10 @@ export default function SignalChart({ node, packetLog }) {
     );
   }
 
-  // Prepare data
+  // Prepare data — p.time is in ms (Date.now())
   const data = relevantPackets.map(p => ({
-    time: format(new Date(p.time * 1000), 'HH:mm'),
-    snr: p.rxSnr ? parseFloat(p.rxSnr.toFixed(1)) : null,
+    time: format(new Date(p.time), 'HH:mm'),
+    snr: p.rxSnr !== undefined && p.rxSnr !== null ? parseFloat(p.rxSnr.toFixed(1)) : null,
     rssi: p.rxRssi || null,
   }));
 

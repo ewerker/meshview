@@ -106,34 +106,6 @@ export default function NodeDetail({ node }) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Signal</CardTitle></CardHeader>
-            <CardContent className="space-y-0">
-              <Row label="SNR" value={node.snr?.toFixed(1)} unit="dB" />
-              <Row label="RSSI" value={node.rssi} unit="dBm" />
-              {recentSignalData.length > 1 && (
-                <div className="flex gap-2 h-10 mt-2 pt-2 border-t border-slate-50 dark:border-slate-800/50">
-                  <div className="flex-1 h-full" title="SNR Verlauf (letzte 15 Min)">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={recentSignalData}>
-                        <YAxis domain={['dataMin - 1', 'dataMax + 1']} hide />
-                        <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex-1 h-full" title="RSSI Verlauf (letzte 15 Min)">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={recentSignalData}>
-                        <YAxis domain={['dataMin - 2', 'dataMax + 2']} hide />
-                        <Line type="monotone" dataKey="rssi" stroke="#f97316" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {dm && (
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Gerätemetriken</CardTitle></CardHeader>
@@ -151,7 +123,44 @@ export default function NodeDetail({ node }) {
           )}
         </TabsContent>
 
-        <TabsContent value="signal" className="mt-4">
+        <TabsContent value="signal" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Aktuelle Werte</CardTitle></CardHeader>
+            <CardContent className="space-y-0">
+              <Row label="SNR" value={node.snr !== undefined && node.snr !== null ? node.snr.toFixed(1) : null} unit="dB" />
+              <Row label="RSSI" value={node.rssi} unit="dBm" />
+              <Row label="Hops" value={node.hopsAway !== undefined ? (node.hopsAway === 0 ? 'Direkt' : `${node.hopsAway} Hop(s)`) : null} />
+              <Row label="Via MQTT" value={node.viaMqtt ? 'Ja' : 'Nein'} />
+              <Row label="Kanal" value={node.channel} />
+            </CardContent>
+          </Card>
+          {recentSignalData.length > 1 && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Verlauf (letzte 15 Min)</CardTitle></CardHeader>
+              <CardContent>
+                <div className="flex gap-2 h-16">
+                  <div className="flex-1 h-full" title="SNR Verlauf">
+                    <div className="text-[10px] text-slate-400 mb-1">SNR (dB)</div>
+                    <ResponsiveContainer width="100%" height="80%">
+                      <LineChart data={recentSignalData}>
+                        <YAxis domain={['dataMin - 1', 'dataMax + 1']} hide />
+                        <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 h-full" title="RSSI Verlauf">
+                    <div className="text-[10px] text-slate-400 mb-1">RSSI (dBm)</div>
+                    <ResponsiveContainer width="100%" height="80%">
+                      <LineChart data={recentSignalData}>
+                        <YAxis domain={['dataMin - 2', 'dataMax + 2']} hide />
+                        <Line type="monotone" dataKey="rssi" stroke="#f97316" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           <SignalChart node={node} packetLog={packetLog} />
         </TabsContent>
 
