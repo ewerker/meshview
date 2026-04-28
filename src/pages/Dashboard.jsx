@@ -206,7 +206,7 @@ export default function Dashboard() {
                           Empfangene Pakete
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable />
+                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} />
                         </div>
                       </div>
                     </Panel>

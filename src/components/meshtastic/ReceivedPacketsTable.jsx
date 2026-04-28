@@ -88,7 +88,7 @@ function formatTime(timestamp) {
   return `${hms}.${ms}`;
 }
 
-export default function ReceivedPacketsTable() {
+export default function ReceivedPacketsTable({ onSelectNode }) {
   const { packetLog } = useMeshStore();
   const [expandedSeq, setExpandedSeq] = useState(null);
 
@@ -130,7 +130,15 @@ export default function ReceivedPacketsTable() {
                       className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                     />
                   </td>
-                  <td className="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">
+                  <td
+                    className={`px-3 py-2 font-mono text-slate-500 dark:text-slate-400 ${packet.from && onSelectNode ? 'hover:text-blue-600 dark:hover:text-blue-400 hover:underline' : ''}`}
+                    onClick={(e) => {
+                      if (packet.from && onSelectNode) {
+                        e.stopPropagation();
+                        onSelectNode(packet.from);
+                      }
+                    }}
+                  >
                     {packet.from?.toString(16).toUpperCase() || '-'}
                   </td>
                   <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
