@@ -198,7 +198,8 @@ class MeshStore {
 
   async sendText(text, destination = 0xffffffff, channel = 0) {
     if (!this.connected) throw new Error('Nicht verbunden');
-    return await this.serial.sendTextMessage(text, destination, channel);
+    if (!this.myNodeNum) throw new Error('Eigene Node-Nummer noch nicht bekannt – bitte kurz warten');
+    return await this.serial.sendTextMessage(text, destination, channel, this.myNodeNum);
   }
 }
 

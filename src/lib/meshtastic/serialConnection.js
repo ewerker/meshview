@@ -192,15 +192,17 @@ export class MeshtasticSerial {
    * @param {string} text - Message content (UTF-8).
    * @param {number} destination - Target node number (0xFFFFFFFF for broadcast).
    * @param {number} channel - Channel index (default 0).
+   * @param {number} fromNum - Sender node number (own node).
    */
-  async sendTextMessage(text, destination = 0xffffffff, channel = 0) {
+  async sendTextMessage(text, destination = 0xffffffff, channel = 0, fromNum = 0) {
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
     const packetId = (Math.floor(Math.random() * 0xfffffffe) + 1) >>> 0;
-    const packet = buildTextMeshPacket(textBytes, destination, channel, packetId);
+    const isBroadcast = destination === 0xffffffff;
+    const packet = buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum, !isBroadcast);
 
     const hex = Array.from(packet).map(b => b.toString(16).padStart(2, '0')).join(' ');
-    if (this.onTx) this.onTx({ kind: 'text', to: destination, channel, text, id: packetId, bytes: packet.length, hex });
+    if (this.onTx) this.onTx({ kind: 'text', from: fromNum, to: destination, channel, text, id: packetId, bytes: packet.length, hex });
 
     await this.sendToRadio(packet);
     return packetId;
@@ -236,27 +238,28 @@ function ToRadio_encode_wantConfigId(id) {
 }
 
 // Build ToRadio frame containing a MeshPacket with TEXT_MESSAGE_APP payload.
-function buildTextMeshPacket(textBytes, destination, channel, packetId) {
+function buildTextMeshPacket(textBytes, destination, channel, packetId, fromNum, wantAck) {
   // Data (decoded) = { portnum=1 (TEXT_MESSAGE_APP), payload=textBytes }
   const dataBytes = [
     ...encodeTag(1, 0), ...encodeVarint(1),                                  // portnum = 1
     ...encodeTag(2, 2), ...encodeVarint(textBytes.length), ...textBytes,     // payload
   ];
 
-  // MeshPacket fields:
+  // MeshPacket fields (in field-number order):
+  //   1 (from, fixed32)
   //   2 (to, fixed32)
   //   3 (channel, varint)
   //   4 (decoded, Data, length-delim)
   //   6 (id, fixed32)
-  //   7 (rx_time) - not set for TX
   //   8 (want_ack, bool)
   //  10 (hop_limit, varint)
   const meshPacket = [
-    ...encodeTag(2, 5), ...fixed32(destination),                               // to
+    ...encodeTag(1, 5), ...fixed32(fromNum >>> 0),                             // from
+    ...encodeTag(2, 5), ...fixed32(destination >>> 0),                         // to
     ...encodeTag(3, 0), ...encodeVarint(channel),                              // channel
     ...encodeTag(4, 2), ...encodeVarint(dataBytes.length), ...dataBytes,       // decoded
     ...encodeTag(6, 5), ...fixed32(packetId),                                  // id
-    ...encodeTag(8, 0), 0x01,                                                  // want_ack = true
+    ...encodeTag(8, 0), wantAck ? 0x01 : 0x00,                                 // want_ack
     ...encodeTag(10, 0), ...encodeVarint(3),                                   // hop_limit = 3
   ];
 
