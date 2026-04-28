@@ -220,7 +220,11 @@ export class MeshtasticSerial {
   async sendReboot(myNodeNum, seconds = 5) {
     if (!myNodeNum) throw new Error('Eigene Node-Nummer unbekannt');
     const packet = buildAdminRebootPacket(myNodeNum, seconds);
+    const hex = Array.from(packet).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    console.log(`[TX] sendReboot to=${myNodeNum.toString(16)} seconds=${seconds} bytes=${packet.length}`);
+    console.log(`[TX] payload: ${hex}`);
     await this.sendToRadio(packet);
+    console.log(`[TX] sendReboot frame written to serial`);
   }
 }
 
