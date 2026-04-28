@@ -14,6 +14,17 @@ function timeAgo(timestamp) {
   return `vor ${Math.floor(diff / 86400)}d`;
 }
 
+function formatAbsoluteTime(timestamp) {
+  if (!timestamp) return null;
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  if (sameDay) {
+    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  }
+  return date.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
 function BatteryBar({ level }) {
   if (level === undefined || level === null || level === 0) return null;
   const color = level > 60 ? 'bg-green-500' : level > 30 ? 'bg-yellow-500' : 'bg-red-500';
@@ -132,6 +143,9 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
         <div className="flex items-center gap-1 text-xs text-slate-400">
           <Clock className="w-3 h-3" />
           <span>{timeAgo(node.lastHeard)}</span>
+          {node.lastHeard && (
+            <span className="text-slate-300 dark:text-slate-500">· {formatAbsoluteTime(node.lastHeard)}</span>
+          )}
         </div>
 
         {/* Channel util */}
