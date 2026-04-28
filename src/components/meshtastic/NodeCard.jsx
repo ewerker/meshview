@@ -27,14 +27,15 @@ function formatAbsoluteTime(timestamp) {
 
 function BatteryBar({ level }) {
   if (level === undefined || level === null || level === 0) return null;
-  const color = level > 60 ? 'bg-green-500' : level > 30 ? 'bg-yellow-500' : 'bg-red-500';
+  const display = Math.min(level, 100);
+  const color = display > 60 ? 'bg-green-500' : display > 30 ? 'bg-yellow-500' : 'bg-red-500';
   return (
     <div className="flex items-center gap-2">
       <Battery className="w-4 h-4 text-slate-400" />
       <div className="flex-1 bg-slate-200 rounded-full h-2">
-        <div className={`h-2 rounded-full ${color}`} style={{ width: `${Math.min(level, 100)}%` }} />
+        <div className={`h-2 rounded-full ${color}`} style={{ width: `${display}%` }} />
       </div>
-      <span className="text-xs font-medium w-8">{level}%</span>
+      <span className="text-xs font-medium w-8">{display}%</span>
     </div>
   );
 }

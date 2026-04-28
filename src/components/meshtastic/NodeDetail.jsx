@@ -71,14 +71,17 @@ export default function NodeDetail({ node }) {
               <span className="text-xs text-slate-400 font-mono">{nodeId}</span>
             </div>
           </div>
-          {dm?.batteryLevel > 0 && (
-            <div className="text-center">
-              <div className={`text-2xl font-bold ${dm.batteryLevel > 60 ? 'text-green-600' : dm.batteryLevel > 30 ? 'text-yellow-600' : 'text-red-600'}`}>
-                {dm.batteryLevel}%
+          {dm?.batteryLevel > 0 && (() => {
+            const display = Math.min(dm.batteryLevel, 100);
+            return (
+              <div className="text-center">
+                <div className={`text-2xl font-bold ${display > 60 ? 'text-green-600' : display > 30 ? 'text-yellow-600' : 'text-red-600'}`}>
+                  {display}%
+                </div>
+                <div className="text-xs text-slate-400">Akku</div>
               </div>
-              <div className="text-xs text-slate-400">Akku</div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
@@ -110,7 +113,7 @@ export default function NodeDetail({ node }) {
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Gerätemetriken</CardTitle></CardHeader>
               <CardContent className="space-y-0">
-                <Row label="Akku" value={dm.batteryLevel > 0 ? dm.batteryLevel : null} unit="%" />
+                <Row label="Akku" value={dm.batteryLevel > 0 ? Math.min(dm.batteryLevel, 100) : null} unit="%" />
                 <Row label="Spannung" value={dm.voltage > 0 ? dm.voltage.toFixed(2) : null} unit="V" />
                 <Row label="Kanal-Auslastung" value={dm.channelUtilization > 0 ? dm.channelUtilization.toFixed(1) : null} unit="%" />
                 <Row label="TX Air-Zeit" value={dm.airUtilTx > 0 ? dm.airUtilTx.toFixed(1) : null} unit="%" />
