@@ -246,11 +246,11 @@ function buildAdminRebootPacket(myNodeNum, seconds) {
   // Data message (mesh.proto):
   //   field 1 (portnum, varint) = 7 (ADMIN_APP)
   //   field 2 (payload, bytes) = adminPayload
-  //   field 7 (want_response, bool) = true
+  //   field 6 (want_response, bool) = true
   const dataBytes = [
     ...encodeTag(1, 0), ...encodeVarint(7),                                  // portnum = 7
     ...encodeTag(2, 2), ...encodeVarint(adminPayload.length), ...adminPayload, // payload
-    ...encodeTag(7, 0), 0x01,                                                 // want_response = true
+    ...encodeTag(6, 0), 0x01,                                                 // want_response = true
   ];
 
   // MeshPacket (mesh.proto):
