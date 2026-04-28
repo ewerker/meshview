@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
 import StatsBar from '@/components/meshtastic/StatsBar.jsx';
@@ -17,9 +18,9 @@ import { Radio, Map, List } from 'lucide-react';
 export default function Dashboard() {
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('myFirst');
-  const [filters, setFilters] = useState({
+  const [search, setSearch] = useLocalStorage('dashboard.search', '');
+  const [sort, setSort] = useLocalStorage('dashboard.sort', 'myFirst');
+  const [filters, setFilters] = useLocalStorage('dashboard.filters', {
     active: false,
     direct: false,
     withGps: false,
@@ -159,9 +160,9 @@ export default function Dashboard() {
 
             {/* Desktop: resizable 3-column layout */}
             <div className="hidden lg:flex h-full">
-              <PanelGroup direction="horizontal" className="h-full w-full">
+              <PanelGroup direction="horizontal" className="h-full w-full" autoSaveId="dashboard.layout.h">
                 {/* Left: Node list */}
-                <Panel defaultSize={20} minSize={12} maxSize={40}>
+                <Panel defaultSize={22} minSize={12} maxSize={40}>
                   <div className="border-r bg-card dark:bg-slate-900 flex flex-col h-full">
                     <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
@@ -186,9 +187,9 @@ export default function Dashboard() {
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
                 {/* Center: Map + Serial Log + Packets Table */}
-                <Panel defaultSize={55} minSize={30}>
-                  <PanelGroup direction="vertical" className="h-full">
-                    <Panel defaultSize={60} minSize={20}>
+                <Panel defaultSize={53} minSize={30}>
+                  <PanelGroup direction="vertical" className="h-full" autoSaveId="dashboard.layout.center">
+                    <Panel defaultSize={55} minSize={20}>
                       <div className="h-full p-4 overflow-hidden">
                         <NodeMap
                           nodes={nodes}
@@ -201,7 +202,7 @@ export default function Dashboard() {
 
                     <PanelResizeHandle className="h-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize" />
 
-                    <Panel defaultSize={40} minSize={15} className="flex flex-col">
+                    <Panel defaultSize={45} minSize={15} className="flex flex-col">
                       <div className="flex flex-col h-full bg-card dark:bg-slate-800">
                         <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700 shrink-0 flex items-center justify-between">
                           <span>{filters.messagesOnly ? 'Empfangene Nachrichten' : 'Empfangene Pakete'}</span>
