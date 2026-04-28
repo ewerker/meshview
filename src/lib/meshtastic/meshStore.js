@@ -48,6 +48,7 @@ class MeshStore {
       from: null,
       to: null,
       raw: parsed,
+      rawBytes: rawBytes,
     };
     if (parsed.type === 'packet' && parsed.packet) {
       logEntry.from = parsed.packet.from;

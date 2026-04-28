@@ -1,5 +1,7 @@
+import { useState, Fragment } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
-import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle } from 'lucide-react';
+import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight } from 'lucide-react';
+import PacketRowDetails from './PacketRowDetails.jsx';
 
 function getDecoded(logEntry) {
   // raw is the parsed FromRadio object: { type, packet: { from, to, decoded: {...} }, ... }
@@ -88,8 +90,7 @@ function formatTime(timestamp) {
 
 export default function ReceivedPacketsTable() {
   const { packetLog } = useMeshStore();
-
-
+  const [expandedSeq, setExpandedSeq] = useState(null);
 
   if (packetLog.length === 0) {
     return (
@@ -104,6 +105,7 @@ export default function ReceivedPacketsTable() {
       <table className="w-full text-xs">
         <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 text-slate-600 dark:text-slate-300 shadow-sm">
           <tr>
+            <th className="px-2 py-2 w-6"></th>
             <th className="px-3 py-2 text-left font-semibold">Von</th>
             <th className="px-3 py-2 text-left font-semibold">Typ</th>
             <th className="px-3 py-2 text-left font-semibold">Details</th>
@@ -115,22 +117,43 @@ export default function ReceivedPacketsTable() {
             const labelParts = getPacketLabel(packet).split(':');
             const typ = labelParts[0];
             const details = labelParts.slice(1).join(':').trim() || '-';
+            const isExpanded = expandedSeq === packet.seq;
+            const toggle = () => setExpandedSeq(isExpanded ? null : packet.seq);
             return (
-              <tr key={packet.seq} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td className="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">
-                  {packet.from?.toString(16).toUpperCase() || '-'}
-                </td>
-                <td className="px-3 py-2 flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  {getPacketIcon(packet)}
-                  <span>{typ}</span>
-                </td>
-                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-xs" title={details !== '-' ? details : undefined}>
-                  {details}
-                </td>
-                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  {formatTime(packet.time)}
-                </td>
-              </tr>
+              <Fragment key={packet.seq}>
+                <tr
+                  onClick={toggle}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                >
+                  <td className="px-2 py-2 text-slate-400 dark:text-slate-500 w-6">
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                    />
+                  </td>
+                  <td className="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">
+                    {packet.from?.toString(16).toUpperCase() || '-'}
+                  </td>
+                  <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
+                    <div className="flex items-center gap-2">
+                      {getPacketIcon(packet)}
+                      <span>{typ}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-xs" title={details !== '-' ? details : undefined}>
+                    {details}
+                  </td>
+                  <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {formatTime(packet.time)}
+                  </td>
+                </tr>
+                {isExpanded && (
+                  <tr>
+                    <td colSpan={5} className="p-0">
+                      <PacketRowDetails packet={packet} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>
