@@ -1,4 +1,5 @@
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
+import { useEffect } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
@@ -20,6 +21,20 @@ function dotIcon(color) {
   });
 }
 
+function FitBounds({ points }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!points || points.length === 0) return;
+    if (points.length === 1) {
+      map.setView(points[0], 14);
+    } else {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+    }
+  }, [map, JSON.stringify(points)]);
+  return null;
+}
+
 export default function NodePositionMiniMap({ node, myNode }) {
   const pos = node?.position;
   if (!pos?.latitude || pos.latitude === 0) return null;
@@ -31,24 +46,19 @@ export default function NodePositionMiniMap({ node, myNode }) {
 
   const distance = hasMyPos ? distanceToMyNode(node, myNode) : null;
 
-  // Compute map bounds
-  const bounds = hasMyPos ? [nodeLatLng, myLatLng] : null;
-  const center = hasMyPos
-    ? [(nodeLatLng[0] + myLatLng[0]) / 2, (nodeLatLng[1] + myLatLng[1]) / 2]
-    : nodeLatLng;
+  const points = hasMyPos ? [nodeLatLng, myLatLng] : [nodeLatLng];
 
   return (
     <div className="space-y-2">
       <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700" style={{ height: 180 }}>
         <MapContainer
-          center={center}
-          zoom={hasMyPos ? 12 : 14}
-          bounds={bounds || undefined}
-          boundsOptions={{ padding: [25, 25] }}
+          center={nodeLatLng}
+          zoom={14}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
           attributionControl={false}
         >
+          <FitBounds points={points} />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             maxZoom={19}
