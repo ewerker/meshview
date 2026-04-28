@@ -11,8 +11,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
-import MessageInput from '@/components/meshtastic/MessageInput.jsx';
-import { Radio, Map, List, Send } from 'lucide-react';
+import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
@@ -122,7 +121,6 @@ export default function Dashboard() {
                   <TabsTrigger value="map" className="flex-1 gap-1"><Map className="w-4 h-4" />Karte</TabsTrigger>
                   <TabsTrigger value="nodes" className="flex-1 gap-1"><List className="w-4 h-4" />Nodes</TabsTrigger>
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />Detail</TabsTrigger>
-                  <TabsTrigger value="send" className="flex-1 gap-1"><Send className="w-4 h-4" />Senden</TabsTrigger>
                 </TabsList>
                 <TabsContent value="map" className="flex-1 p-4 overflow-hidden">
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
@@ -146,9 +144,6 @@ export default function Dashboard() {
                 </TabsContent>
                 <TabsContent value="detail" className="flex-1 overflow-auto">
                   <NodeDetail node={selectedNode} />
-                </TabsContent>
-                <TabsContent value="send" className="flex-1 overflow-auto">
-                  <MessageInput selectedNodeNum={selectedNodeNum} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -212,23 +207,17 @@ export default function Dashboard() {
 
                 <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize" />
 
-                {/* Right: Node detail + Admin tabs */}
+                {/* Right: Node detail */}
                 <Panel defaultSize={25} minSize={15} maxSize={45}>
                   <div className="border-l bg-card dark:bg-slate-900 flex flex-col h-full">
-                    <Tabs defaultValue="detail" className="flex flex-col h-full">
-                      <div className="px-3 py-2 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
-                        <TabsList className="w-full">
-                          <TabsTrigger value="detail" className="flex-1 gap-1 text-xs"><Radio className="w-3.5 h-3.5" />Detail</TabsTrigger>
-                          <TabsTrigger value="send" className="flex-1 gap-1 text-xs"><Send className="w-3.5 h-3.5" />Senden</TabsTrigger>
-                        </TabsList>
-                      </div>
-                      <TabsContent value="detail" className="flex-1 overflow-hidden mt-0">
-                        <NodeDetail node={selectedNode} />
-                      </TabsContent>
-                      <TabsContent value="send" className="flex-1 overflow-auto mt-0">
-                        <MessageInput selectedNodeNum={selectedNodeNum} />
-                      </TabsContent>
-                    </Tabs>
+                    <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
+                      <h3 className="font-semibold text-sm text-slate-600">
+                        {selectedNode ? selectedNode.user?.longName || 'Node Detail' : 'Node auswählen'}
+                      </h3>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <NodeDetail node={selectedNode} />
+                    </div>
                   </div>
                 </Panel>
               </PanelGroup>
