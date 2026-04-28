@@ -88,14 +88,18 @@ function formatTime(timestamp) {
   return `${hms}.${ms}`;
 }
 
-export default function ReceivedPacketsTable({ onSelectNode }) {
+export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = false }) {
   const { packetLog } = useMeshStore();
   const [expandedSeq, setExpandedSeq] = useState(null);
 
-  if (packetLog.length === 0) {
+  const visiblePackets = messagesOnly
+    ? packetLog.filter(p => p.raw?.packet?.decoded?.text)
+    : packetLog;
+
+  if (visiblePackets.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
-        Keine Pakete empfangen
+        {messagesOnly ? 'Keine Nachrichten empfangen' : 'Keine Pakete empfangen'}
       </div>
     );
   }
@@ -113,7 +117,7 @@ export default function ReceivedPacketsTable({ onSelectNode }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-slate-700 border-t border-slate-200 dark:border-slate-700">
-          {packetLog.slice(-50).reverse().map((packet) => {
+          {visiblePackets.slice(-50).reverse().map((packet) => {
             const labelParts = getPacketLabel(packet).split(':');
             const typ = labelParts[0];
             const details = labelParts.slice(1).join(':').trim() || '-';

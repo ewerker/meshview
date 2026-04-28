@@ -30,6 +30,7 @@ export default function Dashboard() {
     near1km: false,
     near5km: false,
     near25km: false,
+    messagesOnly: false,
   });
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
@@ -202,11 +203,19 @@ export default function Dashboard() {
 
                     <Panel defaultSize={40} minSize={15} className="flex flex-col">
                       <div className="flex flex-col h-full bg-card dark:bg-slate-800">
-                        <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700 shrink-0">
-                          Empfangene Pakete
+                        <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700 shrink-0 flex items-center justify-between">
+                          <span>{filters.messagesOnly ? 'Empfangene Nachrichten' : 'Empfangene Pakete'}</span>
+                          {filters.messagesOnly && (
+                            <button
+                              onClick={() => setFilters({ ...filters, messagesOnly: false })}
+                              className="text-blue-500 hover:text-blue-600 font-normal"
+                            >
+                              Filter zurücksetzen
+                            </button>
+                          )}
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} />
+                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} messagesOnly={filters.messagesOnly} />
                         </div>
                       </div>
                     </Panel>

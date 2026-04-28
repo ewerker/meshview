@@ -12,7 +12,7 @@ export default function StatsBar({ nodes, messages, connected, filters, onFilter
     { label: 'Nodes gesamt', value: nodes.length, icon: Radio, color: 'text-blue-600', action: 'clear' },
     { label: 'Aktiv (15min)', value: recentNodes.length, icon: Activity, color: 'text-green-600', filterKey: 'active' },
     { label: 'Mit GPS', value: nodesWithPos.length, icon: MapPin, color: 'text-red-600', filterKey: 'withGps' },
-    { label: 'Nachrichten', value: messages.length, icon: MessageSquare, color: 'text-purple-600' },
+    { label: 'Nachrichten', value: messages.length, icon: MessageSquare, color: 'text-purple-600', filterKey: messages.length > 0 ? 'messagesOnly' : null },
   ];
 
   return (
