@@ -199,25 +199,31 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
   const createdNodes = [];
   const updatedNodes = [];
 
-  onProgress?.(`Prüfe ${nodeRows.length} Nodes…`);
-  for (const nodeRow of nodeRows) {
+  onProgress?.({ text: `Prüfe ${nodeRows.length} Nodes…`, current: 0, total: nodeRows.length, created: 0, updated: 0 });
+  for (const [index, nodeRow] of nodeRows.entries()) {
     const existing = await base44.entities.MeshNode.filter({
       my_node_num: nodeRow.my_node_num,
       num: nodeRow.num,
     });
 
     if (existing.length > 0) {
-      onProgress?.(`Aktualisiere Node: ${nodeRow.long_name || nodeRow.short_name || nodeRow.node_id}`);
       await base44.entities.MeshNode.update(existing[0].id, nodeRow);
       updatedNodes.push(nodeRow);
     } else {
-      onProgress?.(`Speichere neuen Node: ${nodeRow.long_name || nodeRow.short_name || nodeRow.node_id}`);
       await base44.entities.MeshNode.create(nodeRow);
       createdNodes.push(nodeRow);
     }
+
+    onProgress?.({
+      text: `${index + 1}/${nodeRows.length} Nodes gesichert · ${createdNodes.length} neu · ${updatedNodes.length} updated`,
+      current: index + 1,
+      total: nodeRows.length,
+      created: createdNodes.length,
+      updated: updatedNodes.length,
+    });
   }
 
-  onProgress?.(`Übertrage ${packetRows.length} Pakete…`);
+  onProgress?.({ text: `Übertrage ${packetRows.length} Pakete…`, current: nodeRows.length, total: nodeRows.length, created: createdNodes.length, updated: updatedNodes.length });
   if (packetRows.length > 0) {
     await base44.entities.MeshPacket.bulkCreate(packetRows);
   }

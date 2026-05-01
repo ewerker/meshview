@@ -30,6 +30,7 @@ export default function ManualSavePanel() {
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
+  const [progress, setProgress] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
@@ -41,6 +42,7 @@ export default function ManualSavePanel() {
     setSaving(true);
     setResult(null);
     setError(null);
+    setProgress(null);
     setStatus('Bereite Daten vor…');
 
     try {
@@ -49,7 +51,15 @@ export default function ManualSavePanel() {
         myNode,
         nodes,
         packetLog,
-        onProgress: setStatus,
+        onProgress: (nextProgress) => {
+          if (typeof nextProgress === 'string') {
+            setStatus(nextProgress);
+            setProgress(null);
+            return;
+          }
+          setStatus(nextProgress.text);
+          setProgress(nextProgress);
+        },
       });
       setResult(saveResult);
       setStatus('Sicherung abgeschlossen');
@@ -94,9 +104,18 @@ export default function ManualSavePanel() {
       {(saving || status || result || error) && (
         <div className="mt-3 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 p-3 space-y-3">
           {status && (
-            <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <CheckCircle2 className="w-4 h-4 text-green-500" />}
-              {status}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {status}
+              </div>
+              {progress && progress.total > 0 && (
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge variant="secondary">{progress.current}/{progress.total}</Badge>
+                  <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">{progress.created} neu</Badge>
+                  <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100">{progress.updated} updated</Badge>
+                </div>
+              )}
             </div>
           )}
 
