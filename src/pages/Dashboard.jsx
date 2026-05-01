@@ -91,6 +91,13 @@ export default function Dashboard() {
     return 0;
   });
 
+  const handleSelectNode = (nodeNum) => {
+    setSelectedNodeNum(nodeNum);
+    requestAnimationFrame(() => {
+      document.getElementById(`node-card-desktop-${nodeNum}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
       <ConnectionBar />
@@ -99,7 +106,7 @@ export default function Dashboard() {
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
       ) : (
         <>
-          <ManualSavePanel autoSaveStatus={autoSaveStatus} autoSaveEnabled={autoSaveEnabled} onAutoSaveEnabled={() => setAutoSaveEnabled(true)} onSelectNode={setSelectedNodeNum} />
+          <ManualSavePanel autoSaveStatus={autoSaveStatus} autoSaveEnabled={autoSaveEnabled} onAutoSaveEnabled={() => setAutoSaveEnabled(true)} onSelectNode={handleSelectNode} />
           <FirstPacketProgress visible={packetLog.length === 0} />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
@@ -113,7 +120,7 @@ export default function Dashboard() {
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />Detail</TabsTrigger>
                 </TabsList>
                 <TabsContent value="map" className="flex-1 p-4 overflow-hidden">
-                  <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                  <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={handleSelectNode} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
                   <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
@@ -124,7 +131,7 @@ export default function Dashboard() {
                         node={node}
                         isMyNode={node.num === myNodeNum}
                         selected={node.num === selectedNodeNum}
-                        onClick={() => setSelectedNodeNum(node.num)}
+                        onClick={() => handleSelectNode(node.num)}
                       />
                     ))}
                     {sortedNodes.length === 0 && (
@@ -151,13 +158,14 @@ export default function Dashboard() {
                     <div className="flex-1 overflow-y-auto min-h-0">
                       <div className="p-3 space-y-2">
                         {sortedNodes.map(node => (
-                          <NodeCard
-                            key={node.num}
-                            node={node}
-                            isMyNode={node.num === myNodeNum}
-                            selected={node.num === selectedNodeNum}
-                            onClick={() => setSelectedNodeNum(node.num)}
-                          />
+                          <div key={node.num} id={`node-card-desktop-${node.num}`}>
+                            <NodeCard
+                              node={node}
+                              isMyNode={node.num === myNodeNum}
+                              selected={node.num === selectedNodeNum}
+                              onClick={() => handleSelectNode(node.num)}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -175,7 +183,7 @@ export default function Dashboard() {
                           nodes={nodes}
                           myNodeNum={myNodeNum}
                           selectedNodeNum={selectedNodeNum}
-                          onSelectNode={setSelectedNodeNum}
+                          onSelectNode={handleSelectNode}
                         />
                       </div>
                     </Panel>
@@ -196,7 +204,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} messagesOnly={filters.messagesOnly} />
+                          <ReceivedPacketsTable onSelectNode={handleSelectNode} messagesOnly={filters.messagesOnly} />
                         </div>
                       </div>
                     </Panel>
