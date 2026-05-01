@@ -45,7 +45,9 @@ async function flushNodes() {
         num: data.num,
       });
       if (existing.length > 0) {
-        await base44.entities.MeshNode.update(existing[0].id, data);
+        const latest = newestRecord(existing);
+        await base44.entities.MeshNode.update(latest.id, data);
+        if (existing.length > 1) await deleteDuplicateRecords(base44.entities.MeshNode, existing, latest.id);
         updatedNodes.push(data);
       } else {
         await base44.entities.MeshNode.create(data);
@@ -74,6 +76,17 @@ function normalizeBoolean(value) {
   if (value === 1 || value === '1' || value === 'true') return true;
   if (value === 0 || value === '0' || value === 'false') return false;
   return null;
+}
+
+function newestRecord(records) {
+  return [...records].sort((a, b) => String(b.updated_date || '').localeCompare(String(a.updated_date || '')))[0];
+}
+
+async function deleteDuplicateRecords(entity, records, keepId) {
+  const duplicates = records.filter(record => record.id !== keepId);
+  for (const duplicate of duplicates) {
+    await entity.delete(duplicate.id);
+  }
 }
 
 export function createPersistFn(getMyNodeNum, getMyNode, onAutoSave) {
@@ -258,7 +271,17 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
     base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 1000),
     base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 1000),
   ]);
-  const existingByNum = new Map(existingNodes.map(node => [node.num, node]));
+  const existingByNum = new Map();
+  const existingGroups = new Map();
+  for (const node of existingNodes) {
+    if (!existingGroups.has(node.num)) existingGroups.set(node.num, []);
+    existingGroups.get(node.num).push(node);
+  }
+  for (const [num, records] of existingGroups.entries()) {
+    const latest = newestRecord(records);
+    existingByNum.set(num, latest);
+    if (records.length > 1) await deleteDuplicateRecords(base44.entities.MeshNode, records, latest.id);
+  }
   const existingPacketKeys = new Set(existingPackets.map(packet => `${packet.seq}:${packet.time}:${packet.type}`));
   const packetRows = allPacketRows.filter(packet => !existingPacketKeys.has(`${packet.seq}:${packet.time}:${packet.type}`));
 

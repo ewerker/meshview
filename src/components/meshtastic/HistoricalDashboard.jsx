@@ -8,6 +8,7 @@ import NodeMap from '@/components/meshtastic/NodeMap.jsx';
 import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
+import MessageInput from '@/components/meshtastic/MessageInput.jsx';
 import DeviceSelector from '@/components/meshtastic/DeviceSelector.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
@@ -31,6 +32,7 @@ export default function HistoricalDashboard() {
   const myNodeNum = effectiveDevice;
 
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
+  const [replyNodeNum, setReplyNodeNum] = useState(null);
   const [search, setSearch] = useLocalStorage('history.search', '');
   const [sort, setSort] = useLocalStorage('history.sort', 'myFirst');
   const [filters, setFilters] = useLocalStorage('history.filters', {
@@ -170,7 +172,8 @@ export default function HistoricalDashboard() {
                           )}
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} messagesOnly={filters.messagesOnly} packets={packets} />
+                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} onReplyToNode={setReplyNodeNum} messagesOnly={filters.messagesOnly} packets={packets} />
+                          {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
                         </div>
                       </div>
                     </Panel>
