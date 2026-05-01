@@ -121,10 +121,25 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
     })
     : baseVisiblePackets;
 
+  const searchPlaceholder = messagesOnly ? 'Nachrichten durchsuchen…' : 'Pakete durchsuchen…';
+
   if (visiblePackets.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
-        {messagesOnly ? t('noMessagesReceived') : t('noPacketsReceived')}
+      <div className="space-y-2">
+        <div className="px-2 pt-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <Input
+              value={packetSearch}
+              onChange={(e) => setPacketSearch(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="h-8 pl-8 text-xs bg-white dark:bg-slate-950"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
+          {messagesOnly ? t('noMessagesReceived') : t('noPacketsReceived')}
+        </div>
       </div>
     );
   }
@@ -137,7 +152,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
           <Input
             value={packetSearch}
             onChange={(e) => setPacketSearch(e.target.value)}
-            placeholder="Pakete durchsuchen…"
+            placeholder={searchPlaceholder}
             className="h-8 pl-8 text-xs bg-white dark:bg-slate-950"
           />
         </div>
