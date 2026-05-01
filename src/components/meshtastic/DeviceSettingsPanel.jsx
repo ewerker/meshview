@@ -45,6 +45,11 @@ function formatValue(value) {
   return String(value);
 }
 
+function formatFieldValue(key, value) {
+  if (/password|psk|privateKey|adminKey/i.test(key) && value && value !== 'vorhanden') return '••••••••';
+  return formatValue(value);
+}
+
 function getDisplayValues(config) {
   if (config.section?.startsWith('Channel')) {
     const roleNames = ['Deaktiviert', 'Primär', 'Sekundär'];
@@ -94,7 +99,7 @@ function ConfigCard({ config }) {
           {entries.map(([key, value]) => (
             <div key={key} className="flex justify-between gap-3 text-xs">
               <span className="text-blue-700 dark:text-blue-300">{FIELD_LABELS[key] || key}</span>
-              <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all">{formatValue(value)}</span>
+              <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all">{formatFieldValue(key, value)}</span>
             </div>
           ))}
         </div>
