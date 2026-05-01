@@ -49,7 +49,7 @@ class MeshStore {
     if (parsed.type === 'packet' && parsed.packet) {
       parsed.packet.channelHash = parsed.packet.channel || 0;
       parsed.packet.channelInfo = resolvePacketChannel(this.deviceConfigs, parsed.packet.channelHash);
-      parsed.packet.channel = parsed.packet.channelInfo.index ?? parsed.packet.channelHash;
+      parsed.packet.channel = parsed.packet.channelInfo.index;
     }
 
     if (parsed.type === 'packet' && parsed.packet?.encrypted && !parsed.packet.decoded) {
