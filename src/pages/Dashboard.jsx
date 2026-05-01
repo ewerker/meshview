@@ -121,7 +121,7 @@ export default function Dashboard() {
                   <TabsTrigger value="nodes" className="flex-1 gap-1"><List className="w-4 h-4" />{t('nodes')}</TabsTrigger>
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />{t('detail')}</TabsTrigger>
                 </TabsList>
-                <TabsContent value="map" className="flex-1 p-4 overflow-hidden">
+                <TabsContent value="map" className="flex-1 min-h-[55vh] p-4 overflow-hidden">
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={handleSelectNode} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
