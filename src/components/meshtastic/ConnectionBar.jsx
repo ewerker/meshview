@@ -28,7 +28,7 @@ export default function ConnectionBar() {
       <div className="flex items-center gap-3">
         <Radio className="w-5 h-5 text-green-400" />
         <span className="font-bold text-lg tracking-wide">Meshtastic Dashboard</span>
-        <span className="text-slate-500 text-xs">v1.0.0</span>
+        <span className="text-slate-500 text-xs">v1.1.0</span>
       </div>
 
       <div className="flex items-center gap-3">
