@@ -84,6 +84,7 @@ function parseMeshPacket(bytes) {
   const packet = {
     from: fields[1] || 0,
     to: fields[2] || 0,
+    channel: fields[3] || 0,
     id: fields[6] || 0,
     rxTime: fields[9] || 0,
     rxSnr: fields[13] ? int32ToFloat(fields[13]) : 0,
@@ -91,7 +92,7 @@ function parseMeshPacket(bytes) {
     rxRssi: signedInt(fields[14] || 0),
     viaMqtt: fields[15] || false,
     decoded: null,
-    encrypted: !!fields[5],
+    encrypted: fields[5] || null,
   };
 
   if (fields[4]) {
@@ -101,7 +102,7 @@ function parseMeshPacket(bytes) {
   return packet;
 }
 
-function parseData(bytes) {
+export function parseData(bytes) {
   const fields = parseMessage(bytes);
   const portnum = fields[1] || 0;
   const payload = fields[2] || new Uint8Array(0);

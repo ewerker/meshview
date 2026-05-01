@@ -30,7 +30,7 @@ export default function Dashboard() {
   const { isAuthenticated } = useAuth();
   const { t } = useI18n();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
-  const [replyNodeNum, setReplyNodeNum] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [dataTransferBusy, setDataTransferBusy] = useState(false);
   const autoSaveStatus = useMeshPersistence({ enabled: autoSaveEnabled && connected && isAuthenticated && !dataTransferBusy, myNodeNum, nodes, packetLog });
@@ -227,9 +227,9 @@ export default function Dashboard() {
                             </button>
                           )}
                         </div>
-                        {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
+                        {replyTarget && <MessageInput nodes={nodes} selectedNodeNum={replyTarget.nodeNum} selectedChannel={replyTarget.channel} />}
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable onSelectNode={handleSelectNode} onReplyToNode={setReplyNodeNum} messagesOnly={filters.messagesOnly} />
+                          <ReceivedPacketsTable onSelectNode={handleSelectNode} onReplyToNode={setReplyTarget} messagesOnly={filters.messagesOnly} />
                         </div>
                       </div>
                     </Panel>

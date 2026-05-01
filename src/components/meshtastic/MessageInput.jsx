@@ -5,14 +5,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Send } from 'lucide-react';
 import { meshStore } from '@/lib/meshtastic/meshStore.js';
 
-export default function MessageInput({ nodes, selectedNodeNum }) {
+export default function MessageInput({ nodes, selectedNodeNum, selectedChannel = 0 }) {
   const [text, setText] = useState('');
   const [destination, setDestination] = useState('broadcast');
+  const [channel, setChannel] = useState(String(selectedChannel ?? 0));
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (selectedNodeNum) setDestination(String(selectedNodeNum));
   }, [selectedNodeNum]);
+
+  useEffect(() => {
+    setChannel(String(selectedChannel ?? 0));
+  }, [selectedChannel]);
 
   const handleSend = async () => {
     const msg = text.trim();
@@ -21,7 +26,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
     const destNum = destination === 'broadcast' ? 0xffffffff : parseInt(destination);
     setSending(true);
     try {
-      await meshStore.serial.sendTextMessage(msg, destNum);
+      await meshStore.serial.sendTextMessage(msg, destNum, parseInt(channel, 10) || 0);
       setText('');
     } catch (e) {
       alert('Fehler beim Senden: ' + e.message);
@@ -38,6 +43,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
 
   return (
     <div className="border-y bg-white dark:bg-slate-950 p-3 flex flex-col gap-2 shrink-0 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-2">
       <Select value={destination} onValueChange={setDestination}>
         <SelectTrigger className="h-8 text-xs">
           <SelectValue />
@@ -54,6 +60,17 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
           })}
         </SelectContent>
       </Select>
+      <Select value={channel} onValueChange={setChannel}>
+        <SelectTrigger className="h-8 text-xs">
+          <SelectValue placeholder="Channel" />
+        </SelectTrigger>
+        <SelectContent>
+          {[0, 1, 2, 3, 4, 5, 6, 7].map(index => (
+            <SelectItem key={index} value={String(index)}>Ch {index}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      </div>
       <div className="flex gap-2">
         <Input
           className="flex-1 h-8 text-sm"

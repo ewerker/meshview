@@ -108,6 +108,7 @@ export function useHistoricalData(myNodeNum, enabled) {
         from: r.from_num,
         to: r.to_num,
         raw: r.raw,
+        channel: r.channel ?? r.raw?.packet?.channel ?? 0,
       }));
       setPackets(mappedPackets);
 
@@ -118,6 +119,7 @@ export function useHistoricalData(myNodeNum, enabled) {
           from: r.from_num,
           to: r.to_num,
           text: r.text,
+          channel: r.channel ?? r.raw?.packet?.channel ?? 0,
           time: new Date(r.time),
           rxSnr: r.rx_snr,
           rxRssi: r.rx_rssi,

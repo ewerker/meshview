@@ -1,7 +1,8 @@
 // Central state store for Meshtastic data
 import { base44 } from '@/api/base44Client';
 import { MeshtasticSerial } from './serialConnection.js';
-import { parseFromRadio } from './protobufParser.js';
+import { parseFromRadio, parseData } from './protobufParser.js';
+import { decryptMeshtasticPayload, getChannelPsk } from './encryption.js';
 
 class MeshStore {
   constructor() {
@@ -32,7 +33,7 @@ class MeshStore {
     };
   }
 
-  handlePacket(rawBytes) {
+  async handlePacket(rawBytes) {
     // Show loading indicator while actively receiving packets
     this.isLoading = true;
     
@@ -44,6 +45,19 @@ class MeshStore {
     }, 5000);
 
     const parsed = parseFromRadio(rawBytes);
+
+    if (parsed.type === 'packet' && parsed.packet?.encrypted && !parsed.packet.decoded) {
+      const psk = getChannelPsk(this.deviceConfigs, parsed.packet.channel || 0);
+      try {
+        const decrypted = await decryptMeshtasticPayload(parsed.packet.encrypted, psk, parsed.packet.from, parsed.packet.id);
+        if (decrypted) {
+          parsed.packet.decoded = parseData(decrypted);
+          parsed.packet.decrypted = true;
+        }
+      } catch (e) {
+        parsed.packet.decryptError = e.message;
+      }
+    }
 
     // Log all packets - extract from/to based on type
     const logEntry = {
@@ -58,6 +72,7 @@ class MeshStore {
     if (parsed.type === 'packet' && parsed.packet) {
       logEntry.from = parsed.packet.from;
       logEntry.to = parsed.packet.to;
+      logEntry.channel = parsed.packet.channel || 0;
     } else if (parsed.type === 'nodeInfo' && parsed.nodeInfo) {
       logEntry.from = parsed.nodeInfo.num;
     } else if (parsed.type === 'myInfo' && parsed.myInfo) {
@@ -132,6 +147,7 @@ class MeshStore {
         from: fromNum,
         to: packet.to,
         text: decoded.text,
+        channel: packet.channel || 0,
         time: packet.rxTime ? new Date(packet.rxTime * 1000) : new Date(),
         rxSnr: packet.rxSnr,
         rxRssi: packet.rxRssi,

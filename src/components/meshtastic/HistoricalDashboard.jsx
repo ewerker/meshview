@@ -32,7 +32,7 @@ export default function HistoricalDashboard() {
   const myNodeNum = effectiveDevice;
 
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
-  const [replyNodeNum, setReplyNodeNum] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null);
   const [search, setSearch] = useLocalStorage('history.search', '');
   const [sort, setSort] = useLocalStorage('history.sort', 'myFirst');
   const [filters, setFilters] = useLocalStorage('history.filters', {
@@ -171,9 +171,9 @@ export default function HistoricalDashboard() {
                             </button>
                           )}
                         </div>
-                        {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
+                        {replyTarget && <MessageInput nodes={nodes} selectedNodeNum={replyTarget.nodeNum} selectedChannel={replyTarget.channel} />}
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} onReplyToNode={setReplyNodeNum} messagesOnly={filters.messagesOnly} packets={packets} />
+                          <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} onReplyToNode={setReplyTarget} messagesOnly={filters.messagesOnly} packets={packets} />
                         </div>
                       </div>
                     </Panel>

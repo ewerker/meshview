@@ -40,6 +40,10 @@ function getPacketIcon(packet) {
   return <Radio className="w-3 h-3 text-slate-400" />;
 }
 
+function getPacketChannel(packet) {
+  return packet.channel ?? packet.raw?.packet?.channel ?? '-';
+}
+
 function getPacketLabel(packet) {
   const decoded = getDecoded(packet);
   
@@ -167,6 +171,7 @@ export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, mess
             <th className="px-3 py-2 text-left font-semibold">{t('packetFrom')}</th>
             <th className="px-3 py-2 text-left font-semibold">{t('packetType')}</th>
             <th className="px-3 py-2 text-left font-semibold">{t('packetDetails')}</th>
+            <th className="px-3 py-2 text-left font-semibold">Channel</th>
             <th className="px-3 py-2 text-left font-semibold">{t('packetTime')}</th>
           </tr>
         </thead>
@@ -214,7 +219,7 @@ export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, mess
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onReplyToNode(packet.from);
+                          onReplyToNode({ nodeNum: packet.from, channel: getPacketChannel(packet) });
                         }}
                         className="shrink-0 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
                       >
@@ -223,13 +228,16 @@ export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, mess
                     )}
                   </div>
                 </td>
+                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
+                  Ch {getPacketChannel(packet)}
+                </td>
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                   {formatTime(packet.time)}
                 </td>
               </tr>,
               isExpanded && (
                 <tr key={`${packet.seq}-details`}>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={6} className="p-0">
                     <PacketRowDetails packet={packet} />
                   </td>
                 </tr>
