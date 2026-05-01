@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Radio, Map, MessageSquare, Activity, Wifi, Thermometer, Shield, Cpu, Filter, Moon } from 'lucide-react';
+import { ChevronLeft, Radio, Map, MessageSquare, Activity, Wifi, Thermometer, Shield, Cpu, Filter, Moon, Database } from 'lucide-react';
 
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
 
 const features = [
   { icon: Radio, color: 'text-blue-600 bg-blue-50', title: 'Node-Übersicht', desc: 'Alle Nodes im Mesh mit Name, ID, Hardware-Modell, Hops und Verbindungsstatus auf einen Blick.' },
@@ -12,7 +12,8 @@ const features = [
   { icon: Cpu, color: 'text-indigo-600 bg-indigo-50', title: 'Paket-Inspektor', desc: 'Live-Tabelle aller empfangenen Pakete mit Typ, Sender, Details und ausklappbarer Hex-/JSON-Ansicht.' },
   { icon: Filter, color: 'text-amber-600 bg-amber-50', title: 'Filter & Sortierung', desc: 'Nodes filtern nach Aktivität, GPS, Akku, Telemetrie, Entfernung – und sortieren nach SNR, Distanz, Akku u. a.' },
   { icon: Moon, color: 'text-slate-600 bg-slate-100', title: 'Dark Mode & Layout', desc: 'Helles und dunkles Design, frei verschiebbare Panels für individuelle Arbeitsbereiche.' },
-  { icon: Shield, color: 'text-yellow-600 bg-yellow-50', title: 'Datenschutz', desc: 'Alle Daten bleiben lokal. Kein Server, keine Cloud – nur dein Browser und dein Gerät.' },
+  { icon: Database, color: 'text-purple-600 bg-purple-50', title: 'Historischer Verlauf (optional)', desc: 'Mit Anmeldung werden empfangene Daten gespeichert und sind später pro Gerät auch ohne USB-Verbindung abrufbar.' },
+  { icon: Shield, color: 'text-yellow-600 bg-yellow-50', title: 'Datenschutz', desc: 'Ohne Anmeldung bleiben alle Daten ausschließlich lokal im Browser. Gespeicherte Daten sind privat und nur für dich sichtbar.' },
 ];
 
 export default function About() {

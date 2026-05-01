@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Radio, Usb, List, Map, Wifi, Activity, Cpu, Filter, AlertTriangle, Moon } from 'lucide-react';
+import { ChevronLeft, Radio, Usb, List, Map, Wifi, Activity, Cpu, Filter, AlertTriangle, Moon, Database } from 'lucide-react';
 
 function Section({ icon: Icon, color, title, children }) {
   return (
@@ -97,7 +97,18 @@ export default function Help() {
           </ul>
         </Section>
 
-        <Section icon={Moon} color="bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200" title="7. Dark Mode & Layout">
+        <Section icon={Database} color="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300" title="7. Anmeldung & historischer Verlauf">
+          <p>Optional kannst du dich anmelden (Button oben rechts oder auf der Startseite). Vorteile:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li>Empfangene <strong>Pakete und Node-Zustände werden gespeichert</strong>, solange ein Gerät verbunden ist.</li>
+            <li>Auch <strong>ohne USB-Verbindung</strong> siehst du dein Dashboard – mit den letzten gespeicherten Daten.</li>
+            <li>Über die <strong>Geräteauswahl</strong> oben kannst du zwischen mehreren eigenen Meshtastic-Geräten umschalten.</li>
+            <li>Daten werden <strong>pro Benutzer privat</strong> gespeichert – andere sehen sie nicht.</li>
+          </ul>
+          <p className="text-xs text-slate-400">Ohne Anmeldung bleibt alles wie gewohnt rein lokal im Browser, es wird nichts gespeichert.</p>
+        </Section>
+
+        <Section icon={Moon} color="bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200" title="8. Dark Mode & Layout">
           <p>Über das Mond-/Sonnen-Symbol im Header wechselst du zwischen hellem und dunklem Design.</p>
           <p>Die Spalten und Bereiche im Desktop-Layout sind frei <strong>verschiebbar</strong> – einfach die grauen Trennleisten ziehen, um die Größen anzupassen.</p>
           <p>Auf mobilen Geräten erscheinen Karte, Nodes und Details als Tabs.</p>
