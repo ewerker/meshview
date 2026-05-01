@@ -136,7 +136,8 @@ async function flushNodes() {
     // Bulk-create new nodes, then update local cache with returned ids
     if (toCreate.length > 0) {
       const names = toCreate.slice(0, 3).map(c => c.data.long_name || c.data.short_name || ('!' + c.data.num?.toString(16))).join(', ');
-      setActivity(`🆕 ${toCreate.length} neue Node(s): ${names}${toCreate.length > 3 ? '…' : ''}`);
+      const updatesStr = toUpdate.length > 0 ? ` (+${toUpdate.length} Updates)` : '';
+      setActivity(`🆕 ${toCreate.length} neue Node(s)${updatesStr}: ${names}${toCreate.length > 3 ? '…' : ''}`);
       
       // Batch bulkCreate to prevent "Payload Too Large" errors (Nodes are heavy objects)
       for (let i = 0; i < toCreate.length; i += 20) {

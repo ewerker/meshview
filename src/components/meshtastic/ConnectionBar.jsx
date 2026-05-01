@@ -50,8 +50,9 @@ export default function ConnectionBar() {
     <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-3">
         <Radio className="w-5 h-5 text-green-400" />
-        <span className="font-bold text-lg tracking-wide">Meshtastic Dashboard</span>
-        <span className="text-slate-500 text-xs">v1.1.0</span>
+        <span className="font-bold text-lg tracking-wide hidden sm:inline">Meshtastic Dashboard</span>
+        <span className="text-slate-500 text-xs hidden sm:inline">v1.1.0</span>
+        <PersistenceProgress active={isAuthenticated} />
       </div>
 
       <div className="flex items-center gap-3">
@@ -72,12 +73,12 @@ export default function ConnectionBar() {
           {connected ? (
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-sm">Verbunden</span>
+              <span className="text-green-400 text-sm hidden sm:inline">Verbunden</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-red-400 text-sm">Getrennt</span>
+              <span className="text-red-400 text-sm hidden sm:inline">Getrennt</span>
             </div>
           )}
         </div>
@@ -96,8 +97,6 @@ export default function ConnectionBar() {
         <Button size="sm" variant="ghost" onClick={toggleDark} className="text-slate-300 hover:text-white px-2">
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
-
-        <PersistenceProgress active={isAuthenticated} />
 
         {isAuthenticated ? (
           <Button size="sm" variant="ghost" onClick={handleLogout} className="text-slate-300 hover:text-white gap-1.5" title={user?.email}>
