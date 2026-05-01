@@ -162,7 +162,7 @@ function normalizeNodeForSave(node, myNodeNum, myNodeId) {
     my_node_num: myNodeNum,
     my_node_id: myNodeId,
     num: node.num,
-    node_id: node.user?.id || nodeIdString(node.num),
+    node_id: nodeIdString(node.num),
     long_name: node.user?.longName || null,
     short_name: node.user?.shortName || null,
     hw_model: node.user?.hwModel ?? null,

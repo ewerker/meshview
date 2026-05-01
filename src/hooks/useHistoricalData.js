@@ -73,7 +73,7 @@ export function useHistoricalData(myNodeNum, enabled) {
       // Map MeshNode rows -> shape used by NodeCard / NodeMap / NodeDetail
       const mapped = nodeRows.map(r => ({
         num: r.num,
-        user: r.user || { longName: r.long_name, shortName: r.short_name, id: r.node_id, hwModel: r.hw_model, isLicensed: r.is_licensed },
+        user: { ...(r.user || {}), longName: r.user?.longName || r.long_name, shortName: r.user?.shortName || r.short_name, id: r.node_id, hwModel: r.user?.hwModel ?? r.hw_model, isLicensed: r.user?.isLicensed ?? r.is_licensed },
         position: r.position,
         deviceMetrics: r.device_metrics,
         environmentMetrics: r.environment_metrics,

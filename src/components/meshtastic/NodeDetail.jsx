@@ -52,7 +52,7 @@ export default function NodeDetail({ node, packetLog: packetLogProp, myNode: myN
   const dm = node.deviceMetrics;
   const em = node.environmentMetrics;
 
-  const nodeId = user?.id || `!${node.num?.toString(16).padStart(8, '0')}`;
+  const nodeId = `!${node.num?.toString(16).padStart(8, '0')}`;
   const longName = user?.longName || nodeId;
   const shortName = user?.shortName || nodeId.slice(-4);
 
