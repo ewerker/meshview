@@ -86,7 +86,7 @@ class MeshStore {
       this.handleDecodedPacket(parsed.packet);
     } else if (parsed.type === 'metadata') {
       this.metadata = parsed.metadata;
-    } else if (parsed.type === 'config' || parsed.type === 'moduleConfig') {
+    } else if (parsed.type === 'config' || parsed.type === 'moduleConfig' || parsed.type === 'channel') {
       this.captureDeviceConfig(parsed);
     } else if (parsed.type === 'configComplete') {
       this.currentConfigId = parsed.configCompleteId;
@@ -263,6 +263,7 @@ function buildDeviceConfigEntry(parsed, myNodeNum, configId) {
   const configMap = {
     config: { section: parsed.config?.type || 'Config', payload: parsed.config },
     moduleConfig: { section: parsed.moduleConfig?.type || 'ModuleConfig', payload: parsed.moduleConfig },
+    channel: { section: `Channel ${parsed.channel?.index ?? 0}`, payload: parsed.channel },
   };
 
   const data = configMap[parsed.type];

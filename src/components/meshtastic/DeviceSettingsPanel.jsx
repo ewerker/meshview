@@ -1,17 +1,19 @@
 import { useMemo } from 'react';
-import { Settings, Wifi, Bluetooth, Cloud, RefreshCw, CheckCircle2, Database, ChevronDown, Cpu, MapPin, Battery, Monitor, Radio, Shield, Cable, Boxes, Activity, Users } from 'lucide-react';
+import { Settings, Wifi, Bluetooth, Cloud, RefreshCw, CheckCircle2, Database, ChevronDown, Cpu, MapPin, Battery, Monitor, Radio, Shield, Cable, Boxes, Activity, Users, Hash, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 
 const SECTION_META = {
+  User: { title: 'User / Node-Name', icon: User },
+  LoRa: { title: 'LoRa Einstellungen', icon: Radio },
+  Channel: { title: 'Kanal', icon: Hash },
   Device: { title: 'Gerät', icon: Cpu },
   Position: { title: 'Position / GPS', icon: MapPin },
   Power: { title: 'Stromsparmodus', icon: Battery },
   Network: { title: 'WLAN / Netzwerk', icon: Wifi },
   Display: { title: 'Display', icon: Monitor },
-  LoRa: { title: 'LoRa', icon: Radio },
   Bluetooth: { title: 'Bluetooth', icon: Bluetooth },
   Security: { title: 'Sicherheit', icon: Shield },
   MQTT: { title: 'MQTT', icon: Cloud },
@@ -24,6 +26,7 @@ const SECTION_META = {
 };
 
 const FIELD_LABELS = {
+  longName: 'Langname', shortName: 'Kurzname', nodeId: 'Node-ID', hardware: 'Hardware', licensed: 'Lizenziert', channelName: 'Name', channelRole: 'Rolle', channelIndex: 'Index', psk: 'PSK', uplinkEnabled: 'Uplink', downlinkEnabled: 'Downlink',
   enabled: 'Aktiv', wifiEnabled: 'WLAN', wifiSsid: 'SSID', wifiPsk: 'WLAN Passwort', ntpServer: 'NTP', ethernetEnabled: 'Ethernet', rsyslogServer: 'Syslog',
   address: 'Server', username: 'Benutzer', password: 'Passwort', rootTopic: 'Root Topic', encryptionEnabled: 'Verschlüsselung', jsonEnabled: 'JSON', tlsEnabled: 'TLS', proxyToClientEnabled: 'Proxy zum Client',
   mode: 'Modus', fixedPin: 'PIN', role: 'Rolle', serialEnabled: 'Seriell aktiv', buttonGpio: 'Button GPIO', buzzerGpio: 'Buzzer GPIO', rebroadcastMode: 'Rebroadcast', nodeInfoBroadcastSecs: 'NodeInfo Intervall',
@@ -42,10 +45,27 @@ function formatValue(value) {
   return String(value);
 }
 
+function getDisplayValues(config) {
+  if (config.section?.startsWith('Channel')) {
+    const roleNames = ['Deaktiviert', 'Primär', 'Sekundär'];
+    return {
+      channelIndex: config.payload?.index,
+      channelName: config.payload?.settings?.name || 'Standard',
+      channelRole: roleNames[config.payload?.role] || config.payload?.role,
+      psk: config.payload?.settings?.psk ? 'vorhanden' : '',
+      uplinkEnabled: config.payload?.settings?.uplinkEnabled,
+      downlinkEnabled: config.payload?.settings?.downlinkEnabled,
+    };
+  }
+
+  return {};
+}
+
 function ConfigCard({ config }) {
-  const meta = SECTION_META[config.section] || { title: config.section, icon: Settings };
+  const sectionKey = config.section?.startsWith('Channel') ? 'Channel' : config.section;
+  const meta = SECTION_META[sectionKey] || { title: config.section, icon: Settings };
   const Icon = meta.icon;
-  const values = config.payload?.values || {};
+  const values = config.payload?.values || getDisplayValues(config);
   const entries = Object.entries(values).filter(([, value]) => value !== null && value !== undefined && value !== '');
 
   return (
@@ -75,13 +95,30 @@ function ConfigCard({ config }) {
 }
 
 export default function DeviceSettingsPanel() {
-  const { connected, deviceConfigs, configSaveStatus, requestDeviceConfig } = useMeshStore();
+  const { connected, deviceConfigs, configSaveStatus, requestDeviceConfig, myNode, myNodeNum, metadata } = useMeshStore();
   const [isOpen, setIsOpen] = useLocalStorage('deviceSettingsPanel.open', true);
 
   const sortedConfigs = useMemo(() => {
+    const userConfig = myNodeNum ? [{
+      category: 'local',
+      section: 'User',
+      payload: {
+        values: {
+          longName: myNode?.user?.longName,
+          shortName: myNode?.user?.shortName,
+          nodeId: myNode?.user?.id || `!${myNodeNum.toString(16).padStart(8, '0')}`,
+          hardware: myNode?.user?.hwModel ?? metadata?.hwModel,
+          licensed: myNode?.user?.isLicensed,
+        },
+      },
+    }] : [];
     const order = Object.keys(SECTION_META);
-    return [...deviceConfigs].sort((a, b) => order.indexOf(a.section) - order.indexOf(b.section));
-  }, [deviceConfigs]);
+    return [...userConfig, ...deviceConfigs].sort((a, b) => {
+      const aKey = a.section?.startsWith('Channel') ? 'Channel' : a.section;
+      const bKey = b.section?.startsWith('Channel') ? 'Channel' : b.section;
+      return order.indexOf(aKey) - order.indexOf(bKey);
+    });
+  }, [deviceConfigs, myNode, myNodeNum, metadata]);
 
   if (!connected) return null;
 
@@ -94,7 +131,7 @@ export default function DeviceSettingsPanel() {
           <div>
             <div className="font-semibold text-xs text-blue-900 dark:text-blue-100">Geräte-Einstellungen</div>
             <div className="text-[11px] text-blue-700 dark:text-blue-300 leading-tight">
-              {sortedConfigs.length} Bereiche ausgelesen · MQTT, WLAN/Netzwerk, Bluetooth und weitere Geräte-/Modul-Configs.
+              Wichtige Einstellungen: User/Node-Name, Kanäle und LoRa zuerst · weitere Bereiche darunter.
             </div>
           </div>
         </div>
