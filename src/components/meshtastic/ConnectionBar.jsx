@@ -27,14 +27,14 @@ export default function ConnectionBar() {
   };
 
   return (
-    <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-      <div className="flex items-center gap-3">
-        <Radio className="w-5 h-5 text-green-400" />
-        <span className="font-bold text-lg tracking-wide">{t('appName')}</span>
-        <span className="text-slate-500 text-xs">{t('version')}</span>
+    <div className="bg-slate-900 text-white px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <Radio className="w-5 h-5 text-green-400 shrink-0" />
+        <span className="font-bold text-lg tracking-wide truncate">{t('appName')}</span>
+        <span className="text-slate-500 text-xs shrink-0">{t('version')}</span>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3 flex-wrap justify-start sm:justify-end">
         {connected && (
           <>
             <Badge variant="outline" className="text-green-400 border-green-400">
