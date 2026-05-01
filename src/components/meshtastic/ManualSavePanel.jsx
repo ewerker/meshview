@@ -6,7 +6,7 @@ import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useAuth } from '@/lib/AuthContext';
 import { saveMeshSnapshot } from '@/lib/meshtastic/persistence.js';
 
-function NodeResultList({ title, nodes, tone }) {
+function NodeResultList({ title, nodes, tone, onSelectNode }) {
   if (!nodes?.length) return null;
   const toneClass = tone === 'new' ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300';
 
@@ -15,9 +15,11 @@ function NodeResultList({ title, nodes, tone }) {
       <div className={`text-xs font-semibold mb-1 ${toneClass}`}>{title} ({nodes.length})</div>
       <div className="flex flex-wrap gap-1.5">
         {nodes.slice(0, 20).map(node => (
-          <Badge key={`${title}-${node.num}`} variant="outline" className="text-[11px] font-mono">
-            {node.long_name || node.short_name || node.node_id || `#${node.num?.toString(16).toUpperCase()}`}
-          </Badge>
+          <button key={`${title}-${node.num}`} type="button" onClick={() => onSelectNode?.(node.num)}>
+            <Badge variant="outline" className="text-[11px] font-mono cursor-pointer hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950">
+              {node.long_name || node.short_name || node.node_id || `#${node.num?.toString(16).toUpperCase()}`}
+            </Badge>
+          </button>
         ))}
         {nodes.length > 20 && <Badge variant="secondary">+{nodes.length - 20} weitere</Badge>}
       </div>
@@ -25,7 +27,7 @@ function NodeResultList({ title, nodes, tone }) {
   );
 }
 
-export default function ManualSavePanel() {
+export default function ManualSavePanel({ autoSaveStatus, onSelectNode }) {
   const { isAuthenticated, navigateToLogin } = useAuth();
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
   const [saving, setSaving] = useState(false);
@@ -79,12 +81,15 @@ export default function ManualSavePanel() {
           <div>
             <div className="font-semibold text-xs text-slate-700 dark:text-slate-200">Sicherung</div>
             <div className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-              Speichert Nodes und empfangene Pakete manuell.
+              Speichert Nodes und empfangene Pakete automatisch und manuell.
             </div>
             <div className="flex flex-wrap gap-1.5 mt-1 text-[11px] text-slate-600 dark:text-slate-300">
               <Badge variant="secondary">{nodes.length} Nodes erkannt</Badge>
               <Badge variant="secondary">{packetLog.length} Pakete bereit</Badge>
               {myNodeNum && <Badge variant="outline">Gerät #{myNodeNum.toString(16).toUpperCase()}</Badge>}
+              {autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Auto-Speichern…</Badge>}
+              {autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">Auto gespeichert</Badge>}
+              {autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">Auto-Fehler</Badge>}
             </div>
           </div>
         </div>
@@ -134,8 +139,8 @@ export default function ManualSavePanel() {
                 <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Pakete übertragen</div><div className="font-bold text-lg">{result.totalPackets ? `${result.savedPackets}/${result.totalPackets}` : result.savedPackets}</div></div>
                 <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Gerät</div><div className="font-bold text-sm font-mono">#{myNodeNum?.toString(16).toUpperCase()}</div></div>
               </div>
-              <NodeResultList title="Neu gespeichert" nodes={result.createdNodes} tone="new" />
-              <NodeResultList title="Aktualisiert" nodes={result.updatedNodes} tone="updated" />
+              <NodeResultList title="Neu gespeichert" nodes={result.createdNodes} tone="new" onSelectNode={onSelectNode} />
+              <NodeResultList title="Aktualisiert" nodes={result.updatedNodes} tone="updated" onSelectNode={onSelectNode} />
             </div>
           )}
         </div>

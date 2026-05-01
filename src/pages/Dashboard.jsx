@@ -21,7 +21,7 @@ import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
-  useMeshPersistence();
+  const autoSaveStatus = useMeshPersistence();
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const { isAuthenticated } = useAuth();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
@@ -97,7 +97,7 @@ export default function Dashboard() {
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
       ) : (
         <>
-          <ManualSavePanel />
+          <ManualSavePanel autoSaveStatus={autoSaveStatus} onSelectNode={setSelectedNodeNum} />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 overflow-hidden">

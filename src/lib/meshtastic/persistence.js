@@ -13,6 +13,7 @@ let packetBuffer = [];
 let nodeBuffer = new Map(); // key: my_node_num + ':' + num -> latest payload
 let packetTimer = null;
 let nodeTimer = null;
+let autoSaveCallback = null;
 
 async function flushPackets() {
   packetTimer = null;
@@ -20,8 +21,11 @@ async function flushPackets() {
   const batch = packetBuffer;
   packetBuffer = [];
   try {
+    autoSaveCallback?.({ status: 'saving', packets: batch.length, createdNodes: [], updatedNodes: [] });
     await base44.entities.MeshPacket.bulkCreate(batch);
+    autoSaveCallback?.({ status: 'saved', packets: batch.length, createdNodes: [], updatedNodes: [] });
   } catch (e) {
+    autoSaveCallback?.({ status: 'error', message: 'Pakete konnten nicht automatisch gespeichert werden.' });
     console.warn('MeshPacket bulkCreate failed', e);
   }
 }
@@ -30,7 +34,10 @@ async function flushNodes() {
   nodeTimer = null;
   if (nodeBuffer.size === 0) return;
   const entries = Array.from(nodeBuffer.values());
+  const createdNodes = [];
+  const updatedNodes = [];
   nodeBuffer = new Map();
+  autoSaveCallback?.({ status: 'saving', packets: 0, createdNodes: [], updatedNodes: [] });
   for (const data of entries) {
     try {
       const existing = await base44.entities.MeshNode.filter({
@@ -39,13 +46,17 @@ async function flushNodes() {
       });
       if (existing.length > 0) {
         await base44.entities.MeshNode.update(existing[0].id, data);
+        updatedNodes.push(data);
       } else {
         await base44.entities.MeshNode.create(data);
+        createdNodes.push(data);
       }
     } catch (e) {
+      autoSaveCallback?.({ status: 'error', message: 'Nodes konnten nicht automatisch gespeichert werden.' });
       console.warn('MeshNode upsert failed', e);
     }
   }
+  autoSaveCallback?.({ status: 'saved', packets: 0, createdNodes, updatedNodes });
 }
 
 function scheduleFlush() {
@@ -65,7 +76,8 @@ function normalizeBoolean(value) {
   return null;
 }
 
-export function createPersistFn(getMyNodeNum, getMyNode) {
+export function createPersistFn(getMyNodeNum, getMyNode, onAutoSave) {
+  autoSaveCallback = onAutoSave;
   return function persist(logEntry, parsed) {
     const myNodeNum = getMyNodeNum();
     if (!myNodeNum) return; // wait until we know our own device
