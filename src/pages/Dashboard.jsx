@@ -22,7 +22,7 @@ import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
-import { Radio, Map, List } from 'lucide-react';
+import { Radio, Map, List, ChevronDown } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, packetLog, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
@@ -33,6 +33,7 @@ export default function Dashboard() {
   const autoSaveStatus = useMeshPersistence({ enabled: autoSaveEnabled && connected && isAuthenticated, myNodeNum, nodes, packetLog });
   const [search, setSearch] = useLocalStorage('dashboard.search', '');
   const [sort, setSort] = useLocalStorage('dashboard.sort', 'myFirst');
+  const [mainFrameOpen, setMainFrameOpen] = useLocalStorage('dashboard.mainFrame.open', true);
   const [filters, setFilters] = useLocalStorage('dashboard.filters', {
     active: false,
     direct: false,
@@ -116,7 +117,21 @@ export default function Dashboard() {
           <FirstPacketProgress visible={packetLog.length === 0} />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <button
+              type="button"
+              onClick={() => setMainFrameOpen(!mainFrameOpen)}
+              className="w-full border-b bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                <ChevronDown className={`w-4 h-4 transition-transform ${mainFrameOpen ? '' : '-rotate-90'}`} />
+                Netzwerk-Ansicht
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Nodes · Karte · Pakete · Details</span>
+            </button>
+
+            {mainFrameOpen && (
+              <div className="flex-1 min-h-0 overflow-hidden">
             {/* Mobile: Tabs layout */}
             <div className="h-full lg:hidden">
               <Tabs defaultValue="map" className="h-full flex flex-col">
@@ -234,6 +249,8 @@ export default function Dashboard() {
                 </Panel>
               </PanelGroup>
             </div>
+              </div>
+            )}
           </div>
         </>
       )}
