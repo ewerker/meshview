@@ -14,6 +14,7 @@ import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
 import DisconnectedHero from '@/components/meshtastic/DisconnectedHero.jsx';
 import HistoricalDashboard from '@/components/meshtastic/HistoricalDashboard.jsx';
+import StatusBanner from '@/components/meshtastic/StatusBanner.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
 import { useAuth } from '@/lib/AuthContext';
@@ -96,6 +97,7 @@ export default function Dashboard() {
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
       ) : (
         <>
+          <StatusBanner mode="online" />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 overflow-hidden">
