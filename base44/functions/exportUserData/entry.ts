@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ENTITY_NAMES = ['MeshNode', 'MeshPacket', 'MeshDeviceConfig'];
+const EXPORT_LIMIT = 10000;
 
 Deno.serve(async (req) => {
   try {
@@ -12,15 +13,19 @@ Deno.serve(async (req) => {
     }
 
     const data = {};
+    const counts = {};
 
     for (const entityName of ENTITY_NAMES) {
-      data[entityName] = await base44.asServiceRole.entities[entityName].filter({ created_by: user.email });
+      const records = await base44.entities[entityName].list('-created_date', EXPORT_LIMIT);
+      data[entityName] = records;
+      counts[entityName] = records.length;
     }
 
     return Response.json({
       exported_at: new Date().toISOString(),
       user_email: user.email,
       entities: ENTITY_NAMES,
+      counts,
       data,
     });
   } catch (error) {
