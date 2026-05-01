@@ -86,6 +86,8 @@ class MeshStore {
       this.handleDecodedPacket(parsed.packet);
     } else if (parsed.type === 'metadata') {
       this.metadata = parsed.metadata;
+    } else if (parsed.type === 'config' || parsed.type === 'moduleConfig') {
+      this.captureDeviceConfig(parsed);
     } else if (parsed.type === 'configComplete') {
       this.currentConfigId = parsed.configCompleteId;
     }
@@ -205,6 +207,13 @@ class MeshStore {
     await this.serial.connect();
   }
 
+  async requestDeviceConfig() {
+    if (!this.connected) return;
+    this.configSaveStatus = 'requesting';
+    this.notify();
+    await this.serial.sendWantConfig();
+  }
+
   async disconnect() {
     await this.serial.disconnect();
     this.nodes.clear();
@@ -254,12 +263,10 @@ function buildDeviceConfigEntry(parsed, myNodeNum, configId) {
   const configMap = {
     config: { section: parsed.config?.type || 'Config', payload: parsed.config },
     moduleConfig: { section: parsed.moduleConfig?.type || 'ModuleConfig', payload: parsed.moduleConfig },
-    channel: { section: `Channel ${parsed.channel?.index ?? 0}`, payload: parsed.channel },
-    metadata: { section: 'Metadata', payload: parsed.metadata },
   };
 
   const data = configMap[parsed.type];
-  if (!data) return null;
+  if (!data || !['Network', 'Bluetooth', 'MQTT'].includes(data.section)) return null;
 
   return {
     my_node_num: myNodeNum,

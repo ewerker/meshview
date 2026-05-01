@@ -286,7 +286,8 @@ function parseConfig(bytes) {
   // Config is a oneof - find which config type is present
   for (const [fieldNum, name] of Object.entries(CONFIG_NAMES)) {
     if (fields[fieldNum]) {
-      return { type: name, raw: fields[fieldNum] };
+      const rawFields = parseMessage(fields[fieldNum]);
+      return { type: name, raw: fields[fieldNum], fields: rawFields, values: parseConfigValues(name, rawFields) };
     }
   }
   return { type: 'Unknown' };
@@ -296,10 +297,66 @@ function parseModuleConfig(bytes) {
   const fields = parseMessage(bytes);
   for (const [fieldNum, name] of Object.entries(MODULE_CONFIG_NAMES)) {
     if (fields[fieldNum]) {
-      return { type: name, raw: fields[fieldNum] };
+      const rawFields = parseMessage(fields[fieldNum]);
+      return { type: name, raw: fields[fieldNum], fields: rawFields, values: parseModuleConfigValues(name, rawFields) };
     }
   }
   return { type: 'Unknown' };
+}
+
+function parseConfigValues(name, fields) {
+  if (name === 'Network') {
+    return {
+      wifiEnabled: boolValue(fields[1]),
+      wifiSsid: stringValue(fields[2]),
+      wifiPsk: fields[3] ? '••••••••' : '',
+      ntpServer: stringValue(fields[4]),
+      ethernetEnabled: boolValue(fields[5]),
+      rsyslogServer: stringValue(fields[8]),
+    };
+  }
+
+  if (name === 'Bluetooth') {
+    return {
+      enabled: boolValue(fields[1]),
+      mode: bluetoothModeName(fields[2]),
+      fixedPin: fields[3] || null,
+    };
+  }
+
+  return {};
+}
+
+function parseModuleConfigValues(name, fields) {
+  if (name === 'MQTT') {
+    return {
+      enabled: boolValue(fields[1]),
+      address: stringValue(fields[2]),
+      username: stringValue(fields[3]),
+      password: fields[4] ? '••••••••' : '',
+      encryptionEnabled: boolValue(fields[5]),
+      jsonEnabled: boolValue(fields[6]),
+      tlsEnabled: boolValue(fields[7]),
+      rootTopic: stringValue(fields[8]),
+      proxyToClientEnabled: boolValue(fields[9]),
+    };
+  }
+
+  return {};
+}
+
+function stringValue(value) {
+  return value instanceof Uint8Array ? new TextDecoder().decode(value) : '';
+}
+
+function boolValue(value) {
+  if (value === undefined || value === null) return null;
+  return value === true || value === 1;
+}
+
+function bluetoothModeName(value) {
+  const names = { 0: 'Festes PIN', 1: 'Zufälliger PIN', 2: 'Kein PIN' };
+  return names[value] || `Modus ${value ?? '?'}`;
 }
 
 function parseChannel(bytes) {

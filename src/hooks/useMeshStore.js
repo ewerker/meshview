@@ -22,6 +22,7 @@ export function useMeshStore() {
     isLoading: meshStore.isLoading,
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),
+    requestDeviceConfig: () => meshStore.requestDeviceConfig(),
     disconnect: () => meshStore.disconnect(),
   };
 }
