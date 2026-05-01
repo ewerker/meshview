@@ -12,6 +12,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
+import MessageInput from '@/components/meshtastic/MessageInput.jsx';
 import DisconnectedHero from '@/components/meshtastic/DisconnectedHero.jsx';
 import HistoricalDashboard from '@/components/meshtastic/HistoricalDashboard.jsx';
 import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const { isAuthenticated } = useAuth();
   const { t } = useI18n();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
+  const [replyNodeNum, setReplyNodeNum] = useState(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [dataTransferBusy, setDataTransferBusy] = useState(false);
   const autoSaveStatus = useMeshPersistence({ enabled: autoSaveEnabled && connected && isAuthenticated && !dataTransferBusy, myNodeNum, nodes, packetLog });
@@ -226,7 +228,8 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                          <ReceivedPacketsTable onSelectNode={handleSelectNode} messagesOnly={filters.messagesOnly} />
+                          <ReceivedPacketsTable onSelectNode={handleSelectNode} onReplyToNode={setReplyNodeNum} messagesOnly={filters.messagesOnly} />
+                          {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
                         </div>
                       </div>
                     </Panel>

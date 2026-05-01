@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,10 +10,9 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
   const [destination, setDestination] = useState('broadcast');
   const [sending, setSending] = useState(false);
 
-  // Pre-select the currently selected node if available
-  const destValue = selectedNodeNum && destination !== 'broadcast'
-    ? destination
-    : destination;
+  useEffect(() => {
+    if (selectedNodeNum) setDestination(String(selectedNodeNum));
+  }, [selectedNodeNum]);
 
   const handleSend = async () => {
     const msg = text.trim();
