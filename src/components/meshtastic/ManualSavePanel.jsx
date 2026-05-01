@@ -131,7 +131,7 @@ export default function ManualSavePanel() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Neue Nodes</div><div className="font-bold text-lg">{result.createdNodes.length}</div></div>
                 <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Aktualisiert</div><div className="font-bold text-lg">{result.updatedNodes.length}</div></div>
-                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Pakete übertragen</div><div className="font-bold text-lg">{result.savedPackets}</div></div>
+                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Pakete übertragen</div><div className="font-bold text-lg">{result.totalPackets ? `${result.savedPackets}/${result.totalPackets}` : result.savedPackets}</div></div>
                 <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Gerät</div><div className="font-bold text-sm font-mono">#{myNodeNum?.toString(16).toUpperCase()}</div></div>
               </div>
               <NodeResultList title="Neu gespeichert" nodes={result.createdNodes} tone="new" />

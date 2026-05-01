@@ -203,14 +203,18 @@ function wait(ms) {
 
 async function bulkCreateInBatches(entity, rows, onProgress, getProgressText) {
   let saved = 0;
+  const totalBatches = Math.ceil(rows.length / SAVE_BATCH_SIZE);
+
   for (let i = 0; i < rows.length; i += SAVE_BATCH_SIZE) {
     const batch = rows.slice(i, i + SAVE_BATCH_SIZE);
-    onProgress?.(getProgressText(saved, rows.length, batch.length));
+    const batchNumber = Math.floor(i / SAVE_BATCH_SIZE) + 1;
+    onProgress?.(getProgressText(saved, rows.length, batchNumber, totalBatches));
     await entity.bulkCreate(batch);
     saved += batch.length;
-    onProgress?.(getProgressText(saved, rows.length, 0));
-    if (i + SAVE_BATCH_SIZE < rows.length) await wait(SAVE_BATCH_PAUSE_MS);
+    onProgress?.(getProgressText(saved, rows.length, batchNumber, totalBatches));
+    if (batchNumber < totalBatches) await wait(SAVE_BATCH_PAUSE_MS);
   }
+
   return saved;
 }
 
@@ -221,7 +225,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
   const nodeRows = nodes
     .filter(node => typeof node.num === 'number')
     .map(node => normalizeNodeForSave(node, myNodeNum, myNodeId));
-  const packetRows = packetLog.map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
+  const packetRows = [...packetLog].map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
 
   const createdNodes = [];
   const updatedNodes = [];
@@ -257,8 +261,8 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
       base44.entities.MeshNode,
       createdNodes,
       onProgress,
-      (saved, total) => ({
-        text: `Speichere neue Nodes ${saved}/${total}…`,
+      (saved, total, batchNumber, totalBatches) => ({
+        text: `Speichere neue Nodes Block ${batchNumber}/${totalBatches} · ${saved}/${total}…`,
         current: nodeRows.length,
         total: nodeRows.length,
         created: saved,
@@ -272,8 +276,8 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
         base44.entities.MeshPacket,
         packetRows,
         onProgress,
-        (saved, total) => ({
-          text: `Übertrage Pakete ${saved}/${total}…`,
+        (saved, total, batchNumber, totalBatches) => ({
+          text: `Übertrage Pakete Block ${batchNumber}/${totalBatches} · ${saved}/${total}…`,
           current: nodeRows.length,
           total: nodeRows.length,
           created: savedNodeCreates,
@@ -286,5 +290,6 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
     createdNodes,
     updatedNodes,
     savedPackets,
+    totalPackets: packetRows.length,
   };
 }
