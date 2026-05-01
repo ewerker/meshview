@@ -95,8 +95,8 @@ export default function Dashboard() {
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
       ) : (
         <>
-          <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
           <ManualSavePanel />
+          <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 overflow-hidden">
             {/* Mobile: Tabs layout */}
