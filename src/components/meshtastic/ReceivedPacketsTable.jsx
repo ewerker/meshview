@@ -94,6 +94,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
   const { t } = useI18n();
   const store = useMeshStore();
   const packetLog = packets ?? store.packetLog;
+  const nodes = store.nodes || [];
   const [expandedSeq, setExpandedSeq] = useState(null);
 
   const visiblePackets = messagesOnly
@@ -125,6 +126,11 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
             const labelParts = getPacketLabel(packet).split(':');
             const typ = labelParts[0];
             const details = labelParts.slice(1).join(':').trim() || '-';
+            const node = nodes.find(item => item.num === packet.from);
+            const nodeId = packet.from?.toString(16).toUpperCase();
+            const nodeName = node?.user?.longName
+              ? `${node.user.longName}${node.user.shortName ? ` (${node.user.shortName})` : ''}`
+              : nodeId || '-';
             const isExpanded = expandedSeq === packet.seq;
             const toggle = () => setExpandedSeq(isExpanded ? null : packet.seq);
             return [
@@ -147,7 +153,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
                     }
                   }}
                 >
-                  {packet.from?.toString(16).toUpperCase() || '-'}
+                  {nodeName}
                 </td>
                 <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-2">
