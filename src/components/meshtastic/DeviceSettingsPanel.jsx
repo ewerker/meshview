@@ -63,6 +63,8 @@ function getDisplayValues(config) {
 }
 
 function hasUsefulValues(config) {
+  if (config.section?.startsWith('Channel') && config.payload?.role === 0) return false;
+
   const values = config.payload?.values || getDisplayValues(config);
   const keys = Object.keys(values);
   if (keys.length === 0) return false;
