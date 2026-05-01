@@ -1,0 +1,55 @@
+{
+  "name": "MeshDeviceConfig",
+  "type": "object",
+  "description": "Vom Meshtastic-Ger\u00e4t ausgelesene Konfigurationsabschnitte pro lokalem Ger\u00e4t.",
+  "properties": {
+    "my_node_num": {
+      "type": "number",
+      "description": "Node-Nummer des lokal angeschlossenen Ger\u00e4ts."
+    },
+    "my_node_id": {
+      "type": "string",
+      "description": "Lesbare Node-ID des lokalen Ger\u00e4ts, z.B. !abcd1234."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "config",
+        "moduleConfig",
+        "channel",
+        "metadata"
+      ],
+      "description": "Art des empfangenen Konfigurationsdatensatzes."
+    },
+    "section": {
+      "type": "string",
+      "description": "Konfigurationsbereich, z.B. Device, LoRa, MQTT oder Channel 0."
+    },
+    "config_id": {
+      "type": "number",
+      "description": "Config-Complete-ID der aktuellen Ausleserunde, falls vorhanden."
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Geparste Konfigurationsdaten als JSON-f\u00e4higes Objekt."
+    },
+    "received_at": {
+      "type": "number",
+      "description": "Zeitpunkt des Empfangs in Millisekunden."
+    }
+  },
+  "required": [
+    "my_node_num",
+    "category",
+    "section"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

@@ -17,6 +17,8 @@ export function useMeshStore() {
     myNode: meshStore.getMyNode(),
     metadata: meshStore.metadata,
     packetLog: meshStore.packetLog,
+    deviceConfigs: meshStore.deviceConfigs,
+    configSaveStatus: meshStore.configSaveStatus,
     isLoading: meshStore.isLoading,
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),

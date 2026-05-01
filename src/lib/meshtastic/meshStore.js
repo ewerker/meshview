@@ -1,4 +1,5 @@
 // Central state store for Meshtastic data
+import { base44 } from '@/api/base44Client';
 import { MeshtasticSerial } from './serialConnection.js';
 import { parseFromRadio } from './protobufParser.js';
 
@@ -16,6 +17,9 @@ class MeshStore {
     this.packetSeq = 0;
     this.isLoading = false;
     this.persistFn = null;
+    this.deviceConfigs = [];
+    this.configSaveStatus = null;
+    this.currentConfigId = null;
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -82,6 +86,11 @@ class MeshStore {
       this.handleDecodedPacket(parsed.packet);
     } else if (parsed.type === 'metadata') {
       this.metadata = parsed.metadata;
+      this.captureDeviceConfig(parsed);
+    } else if (parsed.type === 'config' || parsed.type === 'moduleConfig' || parsed.type === 'channel') {
+      this.captureDeviceConfig(parsed);
+    } else if (parsed.type === 'configComplete') {
+      this.currentConfigId = parsed.configCompleteId;
     }
 
     this.notify();
@@ -140,6 +149,39 @@ class MeshStore {
     this.nodes.set(num, { ...existing, ...data });
   }
 
+  captureDeviceConfig(parsed) {
+    const entry = buildDeviceConfigEntry(parsed, this.myNodeNum, this.currentConfigId);
+    if (!entry) return;
+
+    this.deviceConfigs = [
+      ...this.deviceConfigs.filter(item => !(item.category === entry.category && item.section === entry.section)),
+      entry,
+    ];
+
+    this.saveDeviceConfig(entry);
+  }
+
+  async saveDeviceConfig(entry) {
+    if (!entry.my_node_num) return;
+    this.configSaveStatus = 'saving';
+    this.notify();
+
+    const existing = await base44.entities.MeshDeviceConfig.filter({
+      my_node_num: entry.my_node_num,
+      category: entry.category,
+      section: entry.section,
+    });
+
+    if (existing.length > 0) {
+      await base44.entities.MeshDeviceConfig.update(existing[0].id, entry);
+    } else {
+      await base44.entities.MeshDeviceConfig.create(entry);
+    }
+
+    this.configSaveStatus = 'saved';
+    this.notify();
+  }
+
   getNodes() {
     return Array.from(this.nodes.values());
   }
@@ -175,6 +217,9 @@ class MeshStore {
     this.packetLog = [];
     this.packetSeq = 0;
     this.isLoading = false;
+    this.deviceConfigs = [];
+    this.configSaveStatus = null;
+    this.currentConfigId = null;
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.notify();
   }
@@ -186,6 +231,48 @@ class MeshStore {
   setPersistFn(fn) {
     this.persistFn = fn;
   }
+}
+
+function nodeIdString(num) {
+  if (typeof num !== 'number' || !num) return null;
+  return '!' + num.toString(16).padStart(8, '0');
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function toPlainJson(value) {
+  if (value instanceof Uint8Array) return { hex: bytesToHex(value), length: value.length };
+  if (Array.isArray(value)) return value.map(toPlainJson);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toPlainJson(item)]));
+  }
+  return value;
+}
+
+function buildDeviceConfigEntry(parsed, myNodeNum, configId) {
+  if (!myNodeNum) return null;
+
+  const configMap = {
+    config: { section: parsed.config?.type || 'Config', payload: parsed.config },
+    moduleConfig: { section: parsed.moduleConfig?.type || 'ModuleConfig', payload: parsed.moduleConfig },
+    channel: { section: `Channel ${parsed.channel?.index ?? 0}`, payload: parsed.channel },
+    metadata: { section: 'Metadata', payload: parsed.metadata },
+  };
+
+  const data = configMap[parsed.type];
+  if (!data) return null;
+
+  return {
+    my_node_num: myNodeNum,
+    my_node_id: nodeIdString(myNodeNum),
+    category: parsed.type,
+    section: data.section,
+    config_id: configId,
+    payload: toPlainJson(data.payload || {}),
+    received_at: Date.now(),
+  };
 }
 
 // Singleton
