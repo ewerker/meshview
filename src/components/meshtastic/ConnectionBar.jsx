@@ -47,15 +47,15 @@ export default function ConnectionBar() {
 
         <div className="flex items-center gap-2">
           {connected ? (
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-sm">Verbunden</span>
-            </div>
+            <Badge className="bg-green-500/15 text-green-300 border border-green-400/40 hover:bg-green-500/20">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse mr-1.5" />
+              Online-Modus
+            </Badge>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-red-400 text-sm">Getrennt</span>
-            </div>
+            <Badge className="bg-amber-500/15 text-amber-300 border border-amber-400/40 hover:bg-amber-500/20">
+              <span className="w-2 h-2 rounded-full bg-amber-400 mr-1.5" />
+              Offline-Modus
+            </Badge>
           )}
         </div>
 
