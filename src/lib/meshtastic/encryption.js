@@ -74,29 +74,26 @@ export function getChannelHash(channel, primaryChannel) {
   return (xorHash(channelNameBytes(channel)) ^ xorHash(key)) & 0xff;
 }
 
-export function resolvePacketChannel(deviceConfigs, packetChannelHash = 0) {
+export function getChannelCandidates(deviceConfigs) {
   const channels = getChannels(deviceConfigs);
   const primary = getPrimaryChannel(channels);
-  const match = channels.find(channel => getChannelHash(channel, primary) === packetChannelHash);
+  const configured = channels
+    .map(channel => ({
+      index: channel.index ?? 0,
+      name: channel.settings?.name || `Channel ${channel.index ?? 0}`,
+      hash: getChannelHash(channel, primary),
+      psk: getChannelKey(channel, primary),
+    }))
+    .filter(channel => channel.psk);
 
-  if (match) {
-    return {
-      index: match.index ?? 0,
-      hash: packetChannelHash,
-      name: match.settings?.name || `Channel ${match.index ?? 0}`,
-      psk: getChannelKey(match, primary),
-    };
-  }
+  if (configured.length > 0) return configured;
 
-  if (packetChannelHash === 0) {
-    return {
-      index: 0,
-      hash: 0,
-      name: primary?.settings?.name || 'LongFast',
-      psk: getChannelKey(primary, primary) || DEFAULT_PSK,
-    };
-  }
+  return [{ index: 0, name: 'LongFast', hash: 0, psk: DEFAULT_PSK }];
+}
 
+export function resolvePacketChannel(deviceConfigs, packetChannelHash = 0) {
+  const match = getChannelCandidates(deviceConfigs).find(channel => channel.hash === packetChannelHash);
+  if (match) return { ...match, hash: packetChannelHash };
   return { index: null, hash: packetChannelHash, name: `Hash ${packetChannelHash}`, psk: null };
 }
 

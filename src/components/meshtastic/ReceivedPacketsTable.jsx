@@ -87,7 +87,7 @@ function getPacketLabel(packet) {
   if (packet.type === 'rebooted') return 'Neustart: Reboot';
   if (packet.type === 'ack') return `ACK: ID ${packet.id}`;
   if (packet.type === 'error') return `Fehler: ${packet.raw?.error || 'Parse-Fehler'}`;
-  if (packet.type === 'packet' && packet.raw?.packet?.encrypted) return 'Paket: Verschlüsselt';
+  if (packet.type === 'packet' && packet.raw?.packet?.encrypted) return packet.raw?.packet?.decryptError ? `Verschlüsselt: nicht dekodiert` : 'Paket: Verschlüsselt';
   if (decoded?.portnumName) return `App: ${decoded.portnumName}`;
   return `${packet.type || 'Unbekannt'}: -`;
 }

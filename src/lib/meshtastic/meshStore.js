@@ -2,7 +2,7 @@
 import { base44 } from '@/api/base44Client';
 import { MeshtasticSerial } from './serialConnection.js';
 import { parseFromRadio, parseData } from './protobufParser.js';
-import { decryptMeshtasticPayload, resolvePacketChannel } from './encryption.js';
+import { decryptMeshtasticPayload, getChannelCandidates, resolvePacketChannel } from './encryption.js';
 
 class MeshStore {
   constructor() {
@@ -53,14 +53,24 @@ class MeshStore {
     }
 
     if (parsed.type === 'packet' && parsed.packet?.encrypted && !parsed.packet.decoded) {
-      try {
-        const decrypted = await decryptMeshtasticPayload(parsed.packet.encrypted, parsed.packet.channelInfo?.psk, parsed.packet.from, parsed.packet.id);
-        if (decrypted) {
-          parsed.packet.decoded = parseData(decrypted);
-          parsed.packet.decrypted = true;
+      const candidates = parsed.packet.channelInfo?.psk
+        ? [parsed.packet.channelInfo]
+        : getChannelCandidates(this.deviceConfigs);
+
+      for (const candidate of candidates) {
+        try {
+          const decrypted = await decryptMeshtasticPayload(parsed.packet.encrypted, candidate.psk, parsed.packet.from, parsed.packet.id);
+          const decoded = decrypted ? parseData(decrypted) : null;
+          if (isUsefulDecodedData(decoded)) {
+            parsed.packet.decoded = decoded;
+            parsed.packet.decrypted = true;
+            parsed.packet.channelInfo = candidate;
+            parsed.packet.channel = candidate.index;
+            break;
+          }
+        } catch (e) {
+          parsed.packet.decryptError = e.message;
         }
-      } catch (e) {
-        parsed.packet.decryptError = e.message;
       }
     }
 
@@ -278,6 +288,12 @@ function toPlainJson(value) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toPlainJson(item)]));
   }
   return value;
+}
+
+function isUsefulDecodedData(decoded) {
+  if (!decoded) return false;
+  if (decoded.text || decoded.position || decoded.user || decoded.telemetry || decoded.routing) return true;
+  return [1, 3, 4, 5, 6, 9, 34, 64, 66, 67, 70, 71].includes(decoded.portnum);
 }
 
 function buildDeviceConfigEntry(parsed, myNodeNum, configId) {
