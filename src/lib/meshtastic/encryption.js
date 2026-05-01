@@ -22,19 +22,89 @@ function normalizePsk(psk) {
   else if (typeof psk === 'string') bytes = base64ToBytes(psk);
 
   if (!bytes?.length) return null;
-  if (bytes.length === 1 && bytes[0] === 1) return DEFAULT_PSK;
+  if (bytes.length === 1) {
+    if (bytes[0] === 0) return new Uint8Array(0);
+    const expanded = new Uint8Array(DEFAULT_PSK);
+    expanded[expanded.length - 1] = (expanded[expanded.length - 1] + bytes[0] - 1) & 0xff;
+    return expanded;
+  }
+  if (bytes.length < 16) {
+    const padded = new Uint8Array(16);
+    padded.set(bytes);
+    return padded;
+  }
+  if (bytes.length > 16 && bytes.length < 32) {
+    const padded = new Uint8Array(32);
+    padded.set(bytes);
+    return padded;
+  }
   return bytes;
 }
 
-export function getChannelPsk(deviceConfigs, channelIndex = 0) {
-  const channels = (deviceConfigs || [])
+function xorHash(value) {
+  let hash = 0;
+  for (const byte of value) hash ^= byte;
+  return hash;
+}
+
+function channelNameBytes(channel) {
+  return new TextEncoder().encode(channel?.settings?.name || '');
+}
+
+function getChannels(deviceConfigs) {
+  return (deviceConfigs || [])
     .filter(config => config.category === 'channel')
     .map(config => config.payload)
     .filter(Boolean);
+}
 
+function getPrimaryChannel(channels) {
+  return channels.find(channel => channel.role === 1) || channels.find(channel => channel.index === 0) || null;
+}
+
+export function getChannelKey(channel, primaryChannel) {
+  const ownKey = normalizePsk(channel?.settings?.psk);
+  if (ownKey?.length || channel?.role !== 2) return ownKey;
+  return normalizePsk(primaryChannel?.settings?.psk);
+}
+
+export function getChannelHash(channel, primaryChannel) {
+  const key = getChannelKey(channel, primaryChannel);
+  if (!key) return null;
+  return (xorHash(channelNameBytes(channel)) ^ xorHash(key)) & 0xff;
+}
+
+export function resolvePacketChannel(deviceConfigs, packetChannelHash = 0) {
+  const channels = getChannels(deviceConfigs);
+  const primary = getPrimaryChannel(channels);
+  const match = channels.find(channel => getChannelHash(channel, primary) === packetChannelHash);
+
+  if (match) {
+    return {
+      index: match.index ?? 0,
+      hash: packetChannelHash,
+      name: match.settings?.name || `Channel ${match.index ?? 0}`,
+      psk: getChannelKey(match, primary),
+    };
+  }
+
+  if (packetChannelHash === 0) {
+    return {
+      index: 0,
+      hash: 0,
+      name: primary?.settings?.name || 'LongFast',
+      psk: getChannelKey(primary, primary) || DEFAULT_PSK,
+    };
+  }
+
+  return { index: null, hash: packetChannelHash, name: `Hash ${packetChannelHash}`, psk: null };
+}
+
+export function getChannelPsk(deviceConfigs, channelIndex = 0) {
+  const channels = getChannels(deviceConfigs);
+  const primary = getPrimaryChannel(channels);
   const target = channels.find(channel => channel.index === channelIndex);
-  const primary = channels.find(channel => channel.role === 1 || channel.index === 0);
-  return normalizePsk(target?.settings?.psk) || normalizePsk(primary?.settings?.psk) || (channelIndex === 0 ? DEFAULT_PSK : null);
+  return getChannelKey(target, primary) || (channelIndex === 0 ? DEFAULT_PSK : null);
 }
 
 export async function decryptMeshtasticPayload(encrypted, psk, from, packetId) {

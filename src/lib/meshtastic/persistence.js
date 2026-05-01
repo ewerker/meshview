@@ -110,7 +110,7 @@ export function createPersistFn(getMyNodeNum, getMyNode, onAutoSave) {
       rx_snr: parsed?.packet?.rxSnr ?? null,
       rx_rssi: parsed?.packet?.rxRssi ?? null,
       hop_limit: parsed?.packet?.hopLimit ?? null,
-      channel: parsed?.packet?.channel ?? logEntry.channel ?? null,
+      channel: parsed?.packet?.channelInfo?.index ?? parsed?.packet?.channel ?? logEntry.channel ?? null,
       text: decoded?.text || null,
       raw: parsed,
     };

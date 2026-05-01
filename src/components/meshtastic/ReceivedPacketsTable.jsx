@@ -41,7 +41,13 @@ function getPacketIcon(packet) {
 }
 
 function getPacketChannel(packet) {
-  return packet.channel ?? packet.raw?.packet?.channel ?? '-';
+  return packet.channel ?? packet.raw?.packet?.channelInfo?.index ?? packet.raw?.packet?.channel ?? '-';
+}
+
+function getPacketChannelTitle(packet) {
+  const hash = packet.raw?.packet?.channelHash;
+  const name = packet.raw?.packet?.channelInfo?.name;
+  return `${name || `Channel ${getPacketChannel(packet)}`}${hash !== undefined ? ` · Hash ${hash}` : ''}`;
 }
 
 function getPacketLabel(packet) {
@@ -229,7 +235,7 @@ export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, mess
                   </div>
                 </td>
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
-                  Ch {getPacketChannel(packet)}
+                  <span title={getPacketChannelTitle(packet)}>Ch {getPacketChannel(packet)}</span>
                 </td>
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                   {formatTime(packet.time)}
