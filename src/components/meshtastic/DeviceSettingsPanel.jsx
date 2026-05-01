@@ -42,11 +42,12 @@ function formatValue(value) {
   if (value === true) return 'Ja';
   if (value === false) return 'Nein';
   if (value === null || value === undefined || value === '') return '—';
+  if (value?.hex) return value.hex;
   return String(value);
 }
 
 function formatFieldValue(key, value) {
-  if (/password|psk|privateKey|adminKey/i.test(key) && value && value !== 'vorhanden') return '••••••••';
+  if (/password|privateKey|adminKey/i.test(key) && value && value !== 'vorhanden') return '••••••••';
   return formatValue(value);
 }
 
@@ -57,7 +58,7 @@ function getDisplayValues(config) {
       channelIndex: config.payload?.index,
       channelName: config.payload?.settings?.name || `Kanal ${config.payload?.index ?? '?'}`,
       channelRole: roleNames[config.payload?.role] || config.payload?.role,
-      psk: config.payload?.settings?.psk ? 'vorhanden' : '',
+      psk: config.payload?.settings?.psk || '',
       channelNum: config.payload?.settings?.channelNum,
       uplinkEnabled: config.payload?.settings?.uplinkEnabled,
       downlinkEnabled: config.payload?.settings?.downlinkEnabled,
