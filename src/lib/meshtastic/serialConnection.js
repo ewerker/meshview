@@ -260,8 +260,8 @@ function buildTextPacket(textBytes, destination, channel) {
     [3, 0, channel],                 // MeshPacket.channel
     [4, 2, new Uint8Array(data)],    // MeshPacket.decoded
     [6, 0, packetId],                // MeshPacket.id
-    [8, 0, 1],                       // MeshPacket.want_ack
-    [10, 0, 3],                      // MeshPacket.hop_limit
+    [9, 0, 3],                       // MeshPacket.hop_limit
+    [10, 0, 1],                      // MeshPacket.want_ack
   ]);
 
   return new Uint8Array(encodeMessage([
