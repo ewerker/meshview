@@ -14,6 +14,9 @@ let nodeTimer = null;
 let flushNodesRunning = false;
 let flushPacketsRunning = false;
 
+// Buffer for packets that arrive before we know our own device ID
+let preAuthBuffer = [];
+
 // Local cache: my_node_num + ':' + num -> existing MeshNode entity id.
 // Avoids one filter() call per node per flush (was ~200 reads each cycle).
 const nodeIdCache = new Map();
@@ -188,7 +191,21 @@ function nodeIdString(num) {
 export function createPersistFn(getMyNodeNum, getMyNode) {
   return function persist(logEntry, parsed) {
     const myNodeNum = getMyNodeNum();
-    if (!myNodeNum) return; // wait until we know our own device
+    
+    // If we don't know our own device ID yet, queue packets up.
+    // They will be flushed as soon as the first packet with myNodeNum arrives.
+    if (!myNodeNum) {
+      preAuthBuffer.push({ logEntry, parsed });
+      return;
+    }
+
+    // If this is the first time we have myNodeNum, flush the queued packets first
+    if (preAuthBuffer.length > 0) {
+      const queued = [...preAuthBuffer];
+      preAuthBuffer = [];
+      queued.forEach(q => persist(q.logEntry, q.parsed));
+    }
+
     const myNodeId = nodeIdString(myNodeNum);
 
     // ---- 1) Save raw packet ----
@@ -270,6 +287,7 @@ export async function flushNow() {
 export function resetPersistenceCache() {
   nodeIdCache.clear();
   nodeCacheLoadedFor = null;
+  preAuthBuffer = [];
 }
 
 export function isPersistenceBusy() {
