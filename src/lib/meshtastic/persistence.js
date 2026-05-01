@@ -195,6 +195,10 @@ function hasNodeChanged(existing, next) {
   ].some(key => JSON.stringify(existing[key] ?? null) !== JSON.stringify(next[key] ?? null));
 }
 
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress }) {
   if (!myNodeNum) throw new Error('Eigenes Gerät wurde noch nicht erkannt.');
 
@@ -206,7 +210,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
 
   const createdNodes = [];
   const updatedNodes = [];
-  const existingNodes = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum });
+  const existingNodes = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 1000);
   const existingByNum = new Map(existingNodes.map(node => [node.num, node]));
 
   onProgress?.({ text: `Prüfe ${nodeRows.length} Nodes…`, current: 0, total: nodeRows.length, created: 0, updated: 0 });
@@ -217,6 +221,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
       if (hasNodeChanged(existing, nodeRow)) {
         await base44.entities.MeshNode.update(existing.id, nodeRow);
         updatedNodes.push(nodeRow);
+        if (updatedNodes.length % 20 === 0) await wait(500);
       }
     } else {
       createdNodes.push(nodeRow);
