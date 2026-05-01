@@ -86,9 +86,6 @@ class MeshStore {
       this.handleDecodedPacket(parsed.packet);
     } else if (parsed.type === 'metadata') {
       this.metadata = parsed.metadata;
-      this.captureDeviceConfig(parsed);
-    } else if (parsed.type === 'config' || parsed.type === 'moduleConfig' || parsed.type === 'channel') {
-      this.captureDeviceConfig(parsed);
     } else if (parsed.type === 'configComplete') {
       this.currentConfigId = parsed.configCompleteId;
     }
