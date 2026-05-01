@@ -53,8 +53,8 @@ export default function NodeDetail({ node, packetLog: packetLogProp, myNode: myN
   const em = node.environmentMetrics;
 
   const nodeId = `!${node.num?.toString(16).padStart(8, '0')}`;
-  const longName = user?.longName || nodeId;
-  const shortName = user?.shortName || nodeId.slice(-4);
+  const longName = user?.longName || node.long_name || nodeId;
+  const shortName = user?.shortName || node.short_name || nodeId.slice(-4);
 
   const fifteenMinsAgo = Date.now() - 15 * 60 * 1000;
   const recentSignalData = (packetLog || [])

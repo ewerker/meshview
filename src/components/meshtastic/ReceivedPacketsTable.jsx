@@ -101,9 +101,11 @@ export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, mess
 
   const getNodeDisplayName = (nodeNum) => {
     const node = nodes.find(item => item.num === nodeNum);
-    const nodeId = nodeNum?.toString(16).toUpperCase();
-    return node?.user?.longName
-      ? `${node.user.longName}${node.user.shortName ? ` (${node.user.shortName})` : ''}`
+    const nodeId = typeof nodeNum === 'number' ? `!${nodeNum.toString(16).padStart(8, '0')}` : null;
+    const longName = node?.user?.longName || node?.long_name;
+    const shortName = node?.user?.shortName || node?.short_name;
+    return longName
+      ? `${longName}${shortName ? ` (${shortName})` : ''}`
       : nodeId || '-';
   };
 

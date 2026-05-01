@@ -84,7 +84,7 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
 
           return (
             <Marker
-              key={node.num}
+              key={`${node.num}-${node.user?.id || ''}-${node.position.latitude}-${node.position.longitude}`}
               position={[node.position.latitude, node.position.longitude]}
               icon={createNodeIcon(shortName, isMyNode, isSelected)}
               eventHandlers={{ click: () => onSelectNode && onSelectNode(node.num) }}

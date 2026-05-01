@@ -52,8 +52,8 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
   const distance = !isMyNode ? distanceToMyNode(node, myNode) : null;
 
   const nodeId = `!${node.num?.toString(16).padStart(8, '0')}`;
-  const longName = user?.longName || nodeId;
-  const shortName = user?.shortName || nodeId.slice(-4);
+  const longName = user?.longName || node.long_name || nodeId;
+  const shortName = user?.shortName || node.short_name || nodeId.slice(-4);
   const hwModel = HardwareModel[user?.hwModel] || 'Unbekannt';
 
   return (
