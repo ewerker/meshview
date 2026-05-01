@@ -71,9 +71,15 @@ async function ensureNodeCache(myNodeNum) {
   if (nodeCacheLoadedFor === myNodeNum) return;
   nodeIdCache.clear();
   try {
-    const existing = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum });
+    // Load ALL existing nodes for this device (high limit to avoid duplicates)
+    const existing = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-updated_date', 10000);
+    // If multiple rows exist for the same num (legacy duplicates), keep the newest
+    // and remember the others so we can merge into the freshest one going forward.
     for (const n of existing) {
-      nodeIdCache.set(myNodeNum + ':' + n.num, n.id);
+      const key = myNodeNum + ':' + n.num;
+      if (!nodeIdCache.has(key)) {
+        nodeIdCache.set(key, n.id);
+      }
     }
     nodeCacheLoadedFor = myNodeNum;
   } catch (e) {

@@ -15,7 +15,7 @@ export function useMyDevices(isAuthenticated) {
     setLoading(true);
     try {
       // Pull recent nodes; group by my_node_num
-      const rows = await base44.entities.MeshNode.list('-updated_date', 500);
+      const rows = await base44.entities.MeshNode.list('-updated_date', 10000);
       const map = new Map();
       for (const r of rows) {
         if (!r.my_node_num) continue;
@@ -65,10 +65,20 @@ export function useHistoricalData(myNodeNum, enabled) {
     }
     setLoading(true);
     try {
-      const [nodeRows, packetRows] = await Promise.all([
-        base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 500),
+      const [nodeRowsRaw, packetRows] = await Promise.all([
+        base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 10000),
         base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 200),
       ]);
+
+      // Deduplicate by `num`: keep the most recently heard row per remote node
+      const byNum = new Map();
+      for (const r of nodeRowsRaw) {
+        const existing = byNum.get(r.num);
+        if (!existing || (r.last_heard || 0) > (existing.last_heard || 0)) {
+          byNum.set(r.num, r);
+        }
+      }
+      const nodeRows = Array.from(byNum.values());
 
       // Map MeshNode rows -> shape used by NodeCard / NodeMap / NodeDetail
       const mapped = nodeRows.map(r => ({
