@@ -14,8 +14,16 @@ export function useMyDevices(isAuthenticated) {
     }
     setLoading(true);
     try {
-      // Pull recent nodes; group by my_node_num
-      const rows = await base44.entities.MeshNode.list('-updated_date', 10000);
+      // Pull recent nodes; group by my_node_num (paginate to get all)
+      let rows = [];
+      let skip = 0;
+      while (true) {
+        const batch = await base44.entities.MeshNode.list('-updated_date', 100, skip);
+        if (!batch || batch.length === 0) break;
+        rows = rows.concat(batch);
+        if (batch.length < 100) break;
+        skip += 100;
+      }
       const map = new Map();
       for (const r of rows) {
         if (!r.my_node_num) continue;
@@ -65,10 +73,22 @@ export function useHistoricalData(myNodeNum, enabled) {
     }
     setLoading(true);
     try {
-      const [nodeRowsRaw, packetRows] = await Promise.all([
-        base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 10000),
+      // Fetch all nodes using pagination to bypass any backend limits
+      let allNodeRows = [];
+      let skip = 0;
+      const pageSize = 100;
+      while (true) {
+        const batch = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', pageSize, skip);
+        if (!batch || batch.length === 0) break;
+        allNodeRows = allNodeRows.concat(batch);
+        if (batch.length < pageSize) break;
+        skip += pageSize;
+      }
+
+      const [packetRows] = await Promise.all([
         base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 200),
       ]);
+      const nodeRowsRaw = allNodeRows;
 
       // Deduplicate by `num`: keep the most recently heard row per remote node
       const byNum = new Map();

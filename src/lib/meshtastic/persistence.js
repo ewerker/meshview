@@ -77,8 +77,17 @@ async function ensureNodeCache(myNodeNum) {
   nodeIdCache.clear();
   try {
     setActivity('🔄 Lade bestehende Nodes…');
-    // Load ALL existing nodes for this device (high limit so cache is complete)
-    const existing = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-updated_date', 10000);
+    // Load ALL existing nodes for this device using pagination to bypass backend limits
+    let existing = [];
+    let skip = 0;
+    const pageSize = 100;
+    while (true) {
+      const batch = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-updated_date', pageSize, skip);
+      if (!batch || batch.length === 0) break;
+      existing = existing.concat(batch);
+      if (batch.length < pageSize) break;
+      skip += pageSize;
+    }
     // Group by `num` so we can detect & clean up legacy duplicates from earlier sessions
     const groups = new Map();
     for (const n of existing) {
