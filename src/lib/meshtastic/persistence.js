@@ -56,11 +56,12 @@ async function flushPackets() {
   flushPacketsRunning = true;
   // Drain everything currently in the buffer in chunks (bulkCreate has practical limits)
   while (packetBuffer.length > 0) {
-    const batch = packetBuffer.splice(0, 100);
+    const batch = packetBuffer.splice(0, 50);
     inFlightPackets += batch.length;
     setActivity(`📦 Pakete schreiben (${batch.length})`);
     try {
       await base44.entities.MeshPacket.bulkCreate(batch);
+      if (packetBuffer.length > 0) await new Promise(r => setTimeout(r, 400));
     } catch (e) {
       console.warn('MeshPacket bulkCreate failed', e);
     } finally {
@@ -148,9 +149,9 @@ async function flushNodes() {
       const updatesStr = toUpdate.length > 0 ? ` (+${toUpdate.length} Updates)` : '';
       setActivity(`🆕 ${toCreate.length} neue Node(s)${updatesStr}: ${names}${toCreate.length > 3 ? '…' : ''}`);
       
-      // Batch bulkCreate to prevent "Payload Too Large" errors (Nodes are heavy objects)
-      for (let i = 0; i < toCreate.length; i += 20) {
-        const batch = toCreate.slice(i, i + 20);
+      // Batch bulkCreate to prevent "Payload Too Large" errors and backend rate limits
+      for (let i = 0; i < toCreate.length; i += 10) {
+        const batch = toCreate.slice(i, i + 10);
         try {
           const created = await base44.entities.MeshNode.bulkCreate(batch.map(c => c.data));
           if (Array.isArray(created)) {
@@ -162,9 +163,12 @@ async function flushNodes() {
           console.warn('MeshNode bulkCreate failed for batch', e);
           nodeCacheLoadedFor = null; // Reset cache so next round re-syncs
         }
+        inFlightNodes -= batch.length;
+        emitProgress();
+        if (i + 10 < toCreate.length) {
+          await new Promise(r => setTimeout(r, 600)); // 600ms delay between batches
+        }
       }
-      inFlightNodes -= toCreate.length;
-      emitProgress();
     }
 
     // Updates must still be one-by-one (no bulkUpdate available), but they're fast
@@ -175,6 +179,7 @@ async function flushNodes() {
       setActivity(`✏️ Node ${updatedCount}/${toUpdate.length}: ${name}`);
       try {
         await base44.entities.MeshNode.update(u.id, u.data);
+        await new Promise(r => setTimeout(r, 100)); // kleine Pause, um Spam-Filter zu vermeiden
       } catch (e) {
         console.warn('MeshNode update failed', e);
       } finally {
