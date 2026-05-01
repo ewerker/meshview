@@ -18,12 +18,14 @@ import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import FirstPacketProgress from '@/components/meshtastic/FirstPacketProgress.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, packetLog, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const { isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const autoSaveStatus = useMeshPersistence({ enabled: autoSaveEnabled && connected && isAuthenticated, myNodeNum, nodes, packetLog });
@@ -115,9 +117,9 @@ export default function Dashboard() {
             <div className="h-full lg:hidden">
               <Tabs defaultValue="map" className="h-full flex flex-col">
                 <TabsList className="mx-4 mt-2">
-                  <TabsTrigger value="map" className="flex-1 gap-1"><Map className="w-4 h-4" />Karte</TabsTrigger>
-                  <TabsTrigger value="nodes" className="flex-1 gap-1"><List className="w-4 h-4" />Nodes</TabsTrigger>
-                  <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />Detail</TabsTrigger>
+                  <TabsTrigger value="map" className="flex-1 gap-1"><Map className="w-4 h-4" />{t('map')}</TabsTrigger>
+                  <TabsTrigger value="nodes" className="flex-1 gap-1"><List className="w-4 h-4" />{t('nodes')}</TabsTrigger>
+                  <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />{t('detail')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="map" className="flex-1 p-4 overflow-hidden">
                   <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={handleSelectNode} />
@@ -135,7 +137,7 @@ export default function Dashboard() {
                       />
                     ))}
                     {sortedNodes.length === 0 && (
-                      <div className="text-center text-slate-400 text-sm py-6">Keine Nodes gefunden</div>
+                      <div className="text-center text-slate-400 text-sm py-6">{t('noNodesFound')}</div>
                     )}
                   </div>
                 </TabsContent>
@@ -152,7 +154,7 @@ export default function Dashboard() {
                 <Panel defaultSize={22} minSize={12} maxSize={40}>
                   <div className="border-r bg-card dark:bg-slate-900 flex flex-col h-full">
                     <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
-                      <h3 className="font-semibold text-sm text-slate-600">Nodes ({sortedNodes.length}/{nodes.length})</h3>
+                      <h3 className="font-semibold text-sm text-slate-600">{t('nodes')} ({sortedNodes.length}/{nodes.length})</h3>
                     </div>
                     <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
                     <div className="flex-1 overflow-y-auto min-h-0">
@@ -193,13 +195,13 @@ export default function Dashboard() {
                     <Panel defaultSize={55} minSize={15} className="flex flex-col">
                       <div className="flex flex-col h-full bg-card dark:bg-slate-800">
                         <div className="px-4 py-2 text-xs font-semibold text-slate-400 border-b dark:border-slate-700 shrink-0 flex items-center justify-between">
-                          <span>{filters.messagesOnly ? 'Empfangene Nachrichten' : 'Empfangene Pakete'}</span>
+                          <span>{filters.messagesOnly ? t('receivedMessages') : t('receivedPackets')}</span>
                           {filters.messagesOnly && (
                             <button
                               onClick={() => setFilters({ ...filters, messagesOnly: false })}
                               className="text-blue-500 hover:text-blue-600 font-normal"
                             >
-                              Filter zurücksetzen
+                              {t('resetFilter')}
                             </button>
                           )}
                         </div>
@@ -218,7 +220,7 @@ export default function Dashboard() {
                   <div className="border-l bg-card dark:bg-slate-900 flex flex-col h-full">
                     <div className="px-4 py-3 border-b bg-slate-50 dark:bg-slate-800 shrink-0">
                       <h3 className="font-semibold text-sm text-slate-600">
-                        {selectedNode ? selectedNode.user?.longName || 'Node Detail' : 'Node auswählen'}
+                        {selectedNode ? selectedNode.user?.longName || t('nodeDetail') : t('selectNode')}
                       </h3>
                     </div>
                     <div className="flex-1 overflow-hidden">

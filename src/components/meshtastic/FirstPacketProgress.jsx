@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Radio } from 'lucide-react';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 export default function FirstPacketProgress({ visible }) {
   const [elapsed, setElapsed] = useState(0);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!visible) {
@@ -28,11 +30,11 @@ export default function FirstPacketProgress({ visible }) {
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="font-medium">Warte auf erstes Datenpaket…</span>
+          <span className="font-medium">{t('firstPacketWaiting')}</span>
         </div>
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300">
           <Radio className="w-3.5 h-3.5" />
-          typischerweise bis zu {Math.max(seconds, 1)}s
+          {t('typicallyUpTo', { seconds: Math.max(seconds, 1) })}
         </div>
       </div>
       <div className="h-2 rounded-full bg-blue-100 dark:bg-blue-900 overflow-hidden">

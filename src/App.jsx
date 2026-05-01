@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { DarkModeProvider } from '@/lib/DarkModeContext';
+import { I18nProvider } from '@/lib/i18n/I18nContext.jsx';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import Dashboard from './pages/Dashboard.jsx';
@@ -52,16 +53,18 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
-    <DarkModeProvider>
-      <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
+    <I18nProvider>
+      <DarkModeProvider>
+        <AuthProvider>
+          <QueryClientProvider client={queryClientInstance}>
           <Router>
             <AuthenticatedApp />
           </Router>
           <Toaster />
-        </QueryClientProvider>
-      </AuthProvider>
-    </DarkModeProvider>
+          </QueryClientProvider>
+        </AuthProvider>
+      </DarkModeProvider>
+    </I18nProvider>
   )
 }
 

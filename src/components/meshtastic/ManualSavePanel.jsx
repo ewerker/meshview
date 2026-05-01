@@ -5,8 +5,10 @@ import { Database, Loader2, CheckCircle2, AlertCircle, UploadCloud } from 'lucid
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useAuth } from '@/lib/AuthContext';
 import { saveMeshSnapshot } from '@/lib/meshtastic/persistence.js';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 function NodeResultList({ title, nodes, tone, onSelectNode }) {
+  const { t } = useI18n();
   if (!nodes?.length) return null;
   const toneClass = tone === 'new' ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300';
 
@@ -21,7 +23,7 @@ function NodeResultList({ title, nodes, tone, onSelectNode }) {
             </Badge>
           </button>
         ))}
-        {nodes.length > 20 && <Badge variant="secondary">+{nodes.length - 20} weitere</Badge>}
+        {nodes.length > 20 && <Badge variant="secondary">{t('moreItems', { count: nodes.length - 20 })}</Badge>}
       </div>
     </div>
   );
@@ -29,6 +31,7 @@ function NodeResultList({ title, nodes, tone, onSelectNode }) {
 
 export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAutoSaveEnabled, onSelectNode }) {
   const { isAuthenticated, navigateToLogin } = useAuth();
+  const { t } = useI18n();
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
@@ -45,7 +48,7 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
     setResult(null);
     setError(null);
     setProgress(null);
-    setStatus('Bereite Daten vor…');
+    setStatus(t('preparingData'));
 
     try {
       const saveResult = await saveMeshSnapshot({
@@ -65,9 +68,9 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
       });
       setResult(saveResult);
       onAutoSaveEnabled?.();
-      setStatus('Sicherung abgeschlossen · AutoSave ist jetzt aktiv');
+      setStatus(t('saveCompleteAutosave'));
     } catch (e) {
-      setError(e.message || 'Sicherung fehlgeschlagen');
+      setError(e.message || t('saveFailed'));
       setStatus(null);
     }
 
@@ -80,18 +83,18 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
         <div className="flex items-center gap-2 min-w-0">
           <Database className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
           <div>
-            <div className="font-semibold text-xs text-slate-700 dark:text-slate-200">Sicherung</div>
+            <div className="font-semibold text-xs text-slate-700 dark:text-slate-200">{t('save')}</div>
             <div className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-              Speichert Nodes und empfangene Pakete automatisch und manuell.
+              {t('saveDescription')}
             </div>
             <div className="flex flex-wrap gap-1.5 mt-1 text-[11px] text-slate-600 dark:text-slate-300">
-              <Badge variant="secondary">{nodes.length} Nodes erkannt</Badge>
-              <Badge variant="secondary">{packetLog.length} Pakete bereit</Badge>
-              {myNodeNum && <Badge variant="outline">Gerät #{myNodeNum.toString(16).toUpperCase()}</Badge>}
-              {!autoSaveEnabled && <Badge variant="outline">AutoSave nach erster Sicherung</Badge>}
-              {autoSaveEnabled && autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Auto-Speichern…</Badge>}
-              {autoSaveEnabled && autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">Auto gespeichert</Badge>}
-              {autoSaveEnabled && autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">Auto-Fehler</Badge>}
+              <Badge variant="secondary">{t('nodesDetected', { count: nodes.length })}</Badge>
+              <Badge variant="secondary">{t('packetsReady', { count: packetLog.length })}</Badge>
+              {myNodeNum && <Badge variant="outline">{t('deviceHash', { id: myNodeNum.toString(16).toUpperCase() })}</Badge>}
+              {!autoSaveEnabled && <Badge variant="outline">{t('autosaveAfterFirstSave')}</Badge>}
+              {autoSaveEnabled && autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />{t('autosaving')}</Badge>}
+              {autoSaveEnabled && autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">{t('autosaved')}</Badge>}
+              {autoSaveEnabled && autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">{t('autoError')}</Badge>}
             </div>
           </div>
         </div>
@@ -99,11 +102,11 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
         {isAuthenticated ? (
           <Button size="sm" onClick={handleSave} disabled={!canSave || saving} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-            {saving ? 'Sichere…' : 'Jetzt sichern'}
+            {saving ? t('saving') : t('saveNow')}
           </Button>
         ) : (
           <Button size="sm" onClick={navigateToLogin} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
-            Anmelden zum Sichern
+            {t('loginToSave')}
           </Button>
         )}
       </div>
@@ -136,13 +139,13 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
           {result && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Neue Nodes</div><div className="font-bold text-lg">{result.createdNodes.length}</div></div>
-                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Aktualisiert</div><div className="font-bold text-lg">{result.updatedNodes.length}</div></div>
-                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Pakete übertragen</div><div className="font-bold text-lg">{result.totalPackets ? `${result.savedPackets}/${result.totalPackets}` : result.savedPackets}</div></div>
-                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">Gerät</div><div className="font-bold text-sm font-mono">#{myNodeNum?.toString(16).toUpperCase()}</div></div>
+                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">{t('newNodes')}</div><div className="font-bold text-lg">{result.createdNodes.length}</div></div>
+                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">{t('updated')}</div><div className="font-bold text-lg">{result.updatedNodes.length}</div></div>
+                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">{t('packetsTransferred')}</div><div className="font-bold text-lg">{result.totalPackets ? `${result.savedPackets}/${result.totalPackets}` : result.savedPackets}</div></div>
+                <div className="rounded-md bg-slate-50 dark:bg-slate-800 p-2"><div className="text-slate-500">{t('savedDevice')}</div><div className="font-bold text-sm font-mono">#{myNodeNum?.toString(16).toUpperCase()}</div></div>
               </div>
-              <NodeResultList title="Neu gespeichert" nodes={result.createdNodes} tone="new" onSelectNode={onSelectNode} />
-              <NodeResultList title="Aktualisiert" nodes={result.updatedNodes} tone="updated" onSelectNode={onSelectNode} />
+              <NodeResultList title={t('newlySaved')} nodes={result.createdNodes} tone="new" onSelectNode={onSelectNode} />
+              <NodeResultList title={t('updated')} nodes={result.updatedNodes} tone="updated" onSelectNode={onSelectNode} />
             </div>
           )}
         </div>

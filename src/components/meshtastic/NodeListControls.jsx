@@ -4,9 +4,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Search, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 export default function NodeListControls({ search, onSearch, sort, onSort, filters, onFiltersChange }) {
   const [showFilters, setShowFilters] = useState(false);
+  const { t } = useI18n();
 
   const handleFilterChange = (key) => {
     onFiltersChange({
@@ -18,16 +20,16 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
   const activeCount = Object.values(filters).filter(Boolean).length;
 
   const filterOptions = [
-    { key: 'active', label: 'Aktiv (letzte 15 min)' },
-    { key: 'direct', label: 'Nur direkte Verbindungen' },
-    { key: 'withGps', label: 'Mit GPS-Position' },
-    { key: 'withTelemetry', label: 'Mit Geräte-Telemetrie' },
-    { key: 'withEnv', label: 'Mit Umgebungssensoren' },
-    { key: 'lowBattery', label: 'Akku kritisch (<20%)' },
-    { key: 'highBattery', label: 'Akku gut (>60%)' },
-    { key: 'near1km', label: 'Abstand ≤ 1 km' },
-    { key: 'near5km', label: 'Abstand ≤ 5 km' },
-    { key: 'near25km', label: 'Abstand ≤ 25 km' },
+    { key: 'active', label: t('filterActive') },
+    { key: 'direct', label: t('filterDirect') },
+    { key: 'withGps', label: t('filterWithGps') },
+    { key: 'withTelemetry', label: t('filterWithTelemetry') },
+    { key: 'withEnv', label: t('filterWithEnv') },
+    { key: 'lowBattery', label: t('filterLowBattery') },
+    { key: 'highBattery', label: t('filterHighBattery') },
+    { key: 'near1km', label: t('filterNear1') },
+    { key: 'near5km', label: t('filterNear5') },
+    { key: 'near25km', label: t('filterNear25') },
   ];
 
   return (
@@ -36,7 +38,7 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
         <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
         <Input
           className="pl-7 h-7 text-xs"
-          placeholder="Suchen…"
+          placeholder={t('search')}
           value={search}
           onChange={e => onSearch(e.target.value)}
         />
@@ -45,15 +47,15 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
       <div className="flex gap-2">
         <Select value={sort} onValueChange={onSort}>
           <SelectTrigger className="flex-1 h-7 text-xs">
-            <SelectValue placeholder="Sortierung" />
+            <SelectValue placeholder={t('sort')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="myFirst">Mein Gerät zuerst</SelectItem>
-            <SelectItem value="lastHeard">Zuletzt gehört</SelectItem>
-            <SelectItem value="name">Name (A–Z)</SelectItem>
-            <SelectItem value="snr">SNR (beste zuerst)</SelectItem>
-            <SelectItem value="battery">Akku (höchste zuerst)</SelectItem>
-            <SelectItem value="distance">Entfernung (nächste zuerst)</SelectItem>
+            <SelectItem value="myFirst">{t('myDeviceFirst')}</SelectItem>
+            <SelectItem value="lastHeard">{t('lastHeard')}</SelectItem>
+            <SelectItem value="name">{t('nameAz')}</SelectItem>
+            <SelectItem value="snr">{t('bestSnrFirst')}</SelectItem>
+            <SelectItem value="battery">{t('highestBatteryFirst')}</SelectItem>
+            <SelectItem value="distance">{t('nearestFirst')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -61,7 +63,7 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center gap-1 px-2 h-7 text-xs bg-slate-200 dark:bg-slate-700 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
         >
-          Filter {activeCount > 0 && <span className="bg-blue-600 text-white px-1.5 rounded-full text-[10px] leading-none">{activeCount}</span>}
+          {t('filter')} {activeCount > 0 && <span className="bg-blue-600 text-white px-1.5 rounded-full text-[10px] leading-none">{activeCount}</span>}
           <ChevronDown className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
         </button>
       </div>

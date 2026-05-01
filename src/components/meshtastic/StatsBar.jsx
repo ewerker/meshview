@@ -1,6 +1,8 @@
 import { Radio, MapPin, MessageSquare, Activity, Wifi } from 'lucide-react';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 export default function StatsBar({ nodes, messages, connected, filters, onFiltersChange }) {
+  const { t } = useI18n();
   const nodesWithPos = nodes.filter(n => n.position?.latitude && n.position.latitude !== 0);
 
   const recentNodes = nodes.filter(n => {
@@ -9,10 +11,10 @@ export default function StatsBar({ nodes, messages, connected, filters, onFilter
   });
 
   const stats = [
-    { label: 'Nodes gesamt', value: nodes.length, icon: Radio, color: 'text-blue-600', action: 'clear' },
-    { label: 'Aktiv (15min)', value: recentNodes.length, icon: Activity, color: 'text-green-600', filterKey: 'active' },
-    { label: 'Mit GPS', value: nodesWithPos.length, icon: MapPin, color: 'text-red-600', filterKey: 'withGps' },
-    { label: 'Nachrichten', value: messages.length, icon: MessageSquare, color: 'text-purple-600', filterKey: messages.length > 0 ? 'messagesOnly' : null },
+    { label: t('statsTotalNodes'), value: nodes.length, icon: Radio, color: 'text-blue-600', action: 'clear' },
+    { label: t('statsActive'), value: recentNodes.length, icon: Activity, color: 'text-green-600', filterKey: 'active' },
+    { label: t('statsWithGps'), value: nodesWithPos.length, icon: MapPin, color: 'text-red-600', filterKey: 'withGps' },
+    { label: t('statsMessages'), value: messages.length, icon: MessageSquare, color: 'text-purple-600', filterKey: messages.length > 0 ? 'messagesOnly' : null },
   ];
 
   return (

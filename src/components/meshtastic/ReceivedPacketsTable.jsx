@@ -2,6 +2,7 @@ import { useState, Fragment } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight } from 'lucide-react';
 import PacketRowDetails from './PacketRowDetails.jsx';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 function getDecoded(logEntry) {
   // raw is the parsed FromRadio object: { type, packet: { from, to, decoded: {...} }, ... }
@@ -89,6 +90,7 @@ function formatTime(timestamp) {
 }
 
 export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = false, packets }) {
+  const { t } = useI18n();
   const store = useMeshStore();
   const packetLog = packets ?? store.packetLog;
   const [expandedSeq, setExpandedSeq] = useState(null);
@@ -100,7 +102,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
   if (visiblePackets.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
-        {messagesOnly ? 'Keine Nachrichten empfangen' : 'Keine Pakete empfangen'}
+        {messagesOnly ? t('noMessagesReceived') : t('noPacketsReceived')}
       </div>
     );
   }
@@ -111,10 +113,10 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
         <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 text-slate-600 dark:text-slate-300 shadow-sm">
           <tr>
             <th className="px-2 py-2 w-6"></th>
-            <th className="px-3 py-2 text-left font-semibold">Von</th>
-            <th className="px-3 py-2 text-left font-semibold">Typ</th>
-            <th className="px-3 py-2 text-left font-semibold">Details</th>
-            <th className="px-3 py-2 text-left font-semibold">Zeit</th>
+            <th className="px-3 py-2 text-left font-semibold">{t('packetFrom')}</th>
+            <th className="px-3 py-2 text-left font-semibold">{t('packetType')}</th>
+            <th className="px-3 py-2 text-left font-semibold">{t('packetDetails')}</th>
+            <th className="px-3 py-2 text-left font-semibold">{t('packetTime')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-slate-700 border-t border-slate-200 dark:border-slate-700">
