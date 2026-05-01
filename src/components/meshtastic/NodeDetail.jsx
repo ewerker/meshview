@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Battery, MapPin, Wifi, Thermometer, Droplets, Gauge, Wind, Clock, Cpu, Radio } from 'lucide-react';
 import { HardwareModel } from '@/lib/meshtastic/constants.js';
-import TelemetryChart from './TelemetryChart.jsx';
 import SignalChart from './SignalChart.jsx';
 import NodePositionMiniMap from './NodePositionMiniMap.jsx';
 import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
@@ -213,7 +212,14 @@ export default function NodeDetail({ node, packetLog: packetLogProp, myNode: myN
               </CardContent>
             </Card>
           )}
-          <TelemetryChart node={node} />
+          {!dm && (
+            <div className="flex items-center justify-center h-32 text-slate-400">
+              <div className="text-center">
+                <Battery className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Keine Telemetriedaten vorhanden</p>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="env" className="mt-4">
