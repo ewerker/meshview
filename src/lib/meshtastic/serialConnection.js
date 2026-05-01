@@ -185,6 +185,10 @@ export class MeshtasticSerial {
     await this.sendToRadio(ToRadio_encode_wantConfigId(wantConfigId));
   }
 
+  async sendBluetoothPin(pin) {
+    await this.sendToRadio(ToRadio_encode_setBluetoothPin(pin));
+  }
+
   async sendToRadio(data) {
     if (!this.port || !this.port.writable) return;
     const writer = this.port.writable.getWriter();
@@ -219,6 +223,29 @@ function ToRadio_encode_wantConfigId(id) {
   // Tag = (3 << 3) | 0 = 24 = 0x18
   const bytes = [0x18, ...encodeVarint(id)];
   return new Uint8Array(bytes);
+}
+
+function ToRadio_encode_setBluetoothPin(pin) {
+  const bluetoothConfig = encodeMessage([
+    [1, 0, 1],
+    [2, 0, 0],
+    [3, 0, Number(pin)],
+  ]);
+  const config = encodeMessage([[7, 2, bluetoothConfig]]);
+  return encodeMessage([[5, 2, config]]);
+}
+
+function encodeMessage(fields) {
+  const bytes = [];
+  fields.forEach(([fieldNumber, wireType, value]) => {
+    bytes.push(...encodeVarint((fieldNumber << 3) | wireType));
+    if (wireType === 0) {
+      bytes.push(...encodeVarint(value));
+    } else if (wireType === 2) {
+      bytes.push(...encodeVarint(value.length), ...value);
+    }
+  });
+  return bytes;
 }
 
 function encodeVarint(value) {

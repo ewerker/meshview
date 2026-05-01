@@ -23,6 +23,7 @@ export function useMeshStore() {
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),
     requestDeviceConfig: () => meshStore.requestDeviceConfig(),
+    sendBluetoothPin: (pin) => meshStore.sendBluetoothPin(pin),
     disconnect: () => meshStore.disconnect(),
   };
 }
