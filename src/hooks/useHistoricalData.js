@@ -85,9 +85,16 @@ export function useHistoricalData(myNodeNum, enabled) {
         skip += pageSize;
       }
 
-      const [packetRows] = await Promise.all([
-        base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 200),
-      ]);
+      // Fetch packets using pagination (up to 2000 to prevent memory issues)
+      let packetRows = [];
+      let packetSkip = 0;
+      while (packetRows.length < 2000) {
+        const pBatch = await base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', pageSize, packetSkip);
+        if (!pBatch || pBatch.length === 0) break;
+        packetRows = packetRows.concat(pBatch);
+        if (pBatch.length < pageSize) break;
+        packetSkip += pageSize;
+      }
       const nodeRowsRaw = allNodeRows;
 
       // Deduplicate by `num`: keep the most recently heard row per remote node
