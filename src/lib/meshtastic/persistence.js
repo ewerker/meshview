@@ -135,3 +135,89 @@ export function createPersistFn(getMyNodeNum, getMyNode) {
 export async function flushNow() {
   await Promise.all([flushPackets(), flushNodes()]);
 }
+
+function normalizeNodeForSave(node, myNodeNum, myNodeId) {
+  return {
+    my_node_num: myNodeNum,
+    my_node_id: myNodeId,
+    num: node.num,
+    node_id: node.user?.id || nodeIdString(node.num),
+    long_name: node.user?.longName || null,
+    short_name: node.user?.shortName || null,
+    hw_model: node.user?.hwModel ?? null,
+    is_licensed: node.user?.isLicensed ?? null,
+    channel: node.channel ?? null,
+    hops_away: node.hopsAway ?? null,
+    via_mqtt: node.viaMqtt ?? null,
+    snr: node.snr ?? null,
+    rssi: node.rssi ?? null,
+    last_heard: node.lastHeard ?? null,
+    user: node.user || null,
+    position: node.position || null,
+    device_metrics: node.deviceMetrics || null,
+    environment_metrics: node.environmentMetrics || null,
+  };
+}
+
+function normalizePacketForSave(logEntry, myNodeNum, myNodeId) {
+  const parsed = logEntry.raw;
+  const decoded = parsed?.packet?.decoded;
+  return {
+    my_node_num: myNodeNum,
+    my_node_id: myNodeId,
+    seq: logEntry.seq,
+    time: logEntry.time,
+    type: logEntry.type || 'unknown',
+    from_num: logEntry.from ?? null,
+    to_num: logEntry.to ?? null,
+    portnum: decoded?.portnumName || null,
+    rx_snr: parsed?.packet?.rxSnr ?? null,
+    rx_rssi: parsed?.packet?.rxRssi ?? null,
+    hop_limit: parsed?.packet?.hopLimit ?? null,
+    channel: parsed?.packet?.channel ?? null,
+    text: decoded?.text || null,
+    raw: parsed,
+  };
+}
+
+export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress }) {
+  if (!myNodeNum) throw new Error('Eigenes Gerät wurde noch nicht erkannt.');
+
+  const myNodeId = nodeIdString(myNodeNum);
+  const nodeRows = nodes
+    .filter(node => typeof node.num === 'number')
+    .map(node => normalizeNodeForSave(node, myNodeNum, myNodeId));
+  const packetRows = packetLog.map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
+
+  const createdNodes = [];
+  const updatedNodes = [];
+
+  onProgress?.(`Prüfe ${nodeRows.length} Nodes…`);
+  for (const nodeRow of nodeRows) {
+    const existing = await base44.entities.MeshNode.filter({
+      my_node_num: nodeRow.my_node_num,
+      num: nodeRow.num,
+    });
+
+    if (existing.length > 0) {
+      onProgress?.(`Aktualisiere Node: ${nodeRow.long_name || nodeRow.short_name || nodeRow.node_id}`);
+      await base44.entities.MeshNode.update(existing[0].id, nodeRow);
+      updatedNodes.push(nodeRow);
+    } else {
+      onProgress?.(`Speichere neuen Node: ${nodeRow.long_name || nodeRow.short_name || nodeRow.node_id}`);
+      await base44.entities.MeshNode.create(nodeRow);
+      createdNodes.push(nodeRow);
+    }
+  }
+
+  onProgress?.(`Übertrage ${packetRows.length} Pakete…`);
+  if (packetRows.length > 0) {
+    await base44.entities.MeshPacket.bulkCreate(packetRows);
+  }
+
+  return {
+    createdNodes,
+    updatedNodes,
+    savedPackets: packetRows.length,
+  };
+}

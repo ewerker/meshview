@@ -14,15 +14,14 @@ import SerialLog from '@/components/meshtastic/SerialLog.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
 import DisconnectedHero from '@/components/meshtastic/DisconnectedHero.jsx';
 import HistoricalDashboard from '@/components/meshtastic/HistoricalDashboard.jsx';
+import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
-import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
 import { useAuth } from '@/lib/AuthContext';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const { isAuthenticated } = useAuth();
-  useMeshPersistence();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useLocalStorage('dashboard.search', '');
   const [sort, setSort] = useLocalStorage('dashboard.sort', 'myFirst');
@@ -97,6 +96,7 @@ export default function Dashboard() {
       ) : (
         <>
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
+          <ManualSavePanel />
 
           <div className="flex-1 overflow-hidden">
             {/* Mobile: Tabs layout */}
