@@ -25,22 +25,24 @@ export default function ConnectionBar() {
     setConnecting(false);
   };
 
-  const confirmIfBusy = (action) => {
-    if (!isAuthenticated || !isPersistenceBusy()) return true;
+  // Flush first, then only warn if something is *still* pending afterwards.
+  const flushAndConfirm = async (action) => {
+    if (!isAuthenticated) return true;
+    try { await flushNow(); } catch {}
+    if (!isPersistenceBusy()) return true;
     return window.confirm(
       `Es werden gerade noch Daten gespeichert.\n\nWenn du jetzt ${action}, gehen ungespeicherte Daten möglicherweise verloren.\n\nTrotzdem fortfahren?`
     );
   };
 
   const handleDisconnect = async () => {
-    if (!confirmIfBusy('die Verbindung trennst')) return;
-    try { await flushNow(); } catch {}
+    // Stop incoming packets first so the flush has a stable buffer to drain
     disconnect();
+    if (!(await flushAndConfirm('die Verbindung trennst'))) return;
   };
 
   const handleLogout = async () => {
-    if (!confirmIfBusy('dich abmeldest')) return;
-    try { await flushNow(); } catch {}
+    if (!(await flushAndConfirm('dich abmeldest'))) return;
     logout();
   };
 
