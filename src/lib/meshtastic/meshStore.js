@@ -266,7 +266,7 @@ function buildDeviceConfigEntry(parsed, myNodeNum, configId) {
   };
 
   const data = configMap[parsed.type];
-  if (!data || !['Network', 'Bluetooth', 'MQTT'].includes(data.section)) return null;
+  if (!data) return null;
 
   return {
     my_node_num: myNodeNum,

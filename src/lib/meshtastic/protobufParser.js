@@ -305,31 +305,83 @@ function parseModuleConfig(bytes) {
 }
 
 function parseConfigValues(name, fields) {
-  if (name === 'Network') {
-    return {
+  const common = {
+    Device: {
+      role: fields[1] ?? null,
+      serialEnabled: boolValue(fields[2]),
+      buttonGpio: fields[3] ?? null,
+      buzzerGpio: fields[4] ?? null,
+      rebroadcastMode: fields[5] ?? null,
+      nodeInfoBroadcastSecs: fields[6] ?? null,
+    },
+    Position: {
+      positionBroadcastSecs: fields[1] ?? null,
+      smartPositionEnabled: boolValue(fields[2]),
+      fixedPosition: boolValue(fields[3]),
+      gpsEnabled: boolValue(fields[4]),
+      gpsUpdateInterval: fields[5] ?? null,
+      gpsAttemptTime: fields[6] ?? null,
+      broadcastSmartMinimumDistance: fields[7] ?? null,
+      broadcastSmartMinimumIntervalSecs: fields[8] ?? null,
+    },
+    Power: {
+      waitBluetoothSecs: fields[1] ?? null,
+      sdsSecs: fields[2] ?? null,
+      lsSecs: fields[3] ?? null,
+      minWakeSecs: fields[4] ?? null,
+      deviceBatteryInaAddress: fields[5] ?? null,
+      powermonEnabled: boolValue(fields[6]),
+    },
+    Network: {
       wifiEnabled: boolValue(fields[1]),
       wifiSsid: stringValue(fields[2]),
       wifiPsk: fields[3] ? '••••••••' : '',
       ntpServer: stringValue(fields[4]),
       ethernetEnabled: boolValue(fields[5]),
       rsyslogServer: stringValue(fields[8]),
-    };
-  }
-
-  if (name === 'Bluetooth') {
-    return {
+    },
+    Display: {
+      screenOnSecs: fields[1] ?? null,
+      gpsFormat: fields[2] ?? null,
+      autoScreenCarouselSecs: fields[3] ?? null,
+      compassNorthTop: boolValue(fields[4]),
+      flipScreen: boolValue(fields[5]),
+      units: fields[6] ?? null,
+    },
+    LoRa: {
+      region: fields[1] ?? null,
+      modemPreset: fields[2] ?? null,
+      bandwidth: fields[3] ?? null,
+      spreadFactor: fields[4] ?? null,
+      codingRate: fields[5] ?? null,
+      frequencyOffset: fields[6] ?? null,
+      hopLimit: fields[7] ?? null,
+      txEnabled: boolValue(fields[8]),
+      txPower: fields[9] ?? null,
+      channelNum: fields[10] ?? null,
+      overrideDutyCycle: boolValue(fields[11]),
+      sx126xRxBoostedGain: boolValue(fields[12]),
+    },
+    Bluetooth: {
       enabled: boolValue(fields[1]),
       mode: bluetoothModeName(fields[2]),
       fixedPin: fields[3] || null,
-    };
-  }
+    },
+    Security: {
+      publicKey: fields[1] ? 'vorhanden' : '',
+      privateKey: fields[2] ? 'vorhanden' : '',
+      adminKey: fields[3] ? 'vorhanden' : '',
+      serialEnabled: boolValue(fields[4]),
+      debugLogApiEnabled: boolValue(fields[5]),
+    },
+  };
 
-  return {};
+  return common[name] || rawFieldSummary(fields);
 }
 
 function parseModuleConfigValues(name, fields) {
-  if (name === 'MQTT') {
-    return {
+  const common = {
+    MQTT: {
       enabled: boolValue(fields[1]),
       address: stringValue(fields[2]),
       username: stringValue(fields[3]),
@@ -339,10 +391,57 @@ function parseModuleConfigValues(name, fields) {
       tlsEnabled: boolValue(fields[7]),
       rootTopic: stringValue(fields[8]),
       proxyToClientEnabled: boolValue(fields[9]),
-    };
-  }
+    },
+    Serial: {
+      enabled: boolValue(fields[1]),
+      echo: boolValue(fields[2]),
+      rxd: fields[3] ?? null,
+      txd: fields[4] ?? null,
+      baud: fields[5] ?? null,
+      timeout: fields[6] ?? null,
+      mode: fields[7] ?? null,
+    },
+    StoreForward: {
+      enabled: boolValue(fields[1]),
+      heartbeat: boolValue(fields[2]),
+      records: fields[3] ?? null,
+      historyReturnMax: fields[4] ?? null,
+      historyReturnWindow: fields[5] ?? null,
+    },
+    RangeTest: {
+      enabled: boolValue(fields[1]),
+      sender: fields[2] ?? null,
+      save: boolValue(fields[3]),
+    },
+    Telemetry: {
+      deviceUpdateInterval: fields[1] ?? null,
+      environmentUpdateInterval: fields[2] ?? null,
+      environmentMeasurementEnabled: boolValue(fields[3]),
+      environmentScreenEnabled: boolValue(fields[4]),
+      powerMeasurementEnabled: boolValue(fields[5]),
+      powerUpdateInterval: fields[6] ?? null,
+    },
+    NeighborInfo: {
+      enabled: boolValue(fields[1]),
+      updateInterval: fields[2] ?? null,
+      transmitOverLora: boolValue(fields[3]),
+    },
+    Paxcounter: {
+      enabled: boolValue(fields[1]),
+      paxcounterUpdateInterval: fields[2] ?? null,
+    },
+  };
 
-  return {};
+  return common[name] || rawFieldSummary(fields);
+}
+
+function rawFieldSummary(fields) {
+  return Object.fromEntries(Object.keys(fields).map(key => [`Feld ${key}`, formatRawField(fields[key])]));
+}
+
+function formatRawField(value) {
+  if (value instanceof Uint8Array) return value.length > 0 ? `${value.length} Bytes` : '';
+  return value;
 }
 
 function stringValue(value) {
