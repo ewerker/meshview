@@ -10,21 +10,33 @@ import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 
 function NodeResultList({ title, nodes, tone, onSelectNode }) {
   const { t } = useI18n();
+  const [expanded, setExpanded] = useState(false);
   if (!nodes?.length) return null;
+
   const toneClass = tone === 'new' ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300';
+  const visibleNodes = expanded ? nodes : nodes.slice(0, 20);
 
   return (
     <div>
       <div className={`text-xs font-semibold mb-1 ${toneClass}`}>{title} ({nodes.length})</div>
       <div className="flex flex-wrap gap-1.5">
-        {nodes.slice(0, 20).map(node => (
-          <button key={`${title}-${node.num}`} type="button" onClick={() => onSelectNode?.(node.num)}>
-            <Badge variant="outline" className="text-[11px] font-mono cursor-pointer hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950">
-              {node.long_name || node.short_name || node.node_id || `#${node.num?.toString(16).toUpperCase()}`}
+        {visibleNodes.map(node => {
+          const reasons = node.change_reasons?.length ? ` (${node.change_reasons.join(', ')})` : '';
+          return (
+            <button key={`${title}-${node.num}`} type="button" onClick={() => onSelectNode?.(node.num)}>
+              <Badge variant="outline" className="text-[11px] font-mono cursor-pointer hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950">
+                {node.long_name || node.short_name || node.node_id || `#${node.num?.toString(16).toUpperCase()}`}{reasons}
+              </Badge>
+            </button>
+          );
+        })}
+        {nodes.length > 20 && (
+          <button type="button" onClick={() => setExpanded(!expanded)}>
+            <Badge variant="secondary" className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700">
+              {expanded ? 'Weniger anzeigen' : t('moreItems', { count: nodes.length - 20 })}
             </Badge>
           </button>
-        ))}
-        {nodes.length > 20 && <Badge variant="secondary">{t('moreItems', { count: nodes.length - 20 })}</Badge>}
+        )}
       </div>
     </div>
   );

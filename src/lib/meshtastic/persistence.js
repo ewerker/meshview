@@ -209,6 +209,21 @@ function hasNodeChanged(existing, next) {
   ].some(key => JSON.stringify(existing[key] ?? null) !== JSON.stringify(next[key] ?? null));
 }
 
+function getNodeChangeReasons(existing, next) {
+  const changed = (key) => JSON.stringify(existing[key] ?? null) !== JSON.stringify(next[key] ?? null);
+  const reasons = [];
+
+  if (changed('position')) reasons.push('Entfernung');
+  if (changed('last_heard')) reasons.push('aktiv');
+  if (changed('snr') || changed('rssi')) reasons.push('Signal');
+  if (changed('device_metrics')) reasons.push('Akku');
+  if (changed('environment_metrics')) reasons.push('Umwelt');
+  if (changed('long_name') || changed('short_name') || changed('user')) reasons.push('Name');
+  if (changed('channel') || changed('hops_away') || changed('via_mqtt')) reasons.push('Route');
+
+  return reasons;
+}
+
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -256,7 +271,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
     if (existing) {
       if (hasNodeChanged(existing, nodeRow)) {
         await base44.entities.MeshNode.update(existing.id, nodeRow);
-        updatedNodes.push(nodeRow);
+        updatedNodes.push({ ...nodeRow, change_reasons: getNodeChangeReasons(existing, nodeRow) });
         if (updatedNodes.length % 20 === 0) await wait(SAVE_BATCH_PAUSE_MS);
       }
     } else {
