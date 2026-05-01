@@ -62,6 +62,11 @@ class MeshStore {
     this.packetLog.push(logEntry);
     if (this.packetLog.length > 200) this.packetLog.shift();
 
+    // Persist to DB if a persist function was injected (only when user is logged in)
+    if (this.persistFn) {
+      try { this.persistFn(logEntry, parsed); } catch (e) { console.warn('persist failed', e); }
+    }
+
     if (parsed.type === 'myInfo') {
       this.myNodeNum = parsed.myInfo.myNodeNum;
     } else if (parsed.type === 'nodeInfo') {
@@ -82,11 +87,6 @@ class MeshStore {
       this.handleDecodedPacket(parsed.packet);
     } else if (parsed.type === 'metadata') {
       this.metadata = parsed.metadata;
-    }
-
-    // Persist to DB AFTER local state is updated (so myNodeNum is already known if it was in this packet)
-    if (this.persistFn) {
-      try { this.persistFn(logEntry, parsed); } catch (e) { console.warn('persist failed', e); }
     }
 
     this.notify();

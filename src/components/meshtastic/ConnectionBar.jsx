@@ -6,8 +6,6 @@ import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useDarkMode } from '@/lib/DarkModeContext';
 import { useAuth } from '@/lib/AuthContext';
-import PersistenceProgress from './PersistenceProgress.jsx';
-import { isPersistenceBusy, flushNow } from '@/lib/meshtastic/persistence.js';
 
 export default function ConnectionBar() {
   const { connected, isSupported, connect, disconnect, nodes, myNode, metadata } = useMeshStore();
@@ -25,34 +23,12 @@ export default function ConnectionBar() {
     setConnecting(false);
   };
 
-  // Flush first, then only warn if something is *still* pending afterwards.
-  const flushAndConfirm = async (action) => {
-    if (!isAuthenticated) return true;
-    try { await flushNow(); } catch {}
-    if (!isPersistenceBusy()) return true;
-    return window.confirm(
-      `Es werden gerade noch Daten gespeichert.\n\nWenn du jetzt ${action}, gehen ungespeicherte Daten möglicherweise verloren.\n\nTrotzdem fortfahren?`
-    );
-  };
-
-  const handleDisconnect = async () => {
-    // Stop incoming packets first so the flush has a stable buffer to drain
-    disconnect();
-    if (!(await flushAndConfirm('die Verbindung trennst'))) return;
-  };
-
-  const handleLogout = async () => {
-    if (!(await flushAndConfirm('dich abmeldest'))) return;
-    logout();
-  };
-
   return (
     <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-3">
         <Radio className="w-5 h-5 text-green-400" />
-        <span className="font-bold text-lg tracking-wide hidden sm:inline">Meshtastic Dashboard</span>
-        <span className="text-slate-500 text-xs hidden sm:inline">v1.1.0</span>
-        <PersistenceProgress active={isAuthenticated} />
+        <span className="font-bold text-lg tracking-wide">Meshtastic Dashboard</span>
+        <span className="text-slate-500 text-xs">v1.1.0</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -73,12 +49,12 @@ export default function ConnectionBar() {
           {connected ? (
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-sm hidden sm:inline">Verbunden</span>
+              <span className="text-green-400 text-sm">Verbunden</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-red-400 text-sm hidden sm:inline">Getrennt</span>
+              <span className="text-red-400 text-sm">Getrennt</span>
             </div>
           )}
         </div>
@@ -99,7 +75,7 @@ export default function ConnectionBar() {
         </Button>
 
         {isAuthenticated ? (
-          <Button size="sm" variant="ghost" onClick={handleLogout} className="text-slate-300 hover:text-white gap-1.5" title={user?.email}>
+          <Button size="sm" variant="ghost" onClick={() => logout()} className="text-slate-300 hover:text-white gap-1.5" title={user?.email}>
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Abmelden</span>
           </Button>
@@ -113,7 +89,7 @@ export default function ConnectionBar() {
         {!isSupported ? (
           <span className="text-red-400 text-sm">Web Serial nicht unterstützt (Chrome/Edge erforderlich)</span>
         ) : connected ? (
-          <Button size="sm" variant="destructive" onClick={handleDisconnect} className="gap-2">
+          <Button size="sm" variant="destructive" onClick={disconnect} className="gap-2">
             <WifiOff className="w-4 h-4" />
             Trennen
           </Button>

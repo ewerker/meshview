@@ -14,16 +14,8 @@ export function useMyDevices(isAuthenticated) {
     }
     setLoading(true);
     try {
-      // Pull recent nodes; group by my_node_num (paginate to get all)
-      let rows = [];
-      let skip = 0;
-      while (true) {
-        const batch = await base44.entities.MeshNode.list('-updated_date', 100, skip);
-        if (!batch || batch.length === 0) break;
-        rows = rows.concat(batch);
-        if (batch.length < 100) break;
-        skip += 100;
-      }
+      // Pull recent nodes; group by my_node_num
+      const rows = await base44.entities.MeshNode.list('-updated_date', 500);
       const map = new Map();
       for (const r of rows) {
         if (!r.my_node_num) continue;
@@ -73,39 +65,10 @@ export function useHistoricalData(myNodeNum, enabled) {
     }
     setLoading(true);
     try {
-      // Fetch all nodes using pagination to bypass any backend limits
-      let allNodeRows = [];
-      let skip = 0;
-      const pageSize = 100;
-      while (true) {
-        const batch = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', pageSize, skip);
-        if (!batch || batch.length === 0) break;
-        allNodeRows = allNodeRows.concat(batch);
-        if (batch.length < pageSize) break;
-        skip += pageSize;
-      }
-
-      // Fetch packets using pagination (up to 2000 to prevent memory issues)
-      let packetRows = [];
-      let packetSkip = 0;
-      while (packetRows.length < 2000) {
-        const pBatch = await base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', pageSize, packetSkip);
-        if (!pBatch || pBatch.length === 0) break;
-        packetRows = packetRows.concat(pBatch);
-        if (pBatch.length < pageSize) break;
-        packetSkip += pageSize;
-      }
-      const nodeRowsRaw = allNodeRows;
-
-      // Deduplicate by `num`: keep the most recently heard row per remote node
-      const byNum = new Map();
-      for (const r of nodeRowsRaw) {
-        const existing = byNum.get(r.num);
-        if (!existing || (r.last_heard || 0) > (existing.last_heard || 0)) {
-          byNum.set(r.num, r);
-        }
-      }
-      const nodeRows = Array.from(byNum.values());
+      const [nodeRows, packetRows] = await Promise.all([
+        base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 500),
+        base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 200),
+      ]);
 
       // Map MeshNode rows -> shape used by NodeCard / NodeMap / NodeDetail
       const mapped = nodeRows.map(r => ({

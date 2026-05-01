@@ -9,7 +9,6 @@ import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
 import DeviceSelector from '@/components/meshtastic/DeviceSelector.jsx';
-import StatusBanner from '@/components/meshtastic/StatusBanner.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
@@ -84,7 +83,6 @@ export default function HistoricalDashboard() {
 
   return (
     <>
-      <StatusBanner mode="offline" />
       <DeviceSelector
         devices={devices}
         selected={effectiveDevice}
