@@ -33,7 +33,7 @@ const FIELD_LABELS = {
   positionBroadcastSecs: 'Positionsintervall', smartPositionEnabled: 'Smart Position', fixedPosition: 'Feste Position', gpsEnabled: 'GPS', gpsUpdateInterval: 'GPS Update', gpsAttemptTime: 'GPS Versuchsdauer', broadcastSmartMinimumDistance: 'Smart Distanz', broadcastSmartMinimumIntervalSecs: 'Smart Intervall',
   waitBluetoothSecs: 'Bluetooth Wartezeit', sdsSecs: 'Shutdown Sleep', lsSecs: 'Light Sleep', minWakeSecs: 'Min. Wachzeit', deviceBatteryInaAddress: 'INA Adresse', powermonEnabled: 'Power Monitor',
   screenOnSecs: 'Display an', gpsFormat: 'GPS Format', autoScreenCarouselSecs: 'Karussell', compassNorthTop: 'Kompass Nord oben', flipScreen: 'Display drehen', units: 'Einheiten',
-  region: 'Region', modemPreset: 'Modem Preset', bandwidth: 'Bandbreite', spreadFactor: 'Spread Factor', codingRate: 'Coding Rate', frequencyOffset: 'Frequenz-Offset', hopLimit: 'Hop Limit', txEnabled: 'TX aktiv', txPower: 'TX Leistung', channelNum: 'Kanalnummer', overrideDutyCycle: 'Duty Cycle Override', sx126xRxBoostedGain: 'RX Boost',
+  usePreset: 'Preset verwenden', region: 'Region', modemPreset: 'Modem Preset', bandwidth: 'Bandbreite', spreadFactor: 'Spread Factor', codingRate: 'Coding Rate', frequencyOffset: 'Frequenz-Offset', hopLimit: 'Hop Limit', txEnabled: 'TX aktiv', txPower: 'TX Leistung', channelNum: 'Kanalnummer', overrideDutyCycle: 'Duty Cycle Override', sx126xRxBoostedGain: 'RX Boost',
   publicKey: 'Public Key', privateKey: 'Private Key', adminKey: 'Admin Key', debugLogApiEnabled: 'Debug API', echo: 'Echo', rxd: 'RXD', txd: 'TXD', baud: 'Baud', timeout: 'Timeout',
   heartbeat: 'Heartbeat', records: 'Records', historyReturnMax: 'History Max', historyReturnWindow: 'History Fenster', sender: 'Sender', save: 'Speichern', deviceUpdateInterval: 'Geräteintervall', environmentUpdateInterval: 'Umgebungsintervall', environmentMeasurementEnabled: 'Umgebung messen', environmentScreenEnabled: 'Umgebung anzeigen', powerMeasurementEnabled: 'Power messen', powerUpdateInterval: 'Power Intervall', updateInterval: 'Update Intervall', transmitOverLora: 'Über LoRa senden', paxcounterUpdateInterval: 'Paxcounter Intervall',
 };
@@ -50,15 +50,24 @@ function getDisplayValues(config) {
     const roleNames = ['Deaktiviert', 'Primär', 'Sekundär'];
     return {
       channelIndex: config.payload?.index,
-      channelName: config.payload?.settings?.name || 'Standard',
+      channelName: config.payload?.settings?.name || `Kanal ${config.payload?.index ?? '?'}`,
       channelRole: roleNames[config.payload?.role] || config.payload?.role,
       psk: config.payload?.settings?.psk ? 'vorhanden' : '',
+      channelNum: config.payload?.settings?.channelNum,
       uplinkEnabled: config.payload?.settings?.uplinkEnabled,
       downlinkEnabled: config.payload?.settings?.downlinkEnabled,
     };
   }
 
   return {};
+}
+
+function hasUsefulValues(config) {
+  const values = config.payload?.values || getDisplayValues(config);
+  const keys = Object.keys(values);
+  if (keys.length === 0) return false;
+  if (keys.every(key => /^Feld \d+$/.test(key))) return false;
+  return Object.values(values).some(value => value !== null && value !== undefined && value !== '');
 }
 
 function ConfigCard({ config }) {
@@ -113,11 +122,16 @@ export default function DeviceSettingsPanel() {
       },
     }] : [];
     const order = Object.keys(SECTION_META);
-    return [...userConfig, ...deviceConfigs].sort((a, b) => {
-      const aKey = a.section?.startsWith('Channel') ? 'Channel' : a.section;
-      const bKey = b.section?.startsWith('Channel') ? 'Channel' : b.section;
-      return order.indexOf(aKey) - order.indexOf(bKey);
-    });
+    // Auslesbare, aktuell bewusst ausgeblendete Bereiche ohne sichere Feldzuordnung:
+    // SessionKey, ExternalNotification, CannedMessage, Audio, RemoteHardware,
+    // AmbientLighting, DetectionSensor und unbekannte reine Rohfelder wie "Feld 1/2/3".
+    return [...userConfig, ...deviceConfigs]
+      .filter(hasUsefulValues)
+      .sort((a, b) => {
+        const aKey = a.section?.startsWith('Channel') ? 'Channel' : a.section;
+        const bKey = b.section?.startsWith('Channel') ? 'Channel' : b.section;
+        return order.indexOf(aKey) - order.indexOf(bKey);
+      });
   }, [deviceConfigs, myNode, myNodeNum, metadata]);
 
   if (!connected) return null;
@@ -131,7 +145,7 @@ export default function DeviceSettingsPanel() {
           <div>
             <div className="font-semibold text-xs text-blue-900 dark:text-blue-100">Geräte-Einstellungen</div>
             <div className="text-[11px] text-blue-700 dark:text-blue-300 leading-tight">
-              Wichtige Einstellungen: User/Node-Name, Kanäle und LoRa zuerst · weitere Bereiche darunter.
+              Wichtige Einstellungen: User/Node-Name, Kanaldefinitionen und LoRa zuerst · leere Rohfelder werden ausgeblendet.
             </div>
           </div>
         </div>
