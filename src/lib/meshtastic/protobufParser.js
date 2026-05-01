@@ -116,21 +116,151 @@ function parseData(bytes) {
     if (portnum === 1) {
       // TEXT_MESSAGE_APP
       data.text = new TextDecoder().decode(payload);
+    } else if (portnum === 3) {
+      // REMOTE_HARDWARE_APP
+      data.hardware = parseRemoteHardware(payload);
     } else if (portnum === 4) {
       // POSITION_APP
       data.position = parsePosition(payload);
     } else if (portnum === 5) {
       // NODEINFO_APP
       data.user = parseUser(payload);
+    } else if (portnum === 6) {
+      // ROUTING_APP
+      data.routing = parseRouting(payload);
+    } else if (portnum === 9) {
+      // WAYPOINT_APP
+      data.waypoint = parseWaypoint(payload);
+    } else if (portnum === 34) {
+      // PAXCOUNTER_APP
+      data.paxcounter = parsePaxcounter(payload);
+    } else if (portnum === 64 || portnum === 66) {
+      // SERIAL_APP / RANGE_TEST_APP
+      data.payloadText = decodePrintableText(payload);
     } else if (portnum === 67) {
       // TELEMETRY_APP
       data.telemetry = parseTelemetry(payload);
+    } else if (portnum === 70) {
+      // TRACEROUTE_APP
+      data.traceroute = parseTraceroute(payload);
+    } else if (portnum === 71) {
+      // NEIGHBORINFO_APP
+      data.neighborInfo = parseNeighborInfo(payload);
     }
+
+    data.analysis = buildAppAnalysis(portnum, data, payload);
   } catch (e) {
     data.parseError = e.message;
   }
 
   return data;
+}
+
+function buildAppAnalysis(portnum, data, payload) {
+  const portName = data.portnumName;
+  if (data.text) return { app: portName, summary: `Textnachricht: ${data.text}`, decoded: { text: data.text } };
+  if (data.position) return { app: portName, summary: `Position: ${data.position.latitude?.toFixed(5)}, ${data.position.longitude?.toFixed(5)}`, decoded: data.position };
+  if (data.user) return { app: portName, summary: `NodeInfo: ${data.user.longName || data.user.id || 'unbekannt'}`, decoded: data.user };
+  if (data.telemetry) return { app: portName, summary: summarizeTelemetry(data.telemetry), decoded: data.telemetry };
+  if (data.hardware) return { app: portName, summary: data.hardware.summary, decoded: data.hardware };
+  if (data.routing) return { app: portName, summary: data.routing.summary, decoded: data.routing };
+  if (data.waypoint) return { app: portName, summary: data.waypoint.summary, decoded: data.waypoint };
+  if (data.paxcounter) return { app: portName, summary: data.paxcounter.summary, decoded: data.paxcounter };
+  if (data.traceroute) return { app: portName, summary: data.traceroute.summary, decoded: data.traceroute };
+  if (data.neighborInfo) return { app: portName, summary: data.neighborInfo.summary, decoded: data.neighborInfo };
+  if (data.payloadText) return { app: portName, summary: `${portName}: ${data.payloadText.slice(0, 80)}`, decoded: { text: data.payloadText } };
+
+  const rawFields = rawFieldSummary(parseMessage(payload));
+  return { app: portName, summary: `${portName}: ${payload.length} Bytes Payload`, decoded: rawFields };
+}
+
+function summarizeTelemetry(telemetry) {
+  if (telemetry.deviceMetrics) return `Telemetrie: Batterie ${telemetry.deviceMetrics.batteryLevel || 0}% · ${telemetry.deviceMetrics.voltage?.toFixed?.(2) || '-'}V`;
+  if (telemetry.environmentMetrics) return `Umgebung: ${telemetry.environmentMetrics.temperature?.toFixed?.(1) ?? '-'}°C · ${telemetry.environmentMetrics.relativeHumidity?.toFixed?.(0) ?? '-'}%`;
+  if (telemetry.powerMetrics) return 'Power-Telemetrie empfangen';
+  return 'Telemetrie empfangen';
+}
+
+function parseRemoteHardware(bytes) {
+  const fields = parseMessage(bytes);
+  const typeNames = { 0: 'Unbekannt', 1: 'GPIO lesen', 2: 'GPIO schreiben', 3: 'GPIO beobachten', 4: 'GPIO geändert' };
+  return {
+    type: fields[1] ?? null,
+    typeName: typeNames[fields[1]] || `Typ ${fields[1] ?? '?'}`,
+    gpioMask: fields[2] ?? null,
+    gpioValue: fields[3] ?? null,
+    rawFields: rawFieldSummary(fields),
+    summary: `Hardware: ${typeNames[fields[1]] || `Typ ${fields[1] ?? '?'}`} · Maske ${fields[2] ?? '-'} · Wert ${fields[3] ?? '-'}`,
+  };
+}
+
+function parseRouting(bytes) {
+  const fields = parseMessage(bytes);
+  const errorNames = { 0: 'Kein Fehler', 1: 'Kein Interface', 2: 'Max Retransmit', 3: 'Keine Route', 4: 'Kein Kanal', 5: 'Zu groß', 6: 'Kein Antwortweg', 7: 'Duty Cycle Limit', 8: 'Bad Request', 32: 'PKI verschlüsselt', 33: 'PKI Signatur ungültig' };
+  return {
+    errorReason: fields[1] ?? null,
+    errorText: errorNames[fields[1]] || (fields[1] !== undefined ? `Fehler ${fields[1]}` : null),
+    rawFields: rawFieldSummary(fields),
+    summary: fields[1] !== undefined ? `Routing: ${errorNames[fields[1]] || `Fehler ${fields[1]}`}` : 'Routing: Daten empfangen',
+  };
+}
+
+function parseWaypoint(bytes) {
+  const fields = parseMessage(bytes);
+  const waypoint = {
+    id: fields[1] ?? null,
+    latitudeI: signedInt(fields[2] || 0),
+    longitudeI: signedInt(fields[3] || 0),
+    expire: fields[4] ?? null,
+    lockedTo: fields[5] ?? null,
+    name: stringValue(fields[6]),
+    description: stringValue(fields[7]),
+    icon: fields[8] ?? null,
+    rawFields: rawFieldSummary(fields),
+  };
+  waypoint.latitude = waypoint.latitudeI * 1e-7;
+  waypoint.longitude = waypoint.longitudeI * 1e-7;
+  waypoint.summary = `Waypoint: ${waypoint.name || waypoint.id || '?'} · ${waypoint.latitude.toFixed(5)}, ${waypoint.longitude.toFixed(5)}`;
+  return waypoint;
+}
+
+function parsePaxcounter(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    wifi: fields[1] ?? null,
+    ble: fields[2] ?? null,
+    uptime: fields[3] ?? null,
+    rawFields: rawFieldSummary(fields),
+    summary: `Paxcounter: WLAN ${fields[1] ?? '-'} · BLE ${fields[2] ?? '-'}`,
+  };
+}
+
+function parseTraceroute(bytes) {
+  const fields = parseMessage(bytes);
+  const route = Array.isArray(fields[1]) ? fields[1] : (fields[1] !== undefined ? [fields[1]] : []);
+  const snrTowards = Array.isArray(fields[2]) ? fields[2] : (fields[2] !== undefined ? [fields[2]] : []);
+  return {
+    route,
+    snrTowards,
+    rawFields: rawFieldSummary(fields),
+    summary: route.length ? `Traceroute: ${route.length} Hop(s)` : 'Traceroute: Daten empfangen',
+  };
+}
+
+function parseNeighborInfo(bytes) {
+  const fields = parseMessage(bytes);
+  return {
+    nodeBroadcastIntervalSecs: fields[1] ?? null,
+    neighbors: fields[2] ? 'vorhanden' : null,
+    rawFields: rawFieldSummary(fields),
+    summary: `Nachbar-Info: Intervall ${fields[1] ?? '-'}s`,
+  };
+}
+
+function decodePrintableText(bytes) {
+  if (!bytes?.length) return '';
+  const text = new TextDecoder().decode(bytes).replace(/\u0000/g, '').trim();
+  return /^[\x09\x0a\x0d\x20-\x7eäöüÄÖÜß€§°µ²³\-_:;,.!?/()[\]{}@#%&+=*'"\\|<>\r\n\t]+$/.test(text) ? text : '';
 }
 
 function parseMyNodeInfo(bytes) {

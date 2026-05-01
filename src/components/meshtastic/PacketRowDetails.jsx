@@ -50,11 +50,29 @@ function CopyButton({ text }) {
 }
 
 export default function PacketRowDetails({ packet }) {
+  const decodedAnalysis = packet.raw?.packet?.decoded?.analysis;
+  const analysisJson = decodedAnalysis ? JSON.stringify(decodedAnalysis, jsonReplacer, 2) : null;
   const json = JSON.stringify(packet.raw, jsonReplacer, 2);
   const hex = formatHexDump(packet.rawBytes);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 space-y-3 border-l-2 border-blue-400">
+      {decodedAnalysis && (
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Dekodiert ({decodedAnalysis.app})
+            </div>
+            <CopyButton text={analysisJson} />
+          </div>
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-2 space-y-2">
+            <div className="text-xs font-medium text-slate-700 dark:text-slate-200">{decodedAnalysis.summary}</div>
+            <pre className="text-[11px] font-mono text-slate-600 dark:text-slate-300 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre">
+              {analysisJson}
+            </pre>
+          </div>
+        </div>
+      )}
       <div>
         <div className="flex items-center justify-between mb-1">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">

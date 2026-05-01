@@ -42,6 +42,7 @@ function getPacketIcon(packet) {
 function getPacketLabel(packet) {
   const decoded = getDecoded(packet);
   
+  if (decoded?.analysis?.summary) return `${decoded.analysis.app}: ${decoded.analysis.summary.replace(`${decoded.analysis.app}: `, '')}`;
   if (decoded?.text) return `Text: ${decoded.text.slice(0, 50)}`;
   if (decoded?.position) return `GPS: ${decoded.position.latitude?.toFixed(4)}, ${decoded.position.longitude?.toFixed(4)}`;
   if (decoded?.telemetry?.deviceMetrics) return `Telemetrie: Bat ${decoded.telemetry.deviceMetrics.batteryLevel}%`;
