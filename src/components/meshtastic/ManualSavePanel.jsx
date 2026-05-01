@@ -27,7 +27,7 @@ function NodeResultList({ title, nodes, tone, onSelectNode }) {
   );
 }
 
-export default function ManualSavePanel({ autoSaveStatus, onSelectNode }) {
+export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAutoSaveEnabled, onSelectNode }) {
   const { isAuthenticated, navigateToLogin } = useAuth();
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
   const [saving, setSaving] = useState(false);
@@ -64,7 +64,8 @@ export default function ManualSavePanel({ autoSaveStatus, onSelectNode }) {
         },
       });
       setResult(saveResult);
-      setStatus('Sicherung abgeschlossen');
+      onAutoSaveEnabled?.();
+      setStatus('Sicherung abgeschlossen · AutoSave ist jetzt aktiv');
     } catch (e) {
       setError(e.message || 'Sicherung fehlgeschlagen');
       setStatus(null);
@@ -87,9 +88,10 @@ export default function ManualSavePanel({ autoSaveStatus, onSelectNode }) {
               <Badge variant="secondary">{nodes.length} Nodes erkannt</Badge>
               <Badge variant="secondary">{packetLog.length} Pakete bereit</Badge>
               {myNodeNum && <Badge variant="outline">Gerät #{myNodeNum.toString(16).toUpperCase()}</Badge>}
-              {autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Auto-Speichern…</Badge>}
-              {autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">Auto gespeichert</Badge>}
-              {autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">Auto-Fehler</Badge>}
+              {!autoSaveEnabled && <Badge variant="outline">AutoSave nach erster Sicherung</Badge>}
+              {autoSaveEnabled && autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Auto-Speichern…</Badge>}
+              {autoSaveEnabled && autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">Auto gespeichert</Badge>}
+              {autoSaveEnabled && autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">Auto-Fehler</Badge>}
             </div>
           </div>
         </div>

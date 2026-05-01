@@ -237,12 +237,17 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
   const nodeRows = nodes
     .filter(node => typeof node.num === 'number')
     .map(node => normalizeNodeForSave(node, myNodeNum, myNodeId));
-  const packetRows = [...packetLog].map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
+  const allPacketRows = [...packetLog].map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
 
   const createdNodes = [];
   const updatedNodes = [];
-  const existingNodes = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 1000);
+  const [existingNodes, existingPackets] = await Promise.all([
+    base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 1000),
+    base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 1000),
+  ]);
   const existingByNum = new Map(existingNodes.map(node => [node.num, node]));
+  const existingPacketKeys = new Set(existingPackets.map(packet => `${packet.seq}:${packet.time}:${packet.type}`));
+  const packetRows = allPacketRows.filter(packet => !existingPacketKeys.has(`${packet.seq}:${packet.time}:${packet.type}`));
 
   onProgress?.({ text: `Prüfe ${nodeRows.length} Nodes…`, current: 0, total: nodeRows.length, created: 0, updated: 0 });
   for (const [index, nodeRow] of nodeRows.entries()) {

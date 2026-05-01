@@ -1,30 +1,35 @@
-// Activates DB persistence for incoming Meshtastic packets when a user is logged in.
-import { useEffect, useState } from 'react';
-import { meshStore } from '@/lib/meshtastic/meshStore.js';
-import { createPersistFn, flushNow } from '@/lib/meshtastic/persistence.js';
-import { useAuth } from '@/lib/AuthContext';
+// Runs snapshot-based autosave after the user enabled saving in this session.
+import { useEffect, useRef, useState } from 'react';
+import { saveMeshSnapshot } from '@/lib/meshtastic/persistence.js';
 
-export function useMeshPersistence() {
-  const { isAuthenticated } = useAuth();
+export function useMeshPersistence({ enabled, myNodeNum, nodes, packetLog }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState(null);
+  const lastFingerprintRef = useRef('');
+  const savingRef = useRef(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      meshStore.setPersistFn(null);
-      return;
-    }
+    if (!enabled || !myNodeNum) return;
 
-    meshStore.setPersistFn(createPersistFn(
-      () => meshStore.myNodeNum,
-      () => meshStore.getMyNode(),
-      setAutoSaveStatus
-    ));
+    const fingerprint = `${myNodeNum}:${nodes.length}:${packetLog.length}:${packetLog.at(-1)?.seq || 0}:${packetLog.at(-1)?.time || 0}`;
+    if (fingerprint === lastFingerprintRef.current || savingRef.current) return;
 
-    return () => {
-      flushNow();
-      meshStore.setPersistFn(null);
-    };
-  }, [isAuthenticated]);
+    const timer = setTimeout(async () => {
+      savingRef.current = true;
+      setAutoSaveStatus({ status: 'saving' });
+
+      try {
+        const result = await saveMeshSnapshot({ myNodeNum, nodes, packetLog });
+        lastFingerprintRef.current = fingerprint;
+        setAutoSaveStatus({ status: 'saved', ...result });
+      } catch (e) {
+        setAutoSaveStatus({ status: 'error', message: e.message || 'AutoSave fehlgeschlagen' });
+      }
+
+      savingRef.current = false;
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [enabled, myNodeNum, nodes, packetLog]);
 
   return autoSaveStatus;
 }
