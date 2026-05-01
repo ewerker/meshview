@@ -59,15 +59,23 @@ async function flushPackets() {
     const batch = packetBuffer.splice(0, 50);
     inFlightPackets += batch.length;
     setActivity(`📦 Pakete schreiben (${batch.length})`);
-    try {
-      await base44.entities.MeshPacket.bulkCreate(batch);
-      if (packetBuffer.length > 0) await new Promise(r => setTimeout(r, 400));
-    } catch (e) {
-      console.warn('MeshPacket bulkCreate failed', e);
-    } finally {
-      inFlightPackets -= batch.length;
-      emitProgress();
+    
+    let success = false;
+    let attempts = 0;
+    while (!success && attempts < 3) {
+      try {
+        attempts++;
+        await base44.entities.MeshPacket.bulkCreate(batch);
+        success = true;
+        if (packetBuffer.length > 0) await new Promise(r => setTimeout(r, 400));
+      } catch (e) {
+        console.warn(`MeshPacket bulkCreate failed (Versuch ${attempts})`, e);
+        if (attempts < 3) await new Promise(r => setTimeout(r, 2000)); // 2 Sekunden warten bei Rate Limit
+      }
     }
+    
+    inFlightPackets -= batch.length;
+    emitProgress();
   }
   flushPacketsRunning = false;
   if (inFlightNodes === 0 && nodeBuffer.size === 0) setActivity(null);
@@ -152,17 +160,26 @@ async function flushNodes() {
       // Batch bulkCreate to prevent "Payload Too Large" errors and backend rate limits
       for (let i = 0; i < toCreate.length; i += 10) {
         const batch = toCreate.slice(i, i + 10);
-        try {
-          const created = await base44.entities.MeshNode.bulkCreate(batch.map(c => c.data));
-          if (Array.isArray(created)) {
-            created.forEach((row, idx) => {
-              if (row?.id) nodeIdCache.set(batch[idx].key, row.id);
-            });
+        
+        let success = false;
+        let attempts = 0;
+        while (!success && attempts < 3) {
+          try {
+            attempts++;
+            const created = await base44.entities.MeshNode.bulkCreate(batch.map(c => c.data));
+            if (Array.isArray(created)) {
+              created.forEach((row, idx) => {
+                if (row?.id) nodeIdCache.set(batch[idx].key, row.id);
+              });
+            }
+            success = true;
+          } catch (e) {
+            console.warn(`MeshNode bulkCreate failed (Versuch ${attempts})`, e);
+            if (attempts < 3) await new Promise(r => setTimeout(r, 2000)); // 2 Sekunden warten
+            else nodeCacheLoadedFor = null; // Nach 3 Fehlversuchen Cache resetten
           }
-        } catch (e) {
-          console.warn('MeshNode bulkCreate failed for batch', e);
-          nodeCacheLoadedFor = null; // Reset cache so next round re-syncs
         }
+        
         inFlightNodes -= batch.length;
         emitProgress();
         if (i + 10 < toCreate.length) {
@@ -177,15 +194,23 @@ async function flushNodes() {
       updatedCount++;
       const name = u.data.long_name || u.data.short_name || ('!' + u.data.num?.toString(16));
       setActivity(`✏️ Node ${updatedCount}/${toUpdate.length}: ${name}`);
-      try {
-        await base44.entities.MeshNode.update(u.id, u.data);
-        await new Promise(r => setTimeout(r, 100)); // kleine Pause, um Spam-Filter zu vermeiden
-      } catch (e) {
-        console.warn('MeshNode update failed', e);
-      } finally {
-        inFlightNodes -= 1;
-        emitProgress();
+      
+      let success = false;
+      let attempts = 0;
+      while (!success && attempts < 3) {
+        try {
+          attempts++;
+          await base44.entities.MeshNode.update(u.id, u.data);
+          success = true;
+          await new Promise(r => setTimeout(r, 100)); // kleine Pause, um Spam-Filter zu vermeiden
+        } catch (e) {
+          console.warn(`MeshNode update failed (Versuch ${attempts})`, e);
+          if (attempts < 3) await new Promise(r => setTimeout(r, 2000));
+        }
       }
+      
+      inFlightNodes -= 1;
+      emitProgress();
     }
   }
 
