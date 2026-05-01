@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import { useState } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight } from 'lucide-react';
 import PacketRowDetails from './PacketRowDetails.jsx';
@@ -126,50 +126,49 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
             const details = labelParts.slice(1).join(':').trim() || '-';
             const isExpanded = expandedSeq === packet.seq;
             const toggle = () => setExpandedSeq(isExpanded ? null : packet.seq);
-            return (
-              <Fragment key={packet.seq}>
-                <tr
-                  onClick={toggle}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+            return [
+              <tr
+                key={`${packet.seq}-row`}
+                onClick={toggle}
+                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+              >
+                <td className="px-2 py-2 text-slate-400 dark:text-slate-500 w-6">
+                  <ChevronRight
+                    className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                  />
+                </td>
+                <td
+                  className={`px-3 py-2 font-mono text-slate-500 dark:text-slate-400 ${packet.from && onSelectNode ? 'hover:text-blue-600 dark:hover:text-blue-400 hover:underline' : ''}`}
+                  onClick={(e) => {
+                    if (packet.from && onSelectNode) {
+                      e.stopPropagation();
+                      onSelectNode(packet.from);
+                    }
+                  }}
                 >
-                  <td className="px-2 py-2 text-slate-400 dark:text-slate-500 w-6">
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                    />
-                  </td>
-                  <td
-                    className={`px-3 py-2 font-mono text-slate-500 dark:text-slate-400 ${packet.from && onSelectNode ? 'hover:text-blue-600 dark:hover:text-blue-400 hover:underline' : ''}`}
-                    onClick={(e) => {
-                      if (packet.from && onSelectNode) {
-                        e.stopPropagation();
-                        onSelectNode(packet.from);
-                      }
-                    }}
-                  >
-                    {packet.from?.toString(16).toUpperCase() || '-'}
-                  </td>
-                  <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
-                    <div className="flex items-center gap-2">
-                      {getPacketIcon(packet)}
-                      <span>{typ}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-xs" title={details !== '-' ? details : undefined}>
-                    {details}
-                  </td>
-                  <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    {formatTime(packet.time)}
+                  {packet.from?.toString(16).toUpperCase() || '-'}
+                </td>
+                <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center gap-2">
+                    {getPacketIcon(packet)}
+                    <span>{typ}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-xs" title={details !== '-' ? details : undefined}>
+                  {details}
+                </td>
+                <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  {formatTime(packet.time)}
+                </td>
+              </tr>,
+              isExpanded && (
+                <tr key={`${packet.seq}-details`}>
+                  <td colSpan={5} className="p-0">
+                    <PacketRowDetails packet={packet} />
                   </td>
                 </tr>
-                {isExpanded && (
-                  <tr>
-                    <td colSpan={5} className="p-0">
-                      <PacketRowDetails packet={packet} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            );
+              )
+            ];
           })}
         </tbody>
       </table>
