@@ -15,6 +15,7 @@ class MeshStore {
     this.packetLog = [];
     this.packetSeq = 0;
     this.isLoading = false;
+    this.persistFn = null; // optional async (logEntry, parsed) => void
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -60,6 +61,11 @@ class MeshStore {
     }
     this.packetLog.push(logEntry);
     if (this.packetLog.length > 200) this.packetLog.shift();
+
+    // Persist to DB if a persist function was injected (only when user is logged in)
+    if (this.persistFn) {
+      try { this.persistFn(logEntry, parsed); } catch (e) { console.warn('persist failed', e); }
+    }
 
     if (parsed.type === 'myInfo') {
       this.myNodeNum = parsed.myInfo.myNodeNum;
@@ -180,6 +186,10 @@ class MeshStore {
 
   isSupported() {
     return this.serial.isSupported();
+  }
+
+  setPersistFn(fn) {
+    this.persistFn = fn;
   }
 }
 

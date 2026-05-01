@@ -88,8 +88,9 @@ function formatTime(timestamp) {
   return `${hms}.${ms}`;
 }
 
-export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = false }) {
-  const { packetLog } = useMeshStore();
+export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = false, packets }) {
+  const store = useMeshStore();
+  const packetLog = packets ?? store.packetLog;
   const [expandedSeq, setExpandedSeq] = useState(null);
 
   const visiblePackets = messagesOnly

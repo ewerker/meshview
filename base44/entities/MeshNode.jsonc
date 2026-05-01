@@ -1,0 +1,84 @@
+{
+  "name": "MeshNode",
+  "type": "object",
+  "description": "Letzter bekannter Zustand eines Meshtastic-Nodes, gesehen von einem bestimmten lokalen Ger\u00e4t des Users.",
+  "properties": {
+    "my_node_num": {
+      "type": "number",
+      "description": "Node-Nummer des lokal angeschlossenen Ger\u00e4ts, das dieses Paket empfangen hat (zur Filterung pro Ger\u00e4t des Users)."
+    },
+    "my_node_id": {
+      "type": "string",
+      "description": "Lesbare ID des lokalen Ger\u00e4ts (z.B. !abcd1234)."
+    },
+    "num": {
+      "type": "number",
+      "description": "Node-Nummer des fernen Mesh-Nodes."
+    },
+    "node_id": {
+      "type": "string",
+      "description": "Lesbare ID des fernen Mesh-Nodes (z.B. !abcd1234)."
+    },
+    "long_name": {
+      "type": "string"
+    },
+    "short_name": {
+      "type": "string"
+    },
+    "hw_model": {
+      "type": "number"
+    },
+    "is_licensed": {
+      "type": "boolean"
+    },
+    "channel": {
+      "type": "number"
+    },
+    "hops_away": {
+      "type": "number"
+    },
+    "via_mqtt": {
+      "type": "boolean"
+    },
+    "snr": {
+      "type": "number"
+    },
+    "rssi": {
+      "type": "number"
+    },
+    "last_heard": {
+      "type": "number",
+      "description": "Unix timestamp (Sekunden)"
+    },
+    "user": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Komplettes user-Objekt aus Meshtastic"
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Komplettes position-Objekt aus Meshtastic"
+    },
+    "device_metrics": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "environment_metrics": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "my_node_num",
+    "num"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

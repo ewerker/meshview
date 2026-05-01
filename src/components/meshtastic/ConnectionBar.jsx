@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Usb, WifiOff, Loader2, Radio, HelpCircle, Info, Moon, Sun } from 'lucide-react';
+import { Usb, WifiOff, Loader2, Radio, HelpCircle, Info, Moon, Sun, LogIn, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useDarkMode } from '@/lib/DarkModeContext';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function ConnectionBar() {
   const { connected, isSupported, connect, disconnect, nodes, myNode, metadata } = useMeshStore();
   const { isDark, toggleDark } = useDarkMode();
+  const { isAuthenticated, user, navigateToLogin, logout } = useAuth();
   const [connecting, setConnecting] = useState(false);
 
   const handleConnect = async () => {
@@ -71,6 +73,18 @@ export default function ConnectionBar() {
         <Button size="sm" variant="ghost" onClick={toggleDark} className="text-slate-300 hover:text-white px-2">
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
+
+        {isAuthenticated ? (
+          <Button size="sm" variant="ghost" onClick={() => logout()} className="text-slate-300 hover:text-white gap-1.5" title={user?.email}>
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Abmelden</span>
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={navigateToLogin} className="text-slate-300 hover:text-white gap-1.5">
+            <LogIn className="w-4 h-4" />
+            <span className="hidden sm:inline">Anmelden</span>
+          </Button>
+        )}
 
         {!isSupported ? (
           <span className="text-red-400 text-sm">Web Serial nicht unterstützt (Chrome/Edge erforderlich)</span>

@@ -1,6 +1,8 @@
-import { Radio, Map, Activity, Thermometer, Wifi, Cpu, Filter, Moon, MessageSquare, Battery, Usb, Shield, Zap } from 'lucide-react';
+import { Radio, Map, Activity, Thermometer, Wifi, Cpu, Filter, Moon, MessageSquare, Battery, Usb, Shield, Zap, LogIn, LogOut, Database, User as UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
+import { useAuth } from '@/lib/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const FEATURES = [
   { icon: Radio, color: 'from-blue-500 to-cyan-500', title: 'Node-Übersicht', desc: 'Alle Mesh-Teilnehmer mit Hardware, Hops & Status auf einen Blick' },
@@ -21,6 +23,7 @@ const HIGHLIGHTS = [
 
 export default function DisconnectedHero() {
   const { isSupported } = useMeshStore();
+  const { isAuthenticated, user, navigateToLogin, logout } = useAuth();
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -60,10 +63,38 @@ export default function DisconnectedHero() {
           </div>
 
           {/* CTA */}
-          <div className="mt-8 inline-flex flex-col items-center">
+          <div className="mt-8 inline-flex flex-col items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
               <Usb className="w-4 h-4" />
               <span>Gerät per USB anschließen und oben rechts auf <strong className="text-slate-700 dark:text-slate-200">„Mit Gerät verbinden"</strong> klicken</span>
+            </div>
+
+            {/* Auth section */}
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+              <Database className="w-5 h-5 text-blue-500" />
+              {isAuthenticated ? (
+                <>
+                  <div className="text-sm text-left">
+                    <div className="font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                      <UserIcon className="w-3.5 h-3.5" />{user?.full_name || user?.email}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Empfangene Daten werden gespeichert</div>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => logout()} className="gap-2">
+                    <LogOut className="w-4 h-4" /> Abmelden
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm text-left">
+                    <div className="font-medium text-slate-700 dark:text-slate-200">Nicht angemeldet</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Anmelden, um Daten zu speichern und Verlauf zu sehen</div>
+                  </div>
+                  <Button size="sm" onClick={navigateToLogin} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                    <LogIn className="w-4 h-4" /> Anmelden
+                  </Button>
+                </>
+              )}
             </div>
 
             {!isSupported && (

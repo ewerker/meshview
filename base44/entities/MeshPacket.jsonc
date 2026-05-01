@@ -1,0 +1,68 @@
+{
+  "name": "MeshPacket",
+  "type": "object",
+  "description": "Empfangenes Paket vom Meshtastic-Ger\u00e4t (historisches Log).",
+  "properties": {
+    "my_node_num": {
+      "type": "number",
+      "description": "Node-Nummer des lokal angeschlossenen Ger\u00e4ts, das dieses Paket empfangen hat."
+    },
+    "my_node_id": {
+      "type": "string"
+    },
+    "seq": {
+      "type": "number"
+    },
+    "time": {
+      "type": "number",
+      "description": "Empfangszeit in ms (Date.now())"
+    },
+    "type": {
+      "type": "string",
+      "description": "Paket-Typ (z.B. packet, nodeInfo, myInfo, telemetry, ...)"
+    },
+    "from_num": {
+      "type": "number"
+    },
+    "to_num": {
+      "type": "number"
+    },
+    "portnum": {
+      "type": "string"
+    },
+    "rx_snr": {
+      "type": "number"
+    },
+    "rx_rssi": {
+      "type": "number"
+    },
+    "hop_limit": {
+      "type": "number"
+    },
+    "channel": {
+      "type": "number"
+    },
+    "text": {
+      "type": "string",
+      "description": "Textinhalt, falls Textnachricht"
+    },
+    "raw": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Komplettes geparsetes FromRadio-Objekt"
+    }
+  },
+  "required": [
+    "my_node_num",
+    "time",
+    "type"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

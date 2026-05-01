@@ -31,8 +31,10 @@ function timeAgo(timestamp) {
   return `vor ${Math.floor(diff / 86400)}d`;
 }
 
-export default function NodeDetail({ node }) {
-  const { packetLog, myNode } = useMeshStore();
+export default function NodeDetail({ node, packetLog: packetLogProp, myNode: myNodeProp }) {
+  const store = useMeshStore();
+  const packetLog = packetLogProp ?? store.packetLog;
+  const myNode = myNodeProp ?? store.myNode;
   const distance = node && myNode && node.num !== myNode.num ? distanceToMyNode(node, myNode) : null;
 
   if (!node) return (
