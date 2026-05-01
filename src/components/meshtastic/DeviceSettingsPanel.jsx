@@ -88,7 +88,7 @@ function ConfigCard({ config, onEdit }) {
         </div>
         <div className="flex items-center gap-1.5">
           <Badge variant="outline" className="text-[10px] border-blue-200 dark:border-blue-800">empfangen</Badge>
-          <Button size="sm" variant="outline" onClick={() => onEdit(config)} className="h-6 px-2 text-[10px]">Bearbeiten</Button>
+          <Button size="sm" onClick={() => onEdit(config)} className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white">Bearbeiten</Button>
         </div>
       </div>
 
