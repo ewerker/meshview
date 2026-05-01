@@ -56,6 +56,13 @@ function nodeIdString(num) {
   return '!' + num.toString(16).padStart(8, '0');
 }
 
+function normalizeBoolean(value) {
+  if (typeof value === 'boolean') return value;
+  if (value === 1 || value === '1' || value === 'true') return true;
+  if (value === 0 || value === '0' || value === 'false') return false;
+  return null;
+}
+
 export function createPersistFn(getMyNodeNum, getMyNode) {
   return function persist(logEntry, parsed) {
     const myNodeNum = getMyNodeNum();
@@ -96,7 +103,7 @@ export function createPersistFn(getMyNodeNum, getMyNode) {
         long_name: ni.user?.longName || null,
         short_name: ni.user?.shortName || null,
         hw_model: ni.user?.hwModel ?? null,
-        is_licensed: ni.user?.isLicensed ?? null,
+        is_licensed: normalizeBoolean(ni.user?.isLicensed),
         channel: ni.channel ?? null,
         hops_away: ni.hopsAway ?? null,
         via_mqtt: ni.viaMqtt ?? null,
@@ -145,7 +152,7 @@ function normalizeNodeForSave(node, myNodeNum, myNodeId) {
     long_name: node.user?.longName || null,
     short_name: node.user?.shortName || null,
     hw_model: node.user?.hwModel ?? null,
-    is_licensed: node.user?.isLicensed ?? null,
+    is_licensed: normalizeBoolean(node.user?.isLicensed),
     channel: node.channel ?? null,
     hops_away: node.hopsAway ?? null,
     via_mqtt: node.viaMqtt ?? null,
