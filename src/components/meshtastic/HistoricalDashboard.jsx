@@ -171,9 +171,9 @@ export default function HistoricalDashboard() {
                             </button>
                           )}
                         </div>
+                        {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
                         <div className="flex-1 overflow-y-auto">
                           <ReceivedPacketsTable onSelectNode={setSelectedNodeNum} onReplyToNode={setReplyNodeNum} messagesOnly={filters.messagesOnly} packets={packets} />
-                          {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
                         </div>
                       </div>
                     </Panel>

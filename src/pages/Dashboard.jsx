@@ -227,9 +227,9 @@ export default function Dashboard() {
                             </button>
                           )}
                         </div>
+                        {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
                         <div className="flex-1 overflow-y-auto">
                           <ReceivedPacketsTable onSelectNode={handleSelectNode} onReplyToNode={setReplyNodeNum} messagesOnly={filters.messagesOnly} />
-                          {replyNodeNum && <MessageInput nodes={nodes} selectedNodeNum={replyNodeNum} />}
                         </div>
                       </div>
                     </Panel>

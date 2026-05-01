@@ -37,7 +37,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
   };
 
   return (
-    <div className="border-t bg-white p-3 flex flex-col gap-2 shrink-0">
+    <div className="border-y bg-white dark:bg-slate-950 p-3 flex flex-col gap-2 shrink-0 shadow-sm">
       <Select value={destination} onValueChange={setDestination}>
         <SelectTrigger className="h-8 text-xs">
           <SelectValue />
@@ -62,6 +62,7 @@ export default function MessageInput({ nodes, selectedNodeNum }) {
           onChange={e => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={sending}
+          autoFocus
         />
         <Button size="sm" onClick={handleSend} disabled={sending || !text.trim()} className="px-3">
           <Send className="w-4 h-4" />
