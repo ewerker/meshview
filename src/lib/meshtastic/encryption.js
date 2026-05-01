@@ -47,8 +47,22 @@ function xorHash(value) {
   return hash;
 }
 
-function channelNameBytes(channel) {
-  return new TextEncoder().encode(channel?.settings?.name || '');
+const MODEM_PRESET_NAMES = {
+  0: 'LongFast', 1: 'LongSlow', 2: 'VeryLongSlow', 3: 'MediumSlow', 4: 'MediumFast',
+  5: 'ShortSlow', 6: 'ShortFast', 7: 'LongModerate', 8: 'ShortTurbo',
+};
+
+function getLoraPresetName(deviceConfigs) {
+  const lora = (deviceConfigs || []).find(config => config.category === 'config' && config.section === 'LoRa')?.payload?.values;
+  if (lora && lora.usePreset === false) return 'Custom';
+  return MODEM_PRESET_NAMES[lora?.modemPreset ?? 0] || 'LongFast';
+}
+
+function channelNameBytes(channel, deviceConfigs) {
+  const name = channel?.settings?.name || '';
+  // Firmware: empty/"Default" name expands to current modem preset name (e.g. "LongFast")
+  const effective = name && name !== 'Default' ? name : getLoraPresetName(deviceConfigs);
+  return new TextEncoder().encode(effective);
 }
 
 function getChannels(deviceConfigs) {
@@ -68,27 +82,28 @@ export function getChannelKey(channel, primaryChannel) {
   return normalizePsk(primaryChannel?.settings?.psk);
 }
 
-export function getChannelHash(channel, primaryChannel) {
+export function getChannelHash(channel, primaryChannel, deviceConfigs) {
   const key = getChannelKey(channel, primaryChannel);
   if (!key) return null;
-  return (xorHash(channelNameBytes(channel)) ^ xorHash(key)) & 0xff;
+  return (xorHash(channelNameBytes(channel, deviceConfigs)) ^ xorHash(key)) & 0xff;
 }
 
 export function getChannelCandidates(deviceConfigs) {
   const channels = getChannels(deviceConfigs);
   const primary = getPrimaryChannel(channels);
+  const presetName = getLoraPresetName(deviceConfigs);
   const configured = channels
     .map(channel => ({
       index: channel.index ?? 0,
-      name: channel.settings?.name || `Channel ${channel.index ?? 0}`,
-      hash: getChannelHash(channel, primary),
+      name: channel.settings?.name || presetName,
+      hash: getChannelHash(channel, primary, deviceConfigs),
       psk: getChannelKey(channel, primary),
     }))
     .filter(channel => channel.psk);
 
   if (configured.length > 0) return configured;
 
-  return [{ index: 0, name: 'LongFast', hash: 0, psk: DEFAULT_PSK }];
+  return [{ index: 0, name: presetName, hash: xorHash(new TextEncoder().encode(presetName)) ^ xorHash(DEFAULT_PSK) & 0xff, psk: DEFAULT_PSK }];
 }
 
 export function resolvePacketChannel(deviceConfigs, packetChannelHash = 0) {
