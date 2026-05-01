@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Usb, WifiOff, Loader2, Radio, HelpCircle, Info, Moon, Sun, LogIn, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
+import AppNavigationMenu from '@/components/AppNavigationMenu.jsx';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 import LanguageSwitcher from '@/components/LanguageSwitcher.jsx';
 import { useDarkMode } from '@/lib/DarkModeContext';
@@ -27,14 +28,17 @@ export default function ConnectionBar() {
   };
 
   return (
-    <div className="bg-slate-900 text-white px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <Radio className="w-5 h-5 text-green-400 shrink-0" />
-        <span className="font-bold text-lg tracking-wide truncate">{t('appName')}</span>
-        <span className="text-slate-500 text-xs shrink-0">{t('version')}</span>
+    <div className="bg-slate-900 text-white px-3 py-2 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+      <div className="flex items-center justify-between gap-3 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Radio className="w-5 h-5 text-green-400 shrink-0" />
+          <span className="font-bold text-base sm:text-lg tracking-wide truncate">{t('appName')}</span>
+          <span className="hidden sm:inline text-slate-500 text-xs shrink-0">{t('version')}</span>
+        </div>
+        <AppNavigationMenu className="sm:hidden" />
       </div>
 
-      <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3 flex-wrap justify-start sm:justify-end">
+      <div className="flex w-full sm:w-auto items-center gap-1.5 sm:gap-3 flex-wrap justify-start sm:justify-end">
         {connected && (
           <>
             <Badge variant="outline" className="text-green-400 border-green-400">
@@ -62,12 +66,12 @@ export default function ConnectionBar() {
           )}
         </div>
 
-        <Link to="/help">
+        <Link to="/help" className="hidden sm:block">
           <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white px-2">
             <HelpCircle className="w-4 h-4" />
           </Button>
         </Link>
-        <Link to="/about">
+        <Link to="/about" className="hidden sm:block">
           <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white px-2">
             <Info className="w-4 h-4" />
           </Button>
@@ -99,9 +103,10 @@ export default function ConnectionBar() {
             {t('disconnect')}
           </Button>
         ) : (
-          <Button size="sm" onClick={handleConnect} disabled={connecting} className="gap-2 bg-green-600 hover:bg-green-700">
+          <Button size="sm" onClick={handleConnect} disabled={connecting} className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm bg-green-600 hover:bg-green-700">
             {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Usb className="w-4 h-4" />}
-            {connecting ? t('connecting') : t('connectDevice')}
+            <span className="hidden sm:inline">{connecting ? t('connecting') : t('connectDevice')}</span>
+            <span className="sm:hidden">{connecting ? t('connecting') : 'Verbinden'}</span>
           </Button>
         )}
       </div>
