@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useAuth } from '@/lib/AuthContext';
 
-export default function UserDataTransferPanel() {
+export default function UserDataTransferPanel({ onBusyChange }) {
   const { isAuthenticated, navigateToLogin } = useAuth();
   const [isOpen, setIsOpen] = useLocalStorage('userDataTransferPanel.open', true);
   const [mode, setMode] = useState('merge');
@@ -17,20 +17,25 @@ export default function UserDataTransferPanel() {
 
   const handleExport = async () => {
     setBusy(true);
+    onBusyChange?.(true);
     setError(null);
     setStatus(null);
 
-    const response = await base44.functions.invoke('exportUserData', {});
-    const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `meshtastic-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    try {
+      const response = await base44.functions.invoke('exportUserData', {});
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `meshtastic-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
 
-    setStatus('Export erstellt. Es wurden keine Daten gelöscht.');
-    setBusy(false);
+      setStatus('Export erstellt. Es wurden keine Daten gelöscht.');
+    } finally {
+      setBusy(false);
+      onBusyChange?.(false);
+    }
   };
 
   const handleImportFile = async (event) => {
@@ -38,21 +43,26 @@ export default function UserDataTransferPanel() {
     if (!file) return;
 
     setBusy(true);
+    onBusyChange?.(true);
     setError(null);
     setStatus(null);
 
-    const text = await file.text();
-    const data = JSON.parse(text);
-    const response = await base44.functions.invoke('importUserData', { data, mode });
-    const totals = Object.values(response.data.result || {}).reduce((sum, item) => ({
-      deleted: sum.deleted + (item.deleted || 0),
-      created: sum.created + (item.created || 0),
-      updated: sum.updated + (item.updated || 0),
-    }), { deleted: 0, created: 0, updated: 0 });
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const response = await base44.functions.invoke('importUserData', { data, mode });
+      const totals = Object.values(response.data.result || {}).reduce((sum, item) => ({
+        deleted: sum.deleted + (item.deleted || 0),
+        created: sum.created + (item.created || 0),
+        updated: sum.updated + (item.updated || 0),
+      }), { deleted: 0, created: 0, updated: 0 });
 
-    setStatus(`Import fertig: ${totals.created} ergänzt, ${totals.updated} aktualisiert${totals.deleted ? `, ${totals.deleted} ersetzt` : ''}.`);
-    setBusy(false);
-    event.target.value = '';
+      setStatus(`Import fertig: ${totals.created} ergänzt, ${totals.updated} aktualisiert${totals.deleted ? `, ${totals.deleted} ersetzt` : ''}.`);
+      event.target.value = '';
+    } finally {
+      setBusy(false);
+      onBusyChange?.(false);
+    }
   };
 
   if (!isAuthenticated) {

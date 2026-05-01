@@ -30,7 +30,8 @@ export default function Dashboard() {
   const { t } = useI18n();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
-  const autoSaveStatus = useMeshPersistence({ enabled: autoSaveEnabled && connected && isAuthenticated, myNodeNum, nodes, packetLog });
+  const [dataTransferBusy, setDataTransferBusy] = useState(false);
+  const autoSaveStatus = useMeshPersistence({ enabled: autoSaveEnabled && connected && isAuthenticated && !dataTransferBusy, myNodeNum, nodes, packetLog });
   const [search, setSearch] = useLocalStorage('dashboard.search', '');
   const [sort, setSort] = useLocalStorage('dashboard.sort', 'myFirst');
   const [mainFrameOpen, setMainFrameOpen] = useLocalStorage('dashboard.mainFrame.open', true);
@@ -113,7 +114,7 @@ export default function Dashboard() {
         <>
           <ManualSavePanel autoSaveStatus={autoSaveStatus} autoSaveEnabled={autoSaveEnabled} onAutoSaveEnabled={() => setAutoSaveEnabled(true)} onSelectNode={handleSelectNode} />
           <DeviceSettingsPanel />
-          <UserDataTransferPanel />
+          <UserDataTransferPanel onBusyChange={setDataTransferBusy} />
           <FirstPacketProgress visible={packetLog.length === 0} />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
