@@ -215,7 +215,6 @@ function getNodeChangeReasons(existing, next) {
 
   if (changed('position')) reasons.push('Entfernung');
   if (changed('last_heard')) reasons.push('aktiv');
-  if (changed('device_metrics')) reasons.push('Akku');
   if (changed('environment_metrics')) reasons.push('Umwelt');
   if (changed('long_name') || changed('short_name') || changed('user')) reasons.push('Name');
   if (changed('channel') || changed('hops_away') || changed('via_mqtt')) reasons.push('Route');
