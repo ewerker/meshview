@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
-import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import PacketRowDetails from './PacketRowDetails.jsx';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
@@ -96,10 +97,29 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
   const packetLog = packets ?? store.packetLog;
   const nodes = store.nodes || [];
   const [expandedSeq, setExpandedSeq] = useState(null);
+  const [packetSearch, setPacketSearch] = useState('');
 
-  const visiblePackets = messagesOnly
+  const getNodeDisplayName = (nodeNum) => {
+    const node = nodes.find(item => item.num === nodeNum);
+    const nodeId = nodeNum?.toString(16).toUpperCase();
+    return node?.user?.longName
+      ? `${node.user.longName}${node.user.shortName ? ` (${node.user.shortName})` : ''}`
+      : nodeId || '-';
+  };
+
+  const baseVisiblePackets = messagesOnly
     ? packetLog.filter(p => p.raw?.packet?.decoded?.text)
     : packetLog;
+
+  const searchTerm = packetSearch.trim().toLowerCase();
+  const visiblePackets = searchTerm
+    ? baseVisiblePackets.filter(packet => {
+      const label = getPacketLabel(packet);
+      const nodeName = getNodeDisplayName(packet.from);
+      const rawJson = JSON.stringify(packet.raw || {}).toLowerCase();
+      return `${nodeName} ${label} ${packet.type || ''}`.toLowerCase().includes(searchTerm) || rawJson.includes(searchTerm);
+    })
+    : baseVisiblePackets;
 
   if (visiblePackets.length === 0) {
     return (
@@ -110,7 +130,19 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-2">
+      <div className="px-2 pt-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Input
+            value={packetSearch}
+            onChange={(e) => setPacketSearch(e.target.value)}
+            placeholder="Pakete durchsuchen…"
+            className="h-8 pl-8 text-xs bg-white dark:bg-slate-950"
+          />
+        </div>
+      </div>
+      <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 text-slate-600 dark:text-slate-300 shadow-sm">
           <tr>
@@ -126,11 +158,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
             const labelParts = getPacketLabel(packet).split(':');
             const typ = labelParts[0];
             const details = labelParts.slice(1).join(':').trim() || '-';
-            const node = nodes.find(item => item.num === packet.from);
-            const nodeId = packet.from?.toString(16).toUpperCase();
-            const nodeName = node?.user?.longName
-              ? `${node.user.longName}${node.user.shortName ? ` (${node.user.shortName})` : ''}`
-              : nodeId || '-';
+            const nodeName = getNodeDisplayName(packet.from);
             const isExpanded = expandedSeq === packet.seq;
             const toggle = () => setExpandedSeq(isExpanded ? null : packet.seq);
             return [
@@ -179,6 +207,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
