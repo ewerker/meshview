@@ -72,16 +72,16 @@ export default function ManualSavePanel() {
   };
 
   return (
-    <div className="border-b bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 px-4 py-3">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-3">
-          <Database className="w-5 h-5 text-blue-600 dark:text-blue-300 mt-0.5" />
+    <div className="border-b bg-slate-50/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 px-3 py-2">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <Database className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
           <div>
-            <div className="font-semibold text-sm text-blue-950 dark:text-blue-100">Manuelle Datensicherung</div>
-            <div className="text-xs text-blue-800 dark:text-blue-200 mt-0.5">
-              Nodes und empfangene Pakete werden erst gespeichert, wenn du auf „Jetzt sichern“ klickst.
+            <div className="font-semibold text-xs text-slate-700 dark:text-slate-200">Sicherung</div>
+            <div className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+              Speichert Nodes und empfangene Pakete manuell.
             </div>
-            <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex flex-wrap gap-1.5 mt-1 text-[11px] text-slate-600 dark:text-slate-300">
               <Badge variant="secondary">{nodes.length} Nodes erkannt</Badge>
               <Badge variant="secondary">{packetLog.length} Pakete bereit</Badge>
               {myNodeNum && <Badge variant="outline">Gerät #{myNodeNum.toString(16).toUpperCase()}</Badge>}
@@ -90,19 +90,19 @@ export default function ManualSavePanel() {
         </div>
 
         {isAuthenticated ? (
-          <Button onClick={handleSave} disabled={!canSave || saving} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+          <Button size="sm" onClick={handleSave} disabled={!canSave || saving} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
             {saving ? 'Sichere…' : 'Jetzt sichern'}
           </Button>
         ) : (
-          <Button onClick={navigateToLogin} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+          <Button size="sm" onClick={navigateToLogin} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
             Anmelden zum Sichern
           </Button>
         )}
       </div>
 
       {(saving || status || result || error) && (
-        <div className="mt-3 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 p-3 space-y-3">
+        <div className="mt-2 rounded-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 space-y-2">
           {status && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
