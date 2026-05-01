@@ -180,7 +180,18 @@ export const translations = {
     stepConnectButton: 'Verbinden',
     stepConnectButtonDesc: 'Auf „Mit Gerät verbinden“ klicken und im Browser-Dialog den Port wählen.',
     stepStart: 'Loslegen',
-    stepStartDesc: 'Nodes, Karte, Telemetrie & Pakete erscheinen automatisch in Echtzeit.'
+    stepStartDesc: 'Nodes, Karte, Telemetrie & Pakete erscheinen automatisch in Echtzeit.',
+    aboutBackupTitle: 'Backup & historischer Verlauf',
+    aboutBackupDesc: 'Nach Anmeldung kannst du empfangene Pakete und Node-Zustände manuell sichern; danach läuft AutoSave. Diese Daten sind später pro Gerät auch ohne USB-Verbindung abrufbar.',
+    aboutPrivacyTitle: 'Datenschutz',
+    aboutPrivacyDesc: 'Ohne Anmeldung und ohne Backup bleiben Daten nur lokal im Browser. Wenn du Backup/AutoSave nutzt, werden die gesicherten Daten privat in deinem Benutzerkonto gespeichert und sind nur für dich sichtbar.',
+    helpBackupTitle: '7. Backup, Anmeldung & historischer Verlauf',
+    helpBackupIntro: 'Optional kannst du dich anmelden und über „Jetzt sichern“ ein Backup der empfangenen Mesh-Daten erstellen. Nach dem ersten Backup wird AutoSave für die aktuelle Sitzung aktiviert.',
+    helpBackupPointSave: 'Empfangene Pakete und Node-Zustände werden beim Backup gespeichert, solange ein Gerät verbunden ist.',
+    helpBackupPointOffline: 'Auch ohne USB-Verbindung siehst du dein Dashboard später mit den letzten gespeicherten Daten.',
+    helpBackupPointDevice: 'Über die Geräteauswahl oben kannst du zwischen mehreren eigenen Meshtastic-Geräten umschalten.',
+    helpBackupPointPrivate: 'Gespeicherte Backup-Daten sind pro Benutzer privat – andere sehen sie nicht.',
+    helpBackupPrivacyNote: 'Datenschutz: Ohne Anmeldung und ohne Backup bleibt alles lokal im Browser. Wenn Backup/AutoSave genutzt wird, werden die gesicherten Daten zusätzlich in deinem privaten Benutzerkonto gespeichert.'
   },
   en: {
     language: 'Language',
@@ -363,6 +374,17 @@ export const translations = {
     stepConnectButton: 'Connect',
     stepConnectButtonDesc: 'Click “Connect device” and choose the port in the browser dialog.',
     stepStart: 'Start',
-    stepStartDesc: 'Nodes, map, telemetry and packets appear automatically in real time.'
+    stepStartDesc: 'Nodes, map, telemetry and packets appear automatically in real time.',
+    aboutBackupTitle: 'Backup & history',
+    aboutBackupDesc: 'After signing in, you can manually back up received packets and node states; AutoSave starts afterwards. These data can later be viewed per device even without a USB connection.',
+    aboutPrivacyTitle: 'Privacy',
+    aboutPrivacyDesc: 'Without signing in and without using backup, data stays only in your browser. If you use backup/AutoSave, the saved data is stored privately in your user account and is visible only to you.',
+    helpBackupTitle: '7. Backup, sign-in & history',
+    helpBackupIntro: 'Optionally, you can sign in and use “Save now” to back up received mesh data. After the first backup, AutoSave is enabled for the current session.',
+    helpBackupPointSave: 'Received packets and node states are saved during backup while a device is connected.',
+    helpBackupPointOffline: 'Even without a USB connection, you can later view your dashboard with the last saved data.',
+    helpBackupPointDevice: 'Use the device selector at the top to switch between multiple Meshtastic devices.',
+    helpBackupPointPrivate: 'Saved backup data is private per user – others cannot see it.',
+    helpBackupPrivacyNote: 'Privacy: Without signing in and without backup, everything stays local in the browser. When backup/AutoSave is used, the saved data is additionally stored in your private user account.'
   }
 };

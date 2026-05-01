@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Radio, Usb, List, Map, Wifi, Activity, Cpu, Filter, AlertTriangle, Moon, Database } from 'lucide-react';
+import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 function Section({ icon: Icon, color, title, children }) {
   return (
@@ -16,6 +17,8 @@ function Section({ icon: Icon, color, title, children }) {
 }
 
 export default function Help() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
       <div className="bg-slate-900 text-white px-4 py-3 flex items-center gap-4">
@@ -97,15 +100,15 @@ export default function Help() {
           </ul>
         </Section>
 
-        <Section icon={Database} color="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300" title="7. Anmeldung & historischer Verlauf">
-          <p>Optional kannst du dich anmelden (Button oben rechts oder auf der Startseite). Vorteile:</p>
+        <Section icon={Database} color="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300" title={t('helpBackupTitle')}>
+          <p>{t('helpBackupIntro')}</p>
           <ul className="list-disc ml-4 space-y-1">
-            <li>Empfangene <strong>Pakete und Node-Zustände werden gespeichert</strong>, solange ein Gerät verbunden ist.</li>
-            <li>Auch <strong>ohne USB-Verbindung</strong> siehst du dein Dashboard – mit den letzten gespeicherten Daten.</li>
-            <li>Über die <strong>Geräteauswahl</strong> oben kannst du zwischen mehreren eigenen Meshtastic-Geräten umschalten.</li>
-            <li>Daten werden <strong>pro Benutzer privat</strong> gespeichert – andere sehen sie nicht.</li>
+            <li>{t('helpBackupPointSave')}</li>
+            <li>{t('helpBackupPointOffline')}</li>
+            <li>{t('helpBackupPointDevice')}</li>
+            <li>{t('helpBackupPointPrivate')}</li>
           </ul>
-          <p className="text-xs text-slate-400">Ohne Anmeldung bleibt alles wie gewohnt rein lokal im Browser, es wird nichts gespeichert.</p>
+          <p className="text-xs text-slate-400">{t('helpBackupPrivacyNote')}</p>
         </Section>
 
         <Section icon={Moon} color="bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200" title="8. Dark Mode & Layout">
