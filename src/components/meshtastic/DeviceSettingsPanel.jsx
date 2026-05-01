@@ -38,6 +38,12 @@ const FIELD_LABELS = {
   heartbeat: 'Heartbeat', records: 'Records', historyReturnMax: 'History Max', historyReturnWindow: 'History Fenster', sender: 'Sender', save: 'Speichern', deviceUpdateInterval: 'Geräteintervall', environmentUpdateInterval: 'Umgebungsintervall', environmentMeasurementEnabled: 'Umgebung messen', environmentScreenEnabled: 'Umgebung anzeigen', powerMeasurementEnabled: 'Power messen', powerUpdateInterval: 'Power Intervall', updateInterval: 'Update Intervall', transmitOverLora: 'Über LoRa senden', paxcounterUpdateInterval: 'Paxcounter Intervall',
 };
 
+function hexToBase64(hex) {
+  const cleanHex = String(hex || '').replace(/[^a-fA-F0-9]/g, '');
+  const bytes = cleanHex.match(/.{1,2}/g)?.map(byte => String.fromCharCode(parseInt(byte, 16))).join('') || '';
+  return bytes ? btoa(bytes) : '';
+}
+
 function formatValue(value) {
   if (value === true) return 'Ja';
   if (value === false) return 'Nein';
@@ -47,6 +53,7 @@ function formatValue(value) {
 }
 
 function formatFieldValue(key, value) {
+  if (key === 'psk' && value?.hex) return hexToBase64(value.hex);
   if (/password|privateKey|adminKey/i.test(key) && value && value !== 'vorhanden') return '••••••••';
   return formatValue(value);
 }
