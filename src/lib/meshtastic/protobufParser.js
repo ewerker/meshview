@@ -334,8 +334,9 @@ function parseConfigValues(name, fields) {
     },
     Network: {
       wifiEnabled: boolValue(fields[1]),
-      wifiSsid: stringValue(fields[2]),
-      wifiPsk: fields[3] ? '••••••••' : '',
+      // Bei der aktuell empfangenen Firmware liegen SSID und WLAN-Passwort vertauscht gegenüber der erwarteten Zuordnung.
+      wifiSsid: stringValue(fields[3]),
+      wifiPsk: fields[2] ? '••••••••' : '',
       ntpServer: stringValue(fields[4]),
       ethernetEnabled: boolValue(fields[5]),
       rsyslogServer: stringValue(fields[8]),
