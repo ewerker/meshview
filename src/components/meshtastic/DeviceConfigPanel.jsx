@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Database, Settings, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
+import DeviceConfigDetailsDialog from './DeviceConfigDetailsDialog.jsx';
 
 export default function DeviceConfigPanel() {
   const { connected, deviceConfigs, configSaveStatus } = useMeshStore();
+  const [selectedConfig, setSelectedConfig] = useState(null);
 
   if (!connected || deviceConfigs.length === 0) return null;
 
@@ -24,9 +27,11 @@ export default function DeviceConfigPanel() {
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {latest.map((item, index) => (
-            <Badge key={`${item.category}-${item.section}-${index}`} variant="outline" className="bg-white/70 dark:bg-slate-900/50 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-800">
-              {item.section}
-            </Badge>
+            <button key={`${item.category}-${item.section}-${index}`} type="button" onClick={() => setSelectedConfig(item)}>
+              <Badge variant="outline" className="bg-white/70 dark:bg-slate-900/50 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                {item.section}
+              </Badge>
+            </button>
           ))}
           {configSaveStatus === 'saved' && (
             <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">
@@ -40,6 +45,12 @@ export default function DeviceConfigPanel() {
           )}
         </div>
       </div>
+
+      <DeviceConfigDetailsDialog
+        config={selectedConfig}
+        open={!!selectedConfig}
+        onOpenChange={(open) => !open && setSelectedConfig(null)}
+      />
     </div>
   );
 }
