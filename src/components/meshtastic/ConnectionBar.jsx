@@ -80,9 +80,9 @@ export default function ConnectionBar() {
             <span className="hidden sm:inline">Abmelden</span>
           </Button>
         ) : (
-          <Button size="sm" variant="ghost" onClick={navigateToLogin} className="text-slate-300 hover:text-white gap-1.5">
+          <Button size="sm" onClick={navigateToLogin} className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white">
             <LogIn className="w-4 h-4" />
-            <span className="hidden sm:inline">Anmelden</span>
+            Anmelden
           </Button>
         )}
 
