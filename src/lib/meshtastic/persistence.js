@@ -134,20 +134,24 @@ async function flushNodes() {
     if (toCreate.length > 0) {
       const names = toCreate.slice(0, 3).map(c => c.data.long_name || c.data.short_name || ('!' + c.data.num?.toString(16))).join(', ');
       setActivity(`🆕 ${toCreate.length} neue Node(s): ${names}${toCreate.length > 3 ? '…' : ''}`);
-      try {
-        const created = await base44.entities.MeshNode.bulkCreate(toCreate.map(c => c.data));
-        if (Array.isArray(created)) {
-          created.forEach((row, i) => {
-            if (row?.id) nodeIdCache.set(toCreate[i].key, row.id);
-          });
+      
+      // Batch bulkCreate to prevent "Payload Too Large" errors (Nodes are heavy objects)
+      for (let i = 0; i < toCreate.length; i += 20) {
+        const batch = toCreate.slice(i, i + 20);
+        try {
+          const created = await base44.entities.MeshNode.bulkCreate(batch.map(c => c.data));
+          if (Array.isArray(created)) {
+            created.forEach((row, idx) => {
+              if (row?.id) nodeIdCache.set(batch[idx].key, row.id);
+            });
+          }
+        } catch (e) {
+          console.warn('MeshNode bulkCreate failed for batch', e);
+          nodeCacheLoadedFor = null; // Reset cache so next round re-syncs
         }
-      } catch (e) {
-        console.warn('MeshNode bulkCreate failed', e);
-        nodeCacheLoadedFor = null;
-      } finally {
-        inFlightNodes -= toCreate.length;
-        emitProgress();
       }
+      inFlightNodes -= toCreate.length;
+      emitProgress();
     }
 
     // Updates must still be one-by-one (no bulkUpdate available), but they're fast

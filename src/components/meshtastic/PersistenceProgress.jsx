@@ -55,7 +55,7 @@ export default function PersistenceProgress({ active }) {
   const percent = peak > 0 ? Math.round((done / peak) * 100) : 100;
 
   const label = busy
-    ? (snap.activity || `Speichert ${total}…`)
+    ? (snap.activity || `Sichere ${snap.pendingPackets + snap.inFlightPackets} Pakete, ${snap.pendingNodes + snap.inFlightNodes} Nodes…`)
     : 'Gespeichert';
 
   return (
