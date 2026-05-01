@@ -239,3 +239,12 @@ export function resetPersistenceCache() {
   nodeIdCache.clear();
   nodeCacheLoadedFor = null;
 }
+
+export function isPersistenceBusy() {
+  return (
+    packetBuffer.length > 0 ||
+    nodeBuffer.size > 0 ||
+    inFlightPackets > 0 ||
+    inFlightNodes > 0
+  );
+}
