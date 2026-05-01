@@ -22,27 +22,28 @@ let nodeCacheLoadedFor = null; // my_node_num the cache was loaded for
 // --- Progress tracking (non-blocking UI indicator) ---
 let inFlightPackets = 0;
 let inFlightNodes = 0;
+let currentActivity = null; // human-readable description of what's currently being saved
 const progressListeners = new Set();
-function emitProgress() {
-  const snap = {
+function snapshot() {
+  return {
     pendingPackets: packetBuffer.length,
     pendingNodes: nodeBuffer.size,
     inFlightPackets,
     inFlightNodes,
+    activity: currentActivity,
   };
+}
+function emitProgress() {
+  const snap = snapshot();
   progressListeners.forEach(l => { try { l(snap); } catch {} });
+}
+function setActivity(text) {
+  currentActivity = text;
+  emitProgress();
 }
 export function subscribePersistenceProgress(listener) {
   progressListeners.add(listener);
-  // Immediately emit current state so subscriber gets the initial snapshot
-  try {
-    listener({
-      pendingPackets: packetBuffer.length,
-      pendingNodes: nodeBuffer.size,
-      inFlightPackets,
-      inFlightNodes,
-    });
-  } catch {}
+  try { listener(snapshot()); } catch {}
   return () => progressListeners.delete(listener);
 }
 
@@ -54,7 +55,7 @@ async function flushPackets() {
   while (packetBuffer.length > 0) {
     const batch = packetBuffer.splice(0, 100);
     inFlightPackets += batch.length;
-    emitProgress();
+    setActivity(`📦 Pakete schreiben (${batch.length})`);
     try {
       await base44.entities.MeshPacket.bulkCreate(batch);
     } catch (e) {
@@ -65,23 +66,39 @@ async function flushPackets() {
     }
   }
   flushPacketsRunning = false;
+  if (inFlightNodes === 0 && nodeBuffer.size === 0) setActivity(null);
 }
 
 async function ensureNodeCache(myNodeNum) {
   if (nodeCacheLoadedFor === myNodeNum) return;
   nodeIdCache.clear();
   try {
-    // Load ALL existing nodes for this device (high limit to avoid duplicates)
+    setActivity('🔄 Lade bestehende Nodes…');
+    // Load ALL existing nodes for this device (high limit so cache is complete)
     const existing = await base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-updated_date', 10000);
-    // If multiple rows exist for the same num (legacy duplicates), keep the newest
-    // and remember the others so we can merge into the freshest one going forward.
+    // Group by `num` so we can detect & clean up legacy duplicates from earlier sessions
+    const groups = new Map();
     for (const n of existing) {
-      const key = myNodeNum + ':' + n.num;
-      if (!nodeIdCache.has(key)) {
-        nodeIdCache.set(key, n.id);
-      }
+      if (!groups.has(n.num)) groups.set(n.num, []);
+      groups.get(n.num).push(n);
+    }
+    const dupesToDelete = [];
+    for (const [num, rows] of groups.entries()) {
+      // newest first (already sorted by -updated_date, but be safe)
+      rows.sort((a, b) => (b.updated_date || '').localeCompare(a.updated_date || ''));
+      const keep = rows[0];
+      nodeIdCache.set(myNodeNum + ':' + num, keep.id);
+      for (let i = 1; i < rows.length; i++) dupesToDelete.push(rows[i].id);
     }
     nodeCacheLoadedFor = myNodeNum;
+    // Best-effort cleanup of legacy duplicates so the DB shows the real node count
+    if (dupesToDelete.length > 0) {
+      setActivity(`🧹 Bereinige ${dupesToDelete.length} doppelte Node-Einträge…`);
+      console.info(`Cleaning up ${dupesToDelete.length} duplicate MeshNode rows`);
+      for (const id of dupesToDelete) {
+        try { await base44.entities.MeshNode.delete(id); } catch (e) { /* ignore */ }
+      }
+    }
   } catch (e) {
     console.warn('MeshNode cache load failed', e);
   }
@@ -115,9 +132,10 @@ async function flushNodes() {
 
     // Bulk-create new nodes, then update local cache with returned ids
     if (toCreate.length > 0) {
+      const names = toCreate.slice(0, 3).map(c => c.data.long_name || c.data.short_name || ('!' + c.data.num?.toString(16))).join(', ');
+      setActivity(`🆕 ${toCreate.length} neue Node(s): ${names}${toCreate.length > 3 ? '…' : ''}`);
       try {
         const created = await base44.entities.MeshNode.bulkCreate(toCreate.map(c => c.data));
-        // Returned items may or may not include ids; reload cache to be safe
         if (Array.isArray(created)) {
           created.forEach((row, i) => {
             if (row?.id) nodeIdCache.set(toCreate[i].key, row.id);
@@ -125,7 +143,6 @@ async function flushNodes() {
         }
       } catch (e) {
         console.warn('MeshNode bulkCreate failed', e);
-        // Reset cache so next round re-syncs
         nodeCacheLoadedFor = null;
       } finally {
         inFlightNodes -= toCreate.length;
@@ -134,7 +151,11 @@ async function flushNodes() {
     }
 
     // Updates must still be one-by-one (no bulkUpdate available), but they're fast
+    let updatedCount = 0;
     for (const u of toUpdate) {
+      updatedCount++;
+      const name = u.data.long_name || u.data.short_name || ('!' + u.data.num?.toString(16));
+      setActivity(`✏️ Node ${updatedCount}/${toUpdate.length}: ${name}`);
       try {
         await base44.entities.MeshNode.update(u.id, u.data);
       } catch (e) {
@@ -147,6 +168,7 @@ async function flushNodes() {
   }
 
   flushNodesRunning = false;
+  if (inFlightPackets === 0 && packetBuffer.length === 0) setActivity(null);
 }
 
 function scheduleFlush() {

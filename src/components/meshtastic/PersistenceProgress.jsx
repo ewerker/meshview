@@ -9,7 +9,7 @@ import { subscribePersistenceProgress } from '@/lib/meshtastic/persistence.js';
  * - Briefly shows "gespeichert" after everything drains, then hides.
  */
 export default function PersistenceProgress({ active }) {
-  const [snap, setSnap] = useState({ pendingPackets: 0, pendingNodes: 0, inFlightPackets: 0, inFlightNodes: 0 });
+  const [snap, setSnap] = useState({ pendingPackets: 0, pendingNodes: 0, inFlightPackets: 0, inFlightNodes: 0, activity: null });
   const [showDone, setShowDone] = useState(false);
   const peakRef = useRef(0);
   const [peak, setPeak] = useState(0);
@@ -54,9 +54,13 @@ export default function PersistenceProgress({ active }) {
   const done = Math.max(0, peak - total);
   const percent = peak > 0 ? Math.round((done / peak) * 100) : 100;
 
+  const label = busy
+    ? (snap.activity || `Speichert ${total}…`)
+    : 'Gespeichert';
+
   return (
     <div
-      className="flex items-center gap-2 text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 border border-slate-700 min-w-[180px]"
+      className="flex items-center gap-2 text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 border border-slate-700 min-w-[220px] max-w-[360px]"
       title={`Pakete: ${snap.pendingPackets} wartend, ${snap.inFlightPackets} schreibend\nNodes: ${snap.pendingNodes} wartend, ${snap.inFlightNodes} schreibend`}
     >
       {busy ? (
@@ -65,12 +69,10 @@ export default function PersistenceProgress({ active }) {
         <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
       )}
       <Database className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-      <div className="flex-1 flex flex-col gap-0.5">
+      <div className="flex-1 flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center justify-between gap-2 leading-none">
-          <span className="text-slate-300">
-            {busy ? `Speichert ${total}` : 'Gespeichert'}
-          </span>
-          {busy && peak > 0 && <span className="text-slate-400 font-mono">{percent}%</span>}
+          <span className="text-slate-200 truncate" title={label}>{label}</span>
+          {busy && peak > 0 && <span className="text-slate-400 font-mono shrink-0">{percent}%</span>}
         </div>
         <div className="h-1 w-full bg-slate-700 rounded overflow-hidden">
           <div
