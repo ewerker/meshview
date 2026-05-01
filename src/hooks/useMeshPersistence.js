@@ -12,8 +12,14 @@ export function useMeshPersistence() {
       meshStore.setPersistFn(null);
       return;
     }
-    meshStore.setPersistFn(null);
+
+    meshStore.setPersistFn(createPersistFn(
+      () => meshStore.myNodeNum,
+      () => meshStore.getMyNode()
+    ));
+
     return () => {
+      flushNow();
       meshStore.setPersistFn(null);
     };
   }, [isAuthenticated]);

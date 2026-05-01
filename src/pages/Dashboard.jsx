@@ -17,9 +17,11 @@ import HistoricalDashboard from '@/components/meshtastic/HistoricalDashboard.jsx
 import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
+import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
 import { Radio, Map, List } from 'lucide-react';
 
 export default function Dashboard() {
+  useMeshPersistence();
   const { connected, nodes, messages, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
   const { isAuthenticated } = useAuth();
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
