@@ -6,6 +6,8 @@ import { base44 } from '@/api/base44Client';
 
 const PACKET_FLUSH_MS = 1500;
 const NODE_FLUSH_MS = 5000;
+const SAVE_BATCH_SIZE = 100;
+const SAVE_BATCH_PAUSE_MS = 2000;
 
 let packetBuffer = [];
 let nodeBuffer = new Map(); // key: my_node_num + ':' + num -> latest payload
@@ -199,6 +201,19 @@ function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function bulkCreateInBatches(entity, rows, onProgress, getProgressText) {
+  let saved = 0;
+  for (let i = 0; i < rows.length; i += SAVE_BATCH_SIZE) {
+    const batch = rows.slice(i, i + SAVE_BATCH_SIZE);
+    onProgress?.(getProgressText(saved, rows.length, batch.length));
+    await entity.bulkCreate(batch);
+    saved += batch.length;
+    onProgress?.(getProgressText(saved, rows.length, 0));
+    if (i + SAVE_BATCH_SIZE < rows.length) await wait(SAVE_BATCH_PAUSE_MS);
+  }
+  return saved;
+}
+
 export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress }) {
   if (!myNodeNum) throw new Error('Eigenes Gerät wurde noch nicht erkannt.');
 
@@ -206,7 +221,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
   const nodeRows = nodes
     .filter(node => typeof node.num === 'number')
     .map(node => normalizeNodeForSave(node, myNodeNum, myNodeId));
-  const packetRows = packetLog.slice(-100).map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
+  const packetRows = packetLog.map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
 
   const createdNodes = [];
   const updatedNodes = [];
@@ -221,7 +236,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
       if (hasNodeChanged(existing, nodeRow)) {
         await base44.entities.MeshNode.update(existing.id, nodeRow);
         updatedNodes.push(nodeRow);
-        if (updatedNodes.length % 20 === 0) await wait(500);
+        if (updatedNodes.length % 20 === 0) await wait(SAVE_BATCH_PAUSE_MS);
       }
     } else {
       createdNodes.push(nodeRow);
@@ -236,19 +251,40 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
     });
   }
 
+  let savedNodeCreates = 0;
   if (createdNodes.length > 0) {
-    onProgress?.({ text: `Speichere ${createdNodes.length} neue Nodes…`, current: nodeRows.length, total: nodeRows.length, created: createdNodes.length, updated: updatedNodes.length });
-    await base44.entities.MeshNode.bulkCreate(createdNodes);
+    savedNodeCreates = await bulkCreateInBatches(
+      base44.entities.MeshNode,
+      createdNodes,
+      onProgress,
+      (saved, total) => ({
+        text: `Speichere neue Nodes ${saved}/${total}…`,
+        current: nodeRows.length,
+        total: nodeRows.length,
+        created: saved,
+        updated: updatedNodes.length,
+      })
+    );
   }
 
-  onProgress?.({ text: `Übertrage ${packetRows.length} Pakete…`, current: nodeRows.length, total: nodeRows.length, created: createdNodes.length, updated: updatedNodes.length });
-  if (packetRows.length > 0) {
-    await base44.entities.MeshPacket.bulkCreate(packetRows);
-  }
+  const savedPackets = packetRows.length > 0
+    ? await bulkCreateInBatches(
+        base44.entities.MeshPacket,
+        packetRows,
+        onProgress,
+        (saved, total) => ({
+          text: `Übertrage Pakete ${saved}/${total}…`,
+          current: nodeRows.length,
+          total: nodeRows.length,
+          created: savedNodeCreates,
+          updated: updatedNodes.length,
+        })
+      )
+    : 0;
 
   return {
     createdNodes,
     updatedNodes,
-    savedPackets: packetRows.length,
+    savedPackets,
   };
 }
