@@ -14,8 +14,8 @@ export function useMyDevices(isAuthenticated) {
     }
     setLoading(true);
     try {
-      // Pull recent nodes; group by my_node_num
-      const rows = await base44.entities.MeshNode.list('-updated_date', 500);
+      // Pull only a small recent sample; group by my_node_num
+      const rows = await base44.entities.MeshNode.list('-updated_date', 100);
       const map = new Map();
       for (const r of rows) {
         if (!r.my_node_num) continue;
@@ -66,8 +66,8 @@ export function useHistoricalData(myNodeNum, enabled) {
     setLoading(true);
     try {
       const [nodeRows, packetRows] = await Promise.all([
-        base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 500),
-        base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 200),
+        base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 150),
+        base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 50),
       ]);
 
       // Map MeshNode rows -> shape used by NodeCard / NodeMap / NodeDetail

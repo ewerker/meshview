@@ -187,6 +187,14 @@ function normalizePacketForSave(logEntry, myNodeNum, myNodeId) {
   };
 }
 
+function hasNodeChanged(existing, next) {
+  return [
+    'my_node_id', 'node_id', 'long_name', 'short_name', 'hw_model', 'is_licensed',
+    'channel', 'hops_away', 'via_mqtt', 'snr', 'rssi', 'last_heard',
+    'user', 'position', 'device_metrics', 'environment_metrics'
+  ].some(key => JSON.stringify(existing[key] ?? null) !== JSON.stringify(next[key] ?? null));
+}
+
 export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress }) {
   if (!myNodeNum) throw new Error('Eigenes Gerät wurde noch nicht erkannt.');
 
@@ -194,7 +202,7 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
   const nodeRows = nodes
     .filter(node => typeof node.num === 'number')
     .map(node => normalizeNodeForSave(node, myNodeNum, myNodeId));
-  const packetRows = packetLog.map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
+  const packetRows = packetLog.slice(-100).map(packet => normalizePacketForSave(packet, myNodeNum, myNodeId));
 
   const createdNodes = [];
   const updatedNodes = [];
@@ -206,8 +214,10 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
     const existing = existingByNum.get(nodeRow.num);
 
     if (existing) {
-      await base44.entities.MeshNode.update(existing.id, nodeRow);
-      updatedNodes.push(nodeRow);
+      if (hasNodeChanged(existing, nodeRow)) {
+        await base44.entities.MeshNode.update(existing.id, nodeRow);
+        updatedNodes.push(nodeRow);
+      }
     } else {
       createdNodes.push(nodeRow);
     }
