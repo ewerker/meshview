@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Settings, Wifi, Bluetooth, Cloud, RefreshCw, CheckCircle2, Database, ChevronDown, Cpu, MapPin, Battery, Monitor, Radio, Shield, Cable, Boxes, Activity, Users, Hash, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ function hasUsefulValues(config) {
   return Object.values(values).some(value => value !== null && value !== undefined && value !== '');
 }
 
-function ConfigCard({ config, onEdit }) {
+function ConfigCard({ config }) {
   const sectionKey = config.section?.startsWith('Channel') ? 'Channel' : config.section;
   const meta = SECTION_META[sectionKey] || { title: config.section, icon: Settings };
   const Icon = meta.icon;
@@ -86,10 +86,7 @@ function ConfigCard({ config, onEdit }) {
           <Icon className="w-4 h-4 text-blue-600 dark:text-blue-300" />
           {meta.title}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Badge variant="outline" className="text-[10px] border-blue-200 dark:border-blue-800">empfangen</Badge>
-          <Button size="sm" onClick={() => onEdit(config)} className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white">Bearbeiten</Button>
-        </div>
+        <Badge variant="outline" className="text-[10px] border-blue-200 dark:border-blue-800">empfangen</Badge>
       </div>
 
       {entries.length > 0 ? (
@@ -109,22 +106,8 @@ function ConfigCard({ config, onEdit }) {
 }
 
 export default function DeviceSettingsPanel() {
-  const { connected, deviceConfigs, configSaveStatus, requestDeviceConfig, sendBluetoothPin, myNode, myNodeNum, metadata } = useMeshStore();
+  const { connected, deviceConfigs, configSaveStatus, requestDeviceConfig, myNode, myNodeNum, metadata } = useMeshStore();
   const [isOpen, setIsOpen] = useLocalStorage('deviceSettingsPanel.open', true);
-  const [editingConfig, setEditingConfig] = useState(null);
-  const [btPin, setBtPin] = useState('');
-  const [sendStatus, setSendStatus] = useState(null);
-
-  const handleEdit = (config) => {
-    setEditingConfig(config);
-    setBtPin(config.section === 'Bluetooth' && config.payload?.values?.fixedPin ? String(config.payload.values.fixedPin) : '');
-    setSendStatus(null);
-  };
-
-  const handleSendBluetoothPin = async () => {
-    await sendBluetoothPin(btPin);
-    setSendStatus('BT-PIN wurde als Admin-Config gesendet. Bitte kurz warten und dann neu lesen.');
-  };
 
   const sortedConfigs = useMemo(() => {
     const userConfig = myNodeNum ? [{
@@ -186,7 +169,7 @@ export default function DeviceSettingsPanel() {
 
           {sortedConfigs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-              {sortedConfigs.map(config => <ConfigCard key={`${config.category}-${config.section}`} config={config} onEdit={handleEdit} />)}
+              {sortedConfigs.map(config => <ConfigCard key={`${config.category}-${config.section}`} config={config} />)}
             </div>
           ) : (
             <div className="rounded-lg bg-white/75 dark:bg-slate-900/50 border border-blue-100 dark:border-blue-900 p-3 text-xs text-blue-700 dark:text-blue-300">
@@ -196,32 +179,6 @@ export default function DeviceSettingsPanel() {
         </div>
       )}
 
-      {editingConfig && (
-        <div className="mt-2 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 p-3 text-xs">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="font-semibold text-blue-950 dark:text-blue-50">{editingConfig.section} bearbeiten</div>
-            <Button size="sm" variant="ghost" onClick={() => setEditingConfig(null)} className="h-6 px-2 text-[10px]">Schließen</Button>
-          </div>
-
-          {editingConfig.section === 'Bluetooth' ? (
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="grid gap-1">
-                <span className="text-blue-700 dark:text-blue-300">BT PIN</span>
-                <input
-                  value={btPin}
-                  onChange={(e) => setBtPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="h-8 w-28 rounded-md border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-950 px-2 font-mono"
-                  placeholder="123456"
-                />
-              </label>
-              <Button size="sm" onClick={handleSendBluetoothPin} disabled={btPin.length !== 6}>BT PIN senden</Button>
-              {sendStatus && <span className="text-green-700 dark:text-green-300">{sendStatus}</span>}
-            </div>
-          ) : (
-            <div className="text-blue-700 dark:text-blue-300">Für diesen Bereich ist der Schreibtest noch nicht aktiviert.</div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

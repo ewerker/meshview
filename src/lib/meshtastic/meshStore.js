@@ -214,10 +214,6 @@ class MeshStore {
     await this.serial.sendWantConfig();
   }
 
-  async sendBluetoothPin(pin) {
-    if (!this.connected) return;
-    await this.serial.sendBluetoothPin(pin, this.myNodeNum);
-  }
 
   async disconnect() {
     await this.serial.disconnect();

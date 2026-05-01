@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Database, Loader2, CheckCircle2, AlertCircle, UploadCloud } from 'lucide-react';
+import { Database, Loader2, CheckCircle2, AlertCircle, UploadCloud, ChevronDown } from 'lucide-react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useAuth } from '@/lib/AuthContext';
 import { saveMeshSnapshot } from '@/lib/meshtastic/persistence.js';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
+import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 
 function NodeResultList({ title, nodes, tone, onSelectNode }) {
   const { t } = useI18n();
@@ -33,6 +34,7 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
   const { isAuthenticated, navigateToLogin } = useAuth();
   const { t } = useI18n();
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
+  const [isOpen, setIsOpen] = useLocalStorage('manualSavePanel.open', true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
   const [progress, setProgress] = useState(null);
@@ -79,39 +81,44 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
 
   return (
     <div className="border-b bg-slate-50/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 px-3 py-2">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between gap-3 text-left">
         <div className="flex items-center gap-2 min-w-0">
+          <ChevronDown className={`w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
           <Database className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
           <div>
             <div className="font-semibold text-xs text-slate-700 dark:text-slate-200">{t('save')}</div>
             <div className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
               {t('saveDescription')}
             </div>
-            <div className="flex flex-wrap gap-1.5 mt-1 text-[11px] text-slate-600 dark:text-slate-300">
-              <Badge variant="secondary">{t('nodesDetected', { count: nodes.length })}</Badge>
-              <Badge variant="secondary">{t('packetsReady', { count: packetLog.length })}</Badge>
-              {myNodeNum && <Badge variant="outline">{t('deviceHash', { id: myNodeNum.toString(16).toUpperCase() })}</Badge>}
-              {!autoSaveEnabled && <Badge variant="outline">{t('autosaveAfterFirstSave')}</Badge>}
-              {autoSaveEnabled && autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />{t('autosaving')}</Badge>}
-              {autoSaveEnabled && autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">{t('autosaved')}</Badge>}
-              {autoSaveEnabled && autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">{t('autoError')}</Badge>}
-            </div>
           </div>
         </div>
 
-        {isAuthenticated ? (
-          <Button size="sm" onClick={handleSave} disabled={!canSave || saving} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-            {saving ? t('saving') : t('saveNow')}
-          </Button>
-        ) : (
-          <Button size="sm" onClick={navigateToLogin} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
-            {t('loginToSave')}
-          </Button>
-        )}
-      </div>
+        <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 justify-end">
+          <Badge variant="secondary">{t('nodesDetected', { count: nodes.length })}</Badge>
+          <Badge variant="secondary">{t('packetsReady', { count: packetLog.length })}</Badge>
+          {myNodeNum && <Badge variant="outline">{t('deviceHash', { id: myNodeNum.toString(16).toUpperCase() })}</Badge>}
+          {autoSaveEnabled && autoSaveStatus?.status === 'saving' && <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100"><Loader2 className="w-3 h-3 mr-1 animate-spin" />{t('autosaving')}</Badge>}
+          {autoSaveEnabled && autoSaveStatus?.status === 'saved' && <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">{t('autosaved')}</Badge>}
+          {autoSaveEnabled && autoSaveStatus?.status === 'error' && <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">{t('autoError')}</Badge>}
+        </div>
+      </button>
 
-      {(saving || status || result || error) && (
+      {isOpen && (
+        <div className="mt-2 flex justify-end">
+          {isAuthenticated ? (
+            <Button size="sm" onClick={handleSave} disabled={!canSave || saving} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+              {saving ? t('saving') : t('saveNow')}
+            </Button>
+          ) : (
+            <Button size="sm" onClick={navigateToLogin} className="gap-1.5 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
+              {t('loginToSave')}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {isOpen && (saving || status || result || error) && (
         <div className="mt-2 rounded-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 space-y-2">
           {status && (
             <div className="space-y-2">
