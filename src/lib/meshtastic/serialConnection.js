@@ -187,7 +187,9 @@ export class MeshtasticSerial {
 
 
   async sendToRadio(data) {
-    if (!this.port || !this.port.writable) return;
+    if (!this.port || !this.port.writable) {
+      throw new Error('Kein Meshtastic-Gerät verbunden.');
+    }
     const writer = this.port.writable.getWriter();
     try {
       const header = new Uint8Array([
@@ -247,7 +249,22 @@ function encodeVarint(value) {
 }
 
 function buildTextPacket(textBytes, destination, channel) {
-  // Minimal protobuf: MeshPacket with to, decoded.payload, decoded.portnum=1
-  // This is a simplified placeholder - full implementation would need complete protobuf
-  return new Uint8Array([0x08, ...encodeVarint(destination), 0x1a, textBytes.length, ...textBytes]);
+  const data = encodeMessage([
+    [1, 0, 1],          // Data.portnum = TEXT_MESSAGE_APP
+    [2, 2, textBytes],  // Data.payload = UTF-8 message
+  ]);
+
+  const packetId = Math.floor(Math.random() * 0xffffffff) >>> 0;
+  const meshPacket = encodeMessage([
+    [2, 0, destination],             // MeshPacket.to
+    [3, 0, channel],                 // MeshPacket.channel
+    [4, 2, new Uint8Array(data)],    // MeshPacket.decoded
+    [6, 0, packetId],                // MeshPacket.id
+    [8, 0, 1],                       // MeshPacket.want_ack
+    [10, 0, 3],                      // MeshPacket.hop_limit
+  ]);
+
+  return new Uint8Array(encodeMessage([
+    [2, 2, new Uint8Array(meshPacket)], // ToRadio.packet
+  ]));
 }
