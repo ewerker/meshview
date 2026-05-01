@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useDarkMode } from '@/lib/DarkModeContext';
 import { useAuth } from '@/lib/AuthContext';
+import PersistenceProgress from './PersistenceProgress.jsx';
 
 export default function ConnectionBar() {
   const { connected, isSupported, connect, disconnect, nodes, myNode, metadata } = useMeshStore();
@@ -73,6 +74,8 @@ export default function ConnectionBar() {
         <Button size="sm" variant="ghost" onClick={toggleDark} className="text-slate-300 hover:text-white px-2">
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
+
+        <PersistenceProgress active={isAuthenticated} />
 
         {isAuthenticated ? (
           <Button size="sm" variant="ghost" onClick={() => logout()} className="text-slate-300 hover:text-white gap-1.5" title={user?.email}>

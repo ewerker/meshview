@@ -12,15 +12,47 @@ let nodeBuffer = new Map(); // key: my_node_num + ':' + num -> latest payload
 let packetTimer = null;
 let nodeTimer = null;
 
+// --- Progress tracking (non-blocking UI indicator) ---
+let inFlightPackets = 0;
+let inFlightNodes = 0;
+const progressListeners = new Set();
+function emitProgress() {
+  const snap = {
+    pendingPackets: packetBuffer.length,
+    pendingNodes: nodeBuffer.size,
+    inFlightPackets,
+    inFlightNodes,
+  };
+  progressListeners.forEach(l => { try { l(snap); } catch {} });
+}
+export function subscribePersistenceProgress(listener) {
+  progressListeners.add(listener);
+  // Immediately emit current state so subscriber gets the initial snapshot
+  try {
+    listener({
+      pendingPackets: packetBuffer.length,
+      pendingNodes: nodeBuffer.size,
+      inFlightPackets,
+      inFlightNodes,
+    });
+  } catch {}
+  return () => progressListeners.delete(listener);
+}
+
 async function flushPackets() {
   packetTimer = null;
   if (packetBuffer.length === 0) return;
   const batch = packetBuffer;
   packetBuffer = [];
+  inFlightPackets += batch.length;
+  emitProgress();
   try {
     await base44.entities.MeshPacket.bulkCreate(batch);
   } catch (e) {
     console.warn('MeshPacket bulkCreate failed', e);
+  } finally {
+    inFlightPackets -= batch.length;
+    emitProgress();
   }
 }
 
@@ -29,6 +61,8 @@ async function flushNodes() {
   if (nodeBuffer.size === 0) return;
   const entries = Array.from(nodeBuffer.values());
   nodeBuffer = new Map();
+  inFlightNodes += entries.length;
+  emitProgress();
   for (const data of entries) {
     try {
       const existing = await base44.entities.MeshNode.filter({
@@ -42,6 +76,9 @@ async function flushNodes() {
       }
     } catch (e) {
       console.warn('MeshNode upsert failed', e);
+    } finally {
+      inFlightNodes -= 1;
+      emitProgress();
     }
   }
 }
@@ -81,6 +118,7 @@ export function createPersistFn(getMyNodeNum, getMyNode) {
       raw: parsed,
     };
     packetBuffer.push(packetRow);
+    emitProgress();
 
     // ---- 2) Update MeshNode state ----
     const updateNode = (num, patch) => {
@@ -88,6 +126,7 @@ export function createPersistFn(getMyNodeNum, getMyNode) {
       const key = myNodeNum + ':' + num;
       const prev = nodeBuffer.get(key) || { my_node_num: myNodeNum, my_node_id: myNodeId, num, node_id: nodeIdString(num) };
       nodeBuffer.set(key, { ...prev, ...patch });
+      emitProgress();
     };
 
     if (parsed.type === 'nodeInfo' && parsed.nodeInfo) {
