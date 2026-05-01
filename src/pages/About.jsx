@@ -67,10 +67,10 @@ export default function About() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
       <div className="bg-slate-900 text-white px-4 py-3 flex items-center gap-4">
-        <Link to="/" className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors">
+        <a href="/" className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors px-2 py-2 -ml-2 rounded-md shrink-0">
           <ChevronLeft className="w-4 h-4" />
           <span className="text-sm">{t('dashboard')}</span>
-        </Link>
+        </a>
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-green-400" />
           <span className="font-bold">{copy.title}</span>
