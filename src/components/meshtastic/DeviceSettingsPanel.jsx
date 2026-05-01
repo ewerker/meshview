@@ -123,7 +123,7 @@ export default function DeviceSettingsPanel() {
 
   const handleSendBluetoothPin = async () => {
     await sendBluetoothPin(btPin);
-    setSendStatus('BT-PIN wurde testweise gesendet.');
+    setSendStatus('BT-PIN wurde als Admin-Config gesendet. Bitte kurz warten und dann neu lesen.');
   };
 
   const sortedConfigs = useMemo(() => {

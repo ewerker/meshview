@@ -185,8 +185,8 @@ export class MeshtasticSerial {
     await this.sendToRadio(ToRadio_encode_wantConfigId(wantConfigId));
   }
 
-  async sendBluetoothPin(pin) {
-    await this.sendToRadio(ToRadio_encode_setBluetoothPin(pin));
+  async sendBluetoothPin(pin, destination) {
+    await this.sendToRadio(ToRadio_encode_setBluetoothPin(pin, destination));
   }
 
   async sendToRadio(data) {
@@ -225,14 +225,21 @@ function ToRadio_encode_wantConfigId(id) {
   return new Uint8Array(bytes);
 }
 
-function ToRadio_encode_setBluetoothPin(pin) {
-  const bluetoothConfig = encodeMessage([
-    [1, 0, 1],
-    [2, 0, 0],
-    [3, 0, Number(pin)],
-  ]);
+function ToRadio_encode_setBluetoothPin(pin, destination = 0xffffffff) {
+  const bluetoothConfig = encodeMessage([[3, 0, Number(pin)]]);
   const config = encodeMessage([[7, 2, bluetoothConfig]]);
-  return encodeMessage([[5, 2, config]]);
+  const adminMessage = encodeMessage([[34, 2, config]]);
+  const data = encodeMessage([
+    [1, 0, 6], // ADMIN_APP
+    [2, 2, adminMessage],
+  ]);
+  const meshPacket = encodeMessage([
+    [2, 0, destination || 0xffffffff],
+    [4, 2, data],
+    [6, 0, Math.floor(Math.random() * 0xffffffff)],
+    [7, 0, 1], // want_ack
+  ]);
+  return encodeMessage([[2, 2, meshPacket]]);
 }
 
 function encodeMessage(fields) {
