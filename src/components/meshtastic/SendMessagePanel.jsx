@@ -9,6 +9,7 @@ import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { getSendableChannels } from '@/lib/meshtastic/channels.js';
 import OutgoingMessageStatus from './OutgoingMessageStatus.jsx';
 import SendMessageOptions from './SendMessageOptions.jsx';
+import OutgoingPacketPreview from './OutgoingPacketPreview.jsx';
 
 export default function SendMessagePanel() {
   const store = useMeshStore();
@@ -118,6 +119,12 @@ export default function SendMessagePanel() {
                 onChange={setSendOpts}
                 nodes={store.nodes}
                 myNodeNum={store.myNodeNum}
+              />
+
+              <OutgoingPacketPreview
+                text={text}
+                channelIndex={channelIndex}
+                sendOpts={sendOpts}
               />
 
               <div className="flex items-center justify-between gap-2 text-[11px]">

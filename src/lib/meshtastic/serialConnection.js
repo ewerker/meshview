@@ -253,6 +253,41 @@ function encodeVarint(value) {
   return bytes;
 }
 
+export function inspectTextPacket(text, destination = 0xffffffff, channel = 0, options = {}) {
+  // Build the same packet structure that sendTextMessage would, but without sending.
+  // Returns a structured description so the UI can show what the wire bytes will look like.
+  const encoder = new TextEncoder();
+  const textBytes = encoder.encode(String(text ?? ''));
+  const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
+  const wantAck = options.wantAck === false ? false : true;
+  const dest = (destination >>> 0);
+
+  const issues = [];
+  if (!textBytes.length) issues.push('Leerer Text — Data.payload wäre 0 Bytes.');
+  if (textBytes.length > 200) issues.push(`Text zu lang (${textBytes.length} Bytes, max 200 für Meshtastic-Textnachrichten).`);
+  if (!Number.isFinite(hopLimit) || hopLimit < 1 || hopLimit > 7) issues.push(`hop_limit außerhalb 1..7 (=${hopLimit}).`);
+  if (!Number.isFinite(channel) || channel < 0 || channel > 7) issues.push(`channel außerhalb 0..7 (=${channel}).`);
+
+  const { bytes, packetId } = buildTextPacket(textBytes, dest, channel, { hopLimit, wantAck });
+
+  return {
+    issues,
+    packetId,
+    fields: {
+      'ToRadio.packet (field 2, length-delim)': `${bytes.length} Bytes ToRadio-Wrapper`,
+      'MeshPacket.to (field 2)': `0x${dest.toString(16).padStart(8, '0')}${dest === 0xffffffff ? ' (Broadcast)' : ''}`,
+      'MeshPacket.channel (field 3)': String(channel),
+      'MeshPacket.id (field 6)': `0x${packetId.toString(16).padStart(8, '0')}`,
+      'MeshPacket.hop_limit (field 9)': String(hopLimit),
+      'MeshPacket.want_ack (field 10)': String(wantAck ? 1 : 0),
+      'Data.portnum (field 1)': '1 (TEXT_MESSAGE_APP)',
+      'Data.payload (field 2)': `${textBytes.length} Bytes UTF-8`,
+    },
+    textBytes,
+    bytes, // raw ToRadio bytes (without START1/START2/length header)
+  };
+}
+
 function buildTextPacket(textBytes, destination, channel, options = {}) {
   const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
   const wantAck = options.wantAck === false ? 0 : 1;
