@@ -44,7 +44,7 @@ function BatteryBar({ level }) {
 }
 
 export default function NodeCard({ node, isMyNode, onClick, selected }) {
-  const { myNode } = useMeshStore();
+  const { myNode, metadata } = useMeshStore();
   const user = node.user;
   const pos = node.position;
   const dm = node.deviceMetrics;
@@ -54,7 +54,9 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
   const nodeId = `!${node.num?.toString(16).padStart(8, '0')}`;
   const longName = user?.longName || node.long_name || nodeId;
   const shortName = user?.shortName || node.short_name || nodeId.slice(-4);
-  const hwModel = HardwareModel[user?.hwModel] || 'Unbekannt';
+  
+  const effectiveHwModel = (user?.hwModel && user.hwModel !== 0) ? user.hwModel : (isMyNode && metadata?.hwModel ? metadata.hwModel : user?.hwModel);
+  const hwModel = effectiveHwModel ? (HardwareModel[effectiveHwModel] || `Unbekannt (${effectiveHwModel})`) : 'Unbekannt';
 
   return (
     <Card

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { useAuth } from '@/lib/AuthContext';
+import { HardwareModel } from '@/lib/meshtastic/constants.js';
 
 const SECTION_META = {
   User: { title: 'User / Node-Name', icon: User },
@@ -214,7 +215,10 @@ export default function DeviceSettingsPanel({ deviceConfigs: deviceConfigsProp, 
           longName: myNode?.user?.longName,
           shortName: myNode?.user?.shortName,
           nodeId: myNode?.user?.id || `!${myNodeNum.toString(16).padStart(8, '0')}`,
-          hardware: myNode?.user?.hwModel ?? metadata?.hwModel,
+          hardware: (() => {
+            const effHw = (myNode?.user?.hwModel && myNode.user.hwModel !== 0) ? myNode.user.hwModel : metadata?.hwModel;
+            return effHw ? (HardwareModel[effHw] || `Unbekannt (${effHw})`) : 'Unbekannt';
+          })(),
           licensed: myNode?.user?.isLicensed,
         },
       },

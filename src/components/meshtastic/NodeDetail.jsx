@@ -103,7 +103,12 @@ export default function NodeDetail({ node, packetLog: packetLogProp, myNode: myN
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">{t('deviceInfo')}</CardTitle></CardHeader>
             <CardContent className="space-y-0">
-              <Row label={t('hardware')} value={HardwareModel[user?.hwModel] || t('unknownHardware')} />
+              <Row label={t('hardware')} value={(() => {
+                const isMyNode = node.num === myNode?.num;
+                const effHw = (user?.hwModel && user.hwModel !== 0) ? user.hwModel : (isMyNode && store.metadata?.hwModel ? store.metadata.hwModel : user?.hwModel);
+                if (!effHw) return t('unknownHardware');
+                return HardwareModel[effHw] || `${t('unknownHardware')} (${effHw})`;
+              })()} />
               <Row label={t('nodeNumber')} value={node.num?.toString(16).padStart(8, '0')} />
               <Row label={t('nodeId')} value={nodeId} />
               <Row label={t('channel')} value={node.channel} />
