@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Database, Loader2, CheckCircle2, AlertCircle, UploadCloud, ChevronDown } from 'lucide-react';
@@ -51,16 +51,16 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
   const [isOpen, setIsOpen] = useLocalStorage('manualSavePanel.open', true);
   const [saving, setSaving] = useState(false);
+  const initialSaveStartedRef = useRef(false);
   const [status, setStatus] = useState(null);
   const [progress, setProgress] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  if (!connected) return null;
-
   const canSave = isAuthenticated && myNodeNum && (nodes.length > 0 || packetLog.length > 0);
 
   const handleSave = async () => {
+    if (saving) return;
     setSaving(true);
     onBusyChange?.(true);
     setResult(null);
@@ -95,6 +95,21 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
     setSaving(false);
     onBusyChange?.(false);
   };
+
+  useEffect(() => {
+    if (!connected || !canSave || autoSaveEnabled || initialSaveStartedRef.current) return;
+
+    const timer = setTimeout(() => {
+      if (!initialSaveStartedRef.current) {
+        initialSaveStartedRef.current = true;
+        handleSave();
+      }
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [connected, canSave, autoSaveEnabled]);
+
+  if (!connected) return null;
 
   return (
     <div className="border-b bg-slate-50/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 px-3 py-2">
