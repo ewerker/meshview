@@ -234,6 +234,10 @@ function encodeMessage(fields) {
       bytes.push(...encodeVarint(value));
     } else if (wireType === 2) {
       bytes.push(...encodeVarint(value.length), ...value);
+    } else if (wireType === 5) {
+      // fixed32 little-endian (used for MeshPacket.from/to/id)
+      const v = value >>> 0;
+      bytes.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff);
     }
   });
   return bytes;
@@ -275,9 +279,9 @@ export function inspectTextPacket(text, destination = 0xffffffff, channel = 0, o
     packetId,
     fields: {
       'ToRadio.packet (field 2, length-delim)': `${bytes.length} Bytes ToRadio-Wrapper`,
-      'MeshPacket.to (field 2)': `0x${dest.toString(16).padStart(8, '0')}${dest === 0xffffffff ? ' (Broadcast)' : ''}`,
+      'MeshPacket.to (field 2, fixed32)': `0x${dest.toString(16).padStart(8, '0')}${dest === 0xffffffff ? ' (Broadcast)' : ''}`,
       'MeshPacket.channel (field 3)': String(channel),
-      'MeshPacket.id (field 6)': `0x${packetId.toString(16).padStart(8, '0')}`,
+      'MeshPacket.id (field 6, fixed32)': `0x${packetId.toString(16).padStart(8, '0')}`,
       'MeshPacket.hop_limit (field 9)': String(hopLimit),
       'MeshPacket.want_ack (field 10)': String(wantAck ? 1 : 0),
       'Data.portnum (field 1)': '1 (TEXT_MESSAGE_APP)',
@@ -299,10 +303,10 @@ function buildTextPacket(textBytes, destination, channel, options = {}) {
 
   const packetId = Math.floor(Math.random() * 0xffffffff) >>> 0;
   const meshPacket = encodeMessage([
-    [2, 0, destination],             // MeshPacket.to
+    [2, 5, destination],             // MeshPacket.to (fixed32)
     [3, 0, channel],                 // MeshPacket.channel
     [4, 2, new Uint8Array(data)],    // MeshPacket.decoded
-    [6, 0, packetId],                // MeshPacket.id
+    [6, 5, packetId],                // MeshPacket.id (fixed32)
     [9, 0, hopLimit],                // MeshPacket.hop_limit
     [10, 0, wantAck],                // MeshPacket.want_ack
   ]);
