@@ -86,25 +86,6 @@ function formatFieldValue(key, value) {
 }
 
 function getDisplayValues(config) {
-  if (config.section === 'Network') {
-    const values = config.payload?.values || {};
-    const rawFields = config.payload?.fields || {};
-    const field2 = typeof rawFields[2] === 'string' ? rawFields[2] : '';
-    const field3 = typeof rawFields[3] === 'string' ? rawFields[3] : '';
-    const field4 = typeof rawFields[4] === 'string' ? rawFields[4] : '';
-    const field5 = typeof rawFields[5] === 'string' ? rawFields[5] : '';
-    const looksShifted = !values.wifiSsid && values.wifiPsk && values.ntpServer;
-
-    return {
-      wifiEnabled: values.wifiEnabled,
-      wifiSsid: looksShifted ? getRawSensitiveValue('wifiPsk', values.wifiPsk) : (values.wifiSsid || field2),
-      wifiPsk: looksShifted ? values.ntpServer : (values.wifiPsk || field3),
-      ntpServer: looksShifted ? field5 : (values.ntpServer || field4),
-      ethernetEnabled: values.ethernetEnabled,
-      rsyslogServer: values.rsyslogServer,
-    };
-  }
-
   if (config.section?.startsWith('Channel')) {
     const roleNames = ['Deaktiviert', 'Primär', 'Sekundär'];
     return {
@@ -124,7 +105,7 @@ function getDisplayValues(config) {
 function hasUsefulValues(config) {
   if (config.section?.startsWith('Channel') && config.payload?.role === 0) return false;
 
-  const values = getDisplayValues(config) || config.payload?.values || {};
+  const values = config.payload?.values || getDisplayValues(config);
   const keys = Object.keys(values);
   if (keys.length === 0) return false;
   if (keys.every(key => /^Feld \d+$/.test(key))) return false;
@@ -176,7 +157,7 @@ function ConfigCard({ config }) {
   const sectionKey = config.section?.startsWith('Channel') ? 'Channel' : config.section;
   const meta = SECTION_META[sectionKey] || { title: config.section, icon: Settings };
   const Icon = meta.icon;
-  const values = getDisplayValues(config) || config.payload?.values || {};
+  const values = config.payload?.values || getDisplayValues(config);
   const entries = Object.entries(values).filter(([, value]) => {
     if (value === null || value === undefined || value === '') return false;
     if (value instanceof Uint8Array) return value.length > 0;
