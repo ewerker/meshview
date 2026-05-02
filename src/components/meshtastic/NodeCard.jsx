@@ -134,17 +134,6 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
 
         {/* Metrics Bars */}
         <div className="space-y-1.5">
-          {distance !== null && (
-            <MetricBar 
-              icon={Ruler} 
-              label="Distanz" 
-              value={distance} 
-              min={0} max={20000} 
-              unit="" 
-              colorClass={distance > 10000 ? 'bg-red-500' : distance > 5000 ? 'bg-yellow-500' : 'bg-green-500'} 
-              formatter={(v) => formatDistance(v)} 
-            />
-          )}
           <MetricBar 
             icon={Wifi} 
             label="SNR" 
@@ -179,7 +168,17 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
           <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300 flex-wrap pt-1">
             <MapPin className="w-3 h-3 text-red-500" />
             <span>{pos.latitude.toFixed(5)}, {pos.longitude.toFixed(5)}</span>
-            {pos.altitude ? <span className="text-slate-400">· {pos.altitude}m</span> : null}
+            {pos.altitude ? (
+              <span className={pos.altitude > 200 ? "text-green-500 font-medium" : "text-slate-400"}>
+                · {pos.altitude}m
+              </span>
+            ) : null}
+            {distance !== null && (
+              <span className={`flex items-center gap-0.5 ml-1 ${distance > 10000 ? 'text-red-500 font-medium' : distance > 5000 ? 'text-yellow-500 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
+                <Ruler className="w-3 h-3" />
+                {formatDistance(distance)}
+              </span>
+            )}
           </div>
         )}
 
