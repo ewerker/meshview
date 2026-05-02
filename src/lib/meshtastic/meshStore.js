@@ -137,7 +137,16 @@ class MeshStore {
     existingNode.rssi = packet.rxRssi;
 
     if (decoded.user) {
-      existingNode.user = decoded.user;
+      // Merge user fields - keep existing values if new ones are empty (e.g. NodeInfo with only id)
+      const merged = { ...(existingNode.user || {}) };
+      for (const [key, value] of Object.entries(decoded.user)) {
+        if (value !== '' && value !== null && value !== undefined && value !== 0) {
+          merged[key] = value;
+        } else if (merged[key] === undefined) {
+          merged[key] = value;
+        }
+      }
+      existingNode.user = merged;
     }
     if (decoded.position) {
       existingNode.position = decoded.position;
