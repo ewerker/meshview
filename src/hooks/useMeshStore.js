@@ -19,6 +19,7 @@ export function useMeshStore() {
     packetLog: meshStore.packetLog,
     deviceConfigs: meshStore.deviceConfigs,
     configSaveStatus: meshStore.configSaveStatus,
+    outgoing: meshStore.outgoing,
     isLoading: meshStore.isLoading,
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),

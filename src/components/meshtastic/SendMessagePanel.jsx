@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { getSendableChannels } from '@/lib/meshtastic/channels.js';
+import OutgoingMessageStatus from './OutgoingMessageStatus.jsx';
 
 export default function SendMessagePanel() {
   const store = useMeshStore();
@@ -109,7 +110,7 @@ export default function SendMessagePanel() {
 
               {status === 'sent' && (
                 <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-300">
-                  <CheckCircle2 className="w-4 h-4" /> Gesendet (an Gerät übergeben).
+                  <CheckCircle2 className="w-4 h-4" /> An Gerät übergeben — warte auf Mesh-Bestätigung.
                 </div>
               )}
               {status === 'error' && error && (
@@ -117,6 +118,8 @@ export default function SendMessagePanel() {
                   <AlertCircle className="w-4 h-4" /> {error}
                 </div>
               )}
+
+              <OutgoingMessageStatus outgoing={store.outgoing} />
             </>
           )}
         </div>

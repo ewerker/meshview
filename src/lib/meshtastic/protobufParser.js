@@ -111,6 +111,9 @@ export function parseData(bytes) {
     portnum,
     portnumName: PortNum[portnum] || `UNKNOWN(${portnum})`,
     payload,
+    requestId: fields[6] || 0,   // Data.request_id — set by acks/replies that reference an originating packet id
+    replyId: fields[7] || 0,     // Data.reply_id — set by replies to a previous packet
+    wantResponse: fields[5] || false,
   };
 
   try {

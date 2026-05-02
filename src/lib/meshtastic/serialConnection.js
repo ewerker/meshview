@@ -211,8 +211,9 @@ export class MeshtasticSerial {
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
     // Build a minimal MeshPacket for text message
-    const packet = buildTextPacket(textBytes, destination, channel);
-    await this.sendToRadio(packet);
+    const { bytes, packetId } = buildTextPacket(textBytes, destination, channel);
+    await this.sendToRadio(bytes);
+    return { packetId };
   }
 }
 
@@ -264,7 +265,8 @@ function buildTextPacket(textBytes, destination, channel) {
     [10, 0, 1],                      // MeshPacket.want_ack
   ]);
 
-  return new Uint8Array(encodeMessage([
+  const bytes = new Uint8Array(encodeMessage([
     [2, 2, new Uint8Array(meshPacket)], // ToRadio.packet
   ]));
+  return { bytes, packetId };
 }

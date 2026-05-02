@@ -21,6 +21,10 @@ class MeshStore {
     this.deviceConfigs = [];
     this.configSaveStatus = null;
     this.currentConfigId = null;
+    this.outgoing = []; // [{ id, text, to, channel, status, sentAt, updatedAt, error, replyText, replyFrom, replyAt }]
+    this.outgoingTimeouts = new Map(); // id -> timeoutHandle
+    this.OUTGOING_ACK_TIMEOUT_MS = 60_000;
+    this.OUTGOING_REPLY_WINDOW_MS = 10 * 60_000;
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -129,6 +133,28 @@ class MeshStore {
   handleDecodedPacket(packet) {
     const decoded = packet.decoded;
     const fromNum = packet.from;
+
+    // ACK/NAK correlation: routing packets carry request_id of the originating packet
+    if (decoded?.routing && decoded.requestId) {
+      const isError = decoded.routing.errorReason && decoded.routing.errorReason !== 0;
+      this.updateOutgoingStatus(decoded.requestId, isError ? 'nak' : 'ack', {
+        ackFrom: fromNum,
+        error: isError ? (decoded.routing.errorText || `Fehler ${decoded.routing.errorReason}`) : null,
+      });
+    }
+
+    // Reply correlation: text response from the destination of one of our outgoing messages
+    if (decoded?.text && fromNum && fromNum !== this.myNodeNum) {
+      const now = Date.now();
+      const match = [...this.outgoing].reverse().find(o =>
+        o.to === fromNum && (now - o.sentAt) <= this.OUTGOING_REPLY_WINDOW_MS
+      );
+      if (match) {
+        this.updateOutgoingStatus(match.id, match.status === 'ack' ? 'reply_received' : match.status, {
+          replyText: decoded.text, replyFrom: fromNum, replyAt: now, replyReceived: true,
+        });
+      }
+    }
 
     // Update node with packet info
     const existingNode = this.nodes.get(fromNum) || { num: fromNum };
@@ -252,19 +278,77 @@ class MeshStore {
     if (!this.connected) throw new Error('Kein Gerät verbunden.');
     if (!text?.trim()) throw new Error('Leerer Text.');
     const BROADCAST = 0xffffffff;
-    await this.serial.sendTextMessage(text, BROADCAST, channelIndex);
-    // Local echo so the UI shows the sent message immediately
-    this.messages.unshift({
-      id: Math.floor(Math.random() * 0xffffffff),
-      from: this.myNodeNum,
-      to: BROADCAST,
-      text,
-      channel: channelIndex,
-      time: new Date(),
-      kind: 'channel',
-      sent: true,
-    });
-    if (this.messages.length > 100) this.messages.pop();
+    const trimmed = text.trim();
+    const now = Date.now();
+
+    // Track as queued before talking to the device
+    const tracked = {
+      id: null, // filled after serial returns the packetId
+      tempId: now + Math.random(),
+      text: trimmed, to: BROADCAST, channel: channelIndex,
+      status: 'queued', sentAt: now, updatedAt: now, error: null,
+      replyReceived: false, replyText: null, replyFrom: null, replyAt: null, ackFrom: null,
+    };
+    this.outgoing.unshift(tracked);
+    if (this.outgoing.length > 50) this.outgoing.pop();
+    this.notify();
+
+    try {
+      const { packetId } = await this.serial.sendTextMessage(trimmed, BROADCAST, channelIndex);
+      tracked.id = packetId;
+      tracked.status = 'sent_to_device';
+      tracked.updatedAt = Date.now();
+
+      // Local echo so the UI shows the sent message immediately
+      this.messages.unshift({
+        id: packetId,
+        from: this.myNodeNum,
+        to: BROADCAST,
+        text: trimmed,
+        channel: channelIndex,
+        time: new Date(),
+        kind: 'channel',
+        sent: true,
+      });
+      if (this.messages.length > 100) this.messages.pop();
+
+      // Start ACK/NAK timeout watcher
+      const handle = setTimeout(() => {
+        const entry = this.outgoing.find(o => o.id === packetId);
+        if (entry && entry.status === 'sent_to_device') {
+          entry.status = 'timeout';
+          entry.updatedAt = Date.now();
+          this.notify();
+        }
+        this.outgoingTimeouts.delete(packetId);
+      }, this.OUTGOING_ACK_TIMEOUT_MS);
+      this.outgoingTimeouts.set(packetId, handle);
+
+      this.notify();
+      return { packetId };
+    } catch (e) {
+      tracked.status = 'error';
+      tracked.error = e.message;
+      tracked.updatedAt = Date.now();
+      this.notify();
+      throw e;
+    }
+  }
+
+  updateOutgoingStatus(packetId, newStatus, extra = {}) {
+    const entry = this.outgoing.find(o => o.id === packetId);
+    if (!entry) return;
+    // Don't downgrade reply_received back to ack
+    const rank = { queued: 0, sent_to_device: 1, timeout: 2, nak: 3, ack: 4, reply_received: 5, error: 6 };
+    if ((rank[newStatus] ?? 0) < (rank[entry.status] ?? 0) && newStatus !== 'nak' && newStatus !== 'reply_received') return;
+    entry.status = newStatus;
+    entry.updatedAt = Date.now();
+    Object.assign(entry, extra);
+    // Cancel timeout once we got any definitive response
+    if (newStatus === 'ack' || newStatus === 'nak' || newStatus === 'reply_received') {
+      const handle = this.outgoingTimeouts.get(packetId);
+      if (handle) { clearTimeout(handle); this.outgoingTimeouts.delete(packetId); }
+    }
     this.notify();
   }
 
@@ -281,6 +365,9 @@ class MeshStore {
     this.deviceConfigs = [];
     this.configSaveStatus = null;
     this.currentConfigId = null;
+    this.outgoingTimeouts.forEach(handle => clearTimeout(handle));
+    this.outgoingTimeouts.clear();
+    this.outgoing = [];
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.notify();
   }
