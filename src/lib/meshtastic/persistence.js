@@ -4,10 +4,10 @@
 
 import { base44 } from '@/api/base44Client';
 
-const PACKET_FLUSH_MS = 1500;
-const NODE_FLUSH_MS = 5000;
-const SAVE_BATCH_SIZE = 100;
-const SAVE_BATCH_PAUSE_MS = 2000;
+const PACKET_FLUSH_MS = 3000;
+const NODE_FLUSH_MS = 10000;
+const SAVE_BATCH_SIZE = 25;
+const SAVE_BATCH_PAUSE_MS = 3000;
 
 let packetBuffer = [];
 let nodeBuffer = new Map(); // key: my_node_num + ':' + num -> latest payload
@@ -293,7 +293,8 @@ export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress
       if (hasNodeChanged(existing, nodeRow)) {
         await base44.entities.MeshNode.update(existing.id, nodeRow);
         updatedNodes.push({ ...nodeRow, change_reasons: getNodeChangeReasons(existing, nodeRow) });
-        if (updatedNodes.length % 20 === 0) await wait(SAVE_BATCH_PAUSE_MS);
+        // Pause after every 5 updates to avoid rate limits
+        if (updatedNodes.length % 5 === 0) await wait(SAVE_BATCH_PAUSE_MS);
       }
     } else {
       createdNodes.push(nodeRow);
