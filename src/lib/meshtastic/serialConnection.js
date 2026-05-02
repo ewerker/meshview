@@ -7,9 +7,7 @@ export class MeshtasticSerial {
   constructor() {
     this.port = null;
     this.reader = null;
-    this.writer = null;        // persistent writer, held open for the connection lifetime
-    this._writeLock = false;   // serialise concurrent writes
-    this._writeQueue = [];
+    this.writer = null;
     this.running = false;
     this.onPacket = null;
     this.onConnect = null;
@@ -44,10 +42,7 @@ export class MeshtasticSerial {
 
       this.running = true;
       this.buffer = [];
-
-      // Acquire a persistent writer for the connection lifetime
-      this.writer = this.port.writable.getWriter();
-
+      
       if (this.onConnect) this.onConnect();
 
       // Start read loop
@@ -79,12 +74,7 @@ export class MeshtasticSerial {
       }
     } catch (_) {}
 
-    try {
-      if (this.writer) {
-        await this.writer.close().catch(() => {});
-        this.writer = null;
-      }
-    } catch (_) { this.writer = null; }
+    this.writer = null;
 
     // Wait for read loop to finish
     if (this.readLoopPromise) {
@@ -197,38 +187,24 @@ export class MeshtasticSerial {
 
 
   async sendToRadio(data) {
-    if (!this.writer) {
+    if (!this.port || !this.port.writable) {
       throw new Error('Kein Meshtastic-Gerät verbunden.');
     }
-    // Queue writes to prevent concurrent access
-    return new Promise((resolve, reject) => {
-      this._writeQueue.push({ data, resolve, reject });
-      this._flushWriteQueue();
-    });
-  }
-
-  async _flushWriteQueue() {
-    if (this._writeLock || this._writeQueue.length === 0) return;
-    this._writeLock = true;
-    while (this._writeQueue.length > 0) {
-      const { data, resolve, reject } = this._writeQueue.shift();
-      try {
-        const header = new Uint8Array([
-          START1,
-          START2,
-          (data.length >> 8) & 0xff,
-          data.length & 0xff,
-        ]);
-        const packet = new Uint8Array(header.length + data.length);
-        packet.set(header, 0);
-        packet.set(data, header.length);
-        await this.writer.write(packet);
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
+    const writer = this.port.writable.getWriter();
+    try {
+      const header = new Uint8Array([
+        START1,
+        START2,
+        (data.length >> 8) & 0xff,
+        data.length & 0xff,
+      ]);
+      const packet = new Uint8Array(header.length + data.length);
+      packet.set(header, 0);
+      packet.set(data, header.length);
+      await writer.write(packet);
+    } finally {
+      writer.releaseLock();
     }
-    this._writeLock = false;
   }
 
   async sendTextMessage(text, destination = 0xffffffff, channel = 0) {

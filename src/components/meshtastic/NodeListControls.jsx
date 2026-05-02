@@ -17,12 +17,7 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
     });
   };
 
-  // Only count boolean filters that are truly active (exclude maxAge='any' and non-boolean values)
-  const activeCount = Object.entries(filters).filter(([key, val]) => {
-    if (key === 'maxAge') return val && val !== 'any';
-    if (key === 'messagesOnly') return false; // not a node-list filter
-    return val === true;
-  }).length;
+  const activeCount = Object.values(filters).filter(Boolean).length;
 
   const filterOptions = [
     { key: 'active', label: t('filterActive') },

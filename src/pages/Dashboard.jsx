@@ -18,7 +18,6 @@ import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import UserDataTransferPanel from '@/components/meshtastic/UserDataTransferPanel.jsx';
 import DeviceSettingsPanel from '@/components/meshtastic/DeviceSettingsPanel.jsx';
 import FirstPacketProgress from '@/components/meshtastic/FirstPacketProgress.jsx';
-import SendMessagePoc from '@/components/meshtastic/SendMessagePoc.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
@@ -37,22 +36,20 @@ export default function Dashboard() {
   const [search, setSearch] = useLocalStorage('dashboard.search', '');
   const [sort, setSort] = useLocalStorage('dashboard.sort', 'myFirst');
   const [mainFrameOpen, setMainFrameOpen] = useLocalStorage('dashboard.mainFrame.open', true);
-  const [rawFilters, setFilters] = useLocalStorage('dashboard.filters', {});
-  // Sanitize: coerce any corrupted localStorage values back to proper types
-  const filters = {
-    active: rawFilters.active === true,
-    direct: rawFilters.direct === true,
-    withGps: rawFilters.withGps === true,
-    withTelemetry: rawFilters.withTelemetry === true,
-    withEnv: rawFilters.withEnv === true,
-    lowBattery: rawFilters.lowBattery === true,
-    highBattery: rawFilters.highBattery === true,
-    near1km: rawFilters.near1km === true,
-    near5km: rawFilters.near5km === true,
-    near25km: rawFilters.near25km === true,
-    messagesOnly: rawFilters.messagesOnly === true,
-    maxAge: (typeof rawFilters.maxAge === 'string' && rawFilters.maxAge !== 'on') ? rawFilters.maxAge : 'any',
-  };
+  const [filters, setFilters] = useLocalStorage('dashboard.filters', {
+    active: false,
+    direct: false,
+    withGps: false,
+    withTelemetry: false,
+    withEnv: false,
+    lowBattery: false,
+    highBattery: false,
+    near1km: false,
+    near5km: false,
+    near25km: false,
+    messagesOnly: false,
+    maxAge: 'any',
+  });
 
   const MAX_AGE_SECONDS = { '1d': 86400, '3d': 259200, '7d': 604800, '30d': 2592000, '90d': 7776000 };
 
@@ -127,7 +124,6 @@ export default function Dashboard() {
           <DeviceSettingsPanel />
           <UserDataTransferPanel onBusyChange={setDataTransferBusy} />
           <FirstPacketProgress visible={packetLog.length === 0} />
-          <SendMessagePoc />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 min-h-0 flex flex-col">
