@@ -43,6 +43,28 @@ function AutoFitBounds({ nodes }) {
   return null;
 }
 
+function MapSizeWatcher() {
+  const map = useMap();
+
+  useEffect(() => {
+    const updateSize = () => map.invalidateSize({ pan: false });
+    const container = map.getContainer();
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(container);
+
+    const timers = [0, 150, 400, 900].map(delay => setTimeout(updateSize, delay));
+    map.on('zoomend moveend', updateSize);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      resizeObserver.disconnect();
+      map.off('zoomend moveend', updateSize);
+    };
+  }, [map]);
+
+  return null;
+}
+
 function timeAgo(timestamp) {
   if (!timestamp) return 'Unbekannt';
   const diff = Math.floor(Date.now() / 1000) - timestamp;
@@ -114,7 +136,11 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          keepBuffer={8}
+          updateWhenIdle={false}
+          updateWhenZooming
         />
+        <MapSizeWatcher />
         <AutoFitBounds nodes={nodesWithPos} />
         <MapController selectedNodeNum={selectedNodeNum} markerRefs={markerRefs} nodes={nodesWithPos} />
 
