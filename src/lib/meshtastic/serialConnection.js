@@ -240,12 +240,16 @@ function encodeMessage(fields) {
 }
 
 function encodeVarint(value) {
+  // Use BigInt to safely handle full uint32/uint64 range (e.g. 0xffffffff broadcast).
+  // The previous `value >>>= 7` was a 32-bit signed shift in JS and corrupted large values.
+  let v = BigInt(value);
+  if (v < 0n) v &= 0xffffffffffffffffn; // treat negatives as unsigned 64-bit
   const bytes = [];
-  while (value > 0x7f) {
-    bytes.push((value & 0x7f) | 0x80);
-    value >>>= 7;
+  while (v > 0x7fn) {
+    bytes.push(Number((v & 0x7fn) | 0x80n));
+    v >>= 7n;
   }
-  bytes.push(value & 0x7f);
+  bytes.push(Number(v & 0x7fn));
   return bytes;
 }
 
