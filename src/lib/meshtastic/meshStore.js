@@ -21,11 +21,6 @@ class MeshStore {
     this.deviceConfigs = [];
     this.configSaveStatus = null;
     this.currentConfigId = null;
-    this.outgoing = []; // [{ id, tempId, text, to, channel, kind, hopLimit, wantAck, status, sentAt, updatedAt, error, replyText, replyFrom, replyAt, ackFrom, acceptedAt }]
-    this.outgoingTimeouts = new Map(); // id -> timeoutHandle
-    this.OUTGOING_ACK_TIMEOUT_MS = 60_000;
-    this.OUTGOING_REPLY_WINDOW_MS = 10 * 60_000;
-    this.BROADCAST_ADDR = 0xffffffff;
 
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
@@ -41,7 +36,7 @@ class MeshStore {
   async handlePacket(rawBytes) {
     // Show loading indicator while actively receiving packets
     this.isLoading = true;
-    
+
     // Auto-hide loading after 5s of inactivity
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.loadingTimeout = setTimeout(() => {
@@ -50,29 +45,6 @@ class MeshStore {
     }, 5000);
 
     const parsed = parseFromRadio(rawBytes);
-
-    // Diagnostic: while any outgoing packet is still pending (no ack/nak/timeout/error yet),
-    // dump every FromRadio so we can see exactly what the device sends back after we wrote bytes.
-    const pendingIds = this.outgoing
-      .filter(o => o.id && !['ack', 'nak', 'timeout', 'error', 'reply_received'].includes(o.status))
-      .map(o => o.id);
-    if (pendingIds.length > 0) {
-      const reqId = parsed?.packet?.decoded?.requestId;
-      const qsId = parsed?.queueStatus?.meshPacketId;
-      const ackId = parsed?.type === 'ack' ? parsed.id : null;
-      const matchedId = [reqId, qsId, ackId].find(x => x && pendingIds.includes(x));
-      console.debug('[fromRadio]', {
-        type: parsed?.type,
-        from: parsed?.packet?.from,
-        to: parsed?.packet?.to,
-        portnum: parsed?.packet?.decoded?.portnumName,
-        requestId: reqId ? `0x${reqId.toString(16)}` : undefined,
-        queueStatusPacketId: qsId ? `0x${qsId.toString(16)}` : undefined,
-        topLevelAckId: ackId ? `0x${ackId.toString(16)}` : undefined,
-        pending: pendingIds.map(x => `0x${x.toString(16)}`),
-        matched: matchedId ? `0x${matchedId.toString(16)}` : 'NO MATCH — unhandled feedback',
-      });
-    }
 
     if (parsed.type === 'packet' && parsed.packet) {
       parsed.packet.channelHash = parsed.packet.channel || 0;
@@ -149,17 +121,6 @@ class MeshStore {
       this.captureDeviceConfig(parsed);
     } else if (parsed.type === 'configComplete') {
       this.currentConfigId = parsed.configCompleteId;
-    } else if (parsed.type === 'queueStatus' && parsed.queueStatus) {
-      // Device-side feedback: device confirms it has queued/handled this packet id
-      const qs = parsed.queueStatus;
-      if (qs.meshPacketId) {
-        console.debug('[outgoing] queueStatus for packetId', qs.meshPacketId, qs);
-        this.updateOutgoingStatus(qs.meshPacketId, 'accepted_by_device', { acceptedAt: Date.now() });
-      }
-    } else if (parsed.type === 'ack' && parsed.id) {
-      // Top-level FromRadio.ack — protocol-level confirmation, NOT end-to-end mesh ack
-      console.debug('[outgoing] top-level ack for packetId', parsed.id);
-      this.updateOutgoingStatus(parsed.id, 'accepted_by_device', { acceptedAt: Date.now() });
     }
 
     this.notify();
@@ -168,29 +129,6 @@ class MeshStore {
   handleDecodedPacket(packet) {
     const decoded = packet.decoded;
     const fromNum = packet.from;
-
-    // ACK/NAK correlation: routing packets carry request_id of the originating packet
-    if (decoded?.routing && decoded.requestId) {
-      const isError = decoded.routing.errorReason && decoded.routing.errorReason !== 0;
-      console.debug('[outgoing] routing', isError ? 'NAK' : 'ACK', 'for requestId', decoded.requestId, 'from', fromNum, decoded.routing);
-      this.updateOutgoingStatus(decoded.requestId, isError ? 'nak' : 'ack', {
-        ackFrom: fromNum,
-        error: isError ? (decoded.routing.errorText || `Fehler ${decoded.routing.errorReason}`) : null,
-      });
-    }
-
-    // Reply correlation: text response from the destination of one of our outgoing messages
-    if (decoded?.text && fromNum && fromNum !== this.myNodeNum) {
-      const now = Date.now();
-      const match = [...this.outgoing].reverse().find(o =>
-        o.to === fromNum && (now - o.sentAt) <= this.OUTGOING_REPLY_WINDOW_MS
-      );
-      if (match) {
-        this.updateOutgoingStatus(match.id, match.status === 'ack' ? 'reply_received' : match.status, {
-          replyText: decoded.text, replyFrom: fromNum, replyAt: now, replyReceived: true,
-        });
-      }
-    }
 
     // Update node with packet info
     const existingNode = this.nodes.get(fromNum) || { num: fromNum };
@@ -308,130 +246,6 @@ class MeshStore {
     await this.serial.sendWantConfig();
   }
 
-  // Send a text message. Supports broadcast (default) and direct messages.
-  // Encryption is handled by the device based on its channel config — no per-message PSK in the browser.
-  //
-  // params:
-  //   text          : string
-  //   channelIndex  : number (channel index used for encryption context)
-  //   options       : { destination?: number, hopLimit?: number, wantAck?: boolean }
-  //                   - destination: omit or 0xffffffff for broadcast; node num for DM
-  //                   - hopLimit: defaults to 3
-  //                   - wantAck: defaults to true
-  async sendChannelMessage(text, channelIndex = 0, options = {}) {
-    if (!this.connected) throw new Error('Kein Gerät verbunden.');
-    if (!text?.trim()) throw new Error('Leerer Text.');
-
-    const trimmed = text.trim();
-    const destination = Number.isFinite(options.destination) ? options.destination >>> 0 : this.BROADCAST_ADDR;
-    const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
-    const isBroadcast = destination === this.BROADCAST_ADDR;
-    // Broadcasts get no routing-ACK by protocol -> default wantAck=false unless explicitly true.
-    // DMs default to want_ack=true unless explicitly disabled.
-    const wantAck = isBroadcast ? options.wantAck === true : options.wantAck !== false;
-    const kind = isBroadcast ? 'channel' : 'direct';
-    const now = Date.now();
-
-    // Track as queued before talking to the device
-    const tracked = {
-      id: null, // filled after serial returns the packetId
-      tempId: now + Math.random(),
-      text: trimmed,
-      to: destination,
-      channel: channelIndex,
-      kind,
-      hopLimit,
-      wantAck,
-      status: 'queued',
-      sentAt: now,
-      updatedAt: now,
-      error: null,
-      replyReceived: false, replyText: null, replyFrom: null, replyAt: null,
-      ackFrom: null, acceptedAt: null,
-    };
-    this.outgoing.unshift(tracked);
-    if (this.outgoing.length > 50) this.outgoing.pop();
-    this.notify();
-
-    try {
-      // Firmware ≥2.x erwartet from=0 vom Phone-API und setzt es selbst auf myNodeNum.
-      // Setzen wir from explizit, verwirft die Firmware das Paket teilweise still.
-      const { packetId } = await this.serial.sendTextMessage(trimmed, destination, channelIndex, { hopLimit, wantAck, from: 0 });
-      tracked.id = packetId;
-      tracked.status = 'written_to_serial'; // bytes left the browser; device acceptance not yet proven
-      tracked.updatedAt = Date.now();
-      console.debug('[outgoing] written_to_serial', { packetId, destination, channelIndex, hopLimit, wantAck, kind });
-
-      // Local echo so the UI shows the sent message immediately
-      this.messages.unshift({
-        id: packetId,
-        from: this.myNodeNum,
-        to: destination,
-        text: trimmed,
-        channel: channelIndex,
-        time: new Date(),
-        kind,
-        sent: true,
-      });
-      if (this.messages.length > 100) this.messages.pop();
-
-      // Routing-ACK only exists for direct messages with want_ack. Broadcasts terminate at accepted_by_device.
-      if (wantAck && !isBroadcast) {
-        const handle = setTimeout(() => {
-          const entry = this.outgoing.find(o => o.id === packetId);
-          if (entry && (entry.status === 'written_to_serial' || entry.status === 'accepted_by_device')) {
-            console.debug('[outgoing] timeout for packetId', packetId, 'last status', entry.status);
-            entry.status = 'timeout';
-            entry.updatedAt = Date.now();
-            this.notify();
-          }
-          this.outgoingTimeouts.delete(packetId);
-        }, this.OUTGOING_ACK_TIMEOUT_MS);
-        this.outgoingTimeouts.set(packetId, handle);
-      }
-
-      this.notify();
-      return { packetId };
-    } catch (e) {
-      tracked.status = 'error';
-      tracked.error = e.message;
-      tracked.updatedAt = Date.now();
-      console.debug('[outgoing] error', e.message);
-      this.notify();
-      throw e;
-    }
-  }
-
-  updateOutgoingStatus(packetId, newStatus, extra = {}) {
-    const entry = this.outgoing.find(o => o.id === packetId);
-    if (!entry) return;
-    // State machine ordering. nak and reply_received may always overwrite.
-    const rank = {
-      queued: 0,
-      written_to_serial: 1,
-      accepted_by_device: 2,
-      timeout: 3,
-      nak: 4,
-      ack: 5,
-      reply_received: 6,
-      error: 7,
-    };
-    const allowOverride = newStatus === 'nak' || newStatus === 'reply_received';
-    if (!allowOverride && (rank[newStatus] ?? 0) < (rank[entry.status] ?? 0)) return;
-    const prev = entry.status;
-    entry.status = newStatus;
-    entry.updatedAt = Date.now();
-    Object.assign(entry, extra);
-    console.debug('[outgoing] status', packetId, prev, '->', newStatus);
-    // Cancel timeout once we got any definitive mesh-level response
-    if (newStatus === 'ack' || newStatus === 'nak' || newStatus === 'reply_received') {
-      const handle = this.outgoingTimeouts.get(packetId);
-      if (handle) { clearTimeout(handle); this.outgoingTimeouts.delete(packetId); }
-    }
-    this.notify();
-  }
-
-
   async disconnect() {
     await this.serial.disconnect();
     this.nodes.clear();
@@ -444,9 +258,6 @@ class MeshStore {
     this.deviceConfigs = [];
     this.configSaveStatus = null;
     this.currentConfigId = null;
-    this.outgoingTimeouts.forEach(handle => clearTimeout(handle));
-    this.outgoingTimeouts.clear();
-    this.outgoing = [];
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.notify();
   }

@@ -206,19 +206,6 @@ export class MeshtasticSerial {
       writer.releaseLock();
     }
   }
-
-  async sendTextMessage(text, destination = 0xffffffff, channel = 0, options = {}) {
-    const encoder = new TextEncoder();
-    const textBytes = encoder.encode(text);
-    // Build a minimal MeshPacket for text message
-    const { bytes, packetId } = buildTextPacket(textBytes, destination, channel, options);
-    await this.sendToRadio(bytes);
-    return { packetId };
-  }
-
-  setMyNodeNum(num) {
-    this.myNodeNum = num >>> 0;
-  }
 }
 
 // Minimal protobuf encoding for ToRadio { want_config_id: uint32 }
@@ -229,23 +216,6 @@ function ToRadio_encode_wantConfigId(id) {
   return new Uint8Array(bytes);
 }
 
-
-function encodeMessage(fields) {
-  const bytes = [];
-  fields.forEach(([fieldNumber, wireType, value]) => {
-    bytes.push(...encodeVarint((fieldNumber << 3) | wireType));
-    if (wireType === 0) {
-      bytes.push(...encodeVarint(value));
-    } else if (wireType === 2) {
-      bytes.push(...encodeVarint(value.length), ...value);
-    } else if (wireType === 5) {
-      // fixed32 little-endian (used for MeshPacket.from/to/id)
-      const v = value >>> 0;
-      bytes.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff);
-    }
-  });
-  return bytes;
-}
 
 function encodeVarint(value) {
   // Use BigInt to safely handle full uint32/uint64 range (e.g. 0xffffffff broadcast).
@@ -259,69 +229,4 @@ function encodeVarint(value) {
   }
   bytes.push(Number(v & 0x7fn));
   return bytes;
-}
-
-export function inspectTextPacket(text, destination = 0xffffffff, channel = 0, options = {}) {
-  // Build the same packet structure that sendTextMessage would, but without sending.
-  // Returns a structured description so the UI can show what the wire bytes will look like.
-  const encoder = new TextEncoder();
-  const textBytes = encoder.encode(String(text ?? ''));
-  const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
-  const wantAck = options.wantAck === false ? false : true;
-  const dest = (destination >>> 0);
-
-  const issues = [];
-  if (!textBytes.length) issues.push('Leerer Text — Data.payload wäre 0 Bytes.');
-  if (textBytes.length > 200) issues.push(`Text zu lang (${textBytes.length} Bytes, max 200 für Meshtastic-Textnachrichten).`);
-  if (!Number.isFinite(hopLimit) || hopLimit < 1 || hopLimit > 7) issues.push(`hop_limit außerhalb 1..7 (=${hopLimit}).`);
-  if (!Number.isFinite(channel) || channel < 0 || channel > 7) issues.push(`channel außerhalb 0..7 (=${channel}).`);
-
-  const fromNum = Number.isFinite(options.from) ? (options.from >>> 0) : 0;
-  const { bytes, packetId } = buildTextPacket(textBytes, dest, channel, { hopLimit, wantAck, from: fromNum });
-
-  return {
-    issues,
-    packetId,
-    fields: {
-      'ToRadio.packet (field 2, length-delim)': `${bytes.length} Bytes ToRadio-Wrapper`,
-      'MeshPacket.from (field 1, fixed32)': `0x${fromNum.toString(16).padStart(8, '0')}${fromNum === 0 ? ' (auto/Gerät)' : ''}`,
-      'MeshPacket.to (field 2, fixed32)': `0x${dest.toString(16).padStart(8, '0')}${dest === 0xffffffff ? ' (Broadcast)' : ''}`,
-      'MeshPacket.channel (field 3)': String(channel),
-      'MeshPacket.id (field 6, fixed32)': `0x${packetId.toString(16).padStart(8, '0')}`,
-      'MeshPacket.hop_limit (field 9)': String(hopLimit),
-      'MeshPacket.want_ack (field 10)': String(wantAck ? 1 : 0),
-      'Data.portnum (field 1)': '1 (TEXT_MESSAGE_APP)',
-      'Data.payload (field 2)': `${textBytes.length} Bytes UTF-8`,
-    },
-    textBytes,
-    bytes, // raw ToRadio bytes (without START1/START2/length header)
-  };
-}
-
-function buildTextPacket(textBytes, destination, channel, options = {}) {
-  const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
-  const wantAck = options.wantAck === false ? 0 : 1;
-  const from = Number.isFinite(options.from) ? (options.from >>> 0) : 0;
-
-  const data = encodeMessage([
-    [1, 0, 1],          // Data.portnum = TEXT_MESSAGE_APP
-    [2, 2, textBytes],  // Data.payload = UTF-8 message
-  ]);
-
-  const packetId = Math.floor(Math.random() * 0xffffffff) >>> 0;
-  // Field order matches the official Python/JS clients: from, to, channel, decoded, id, hop_limit, want_ack
-  const meshPacket = encodeMessage([
-    [1, 5, from],                    // MeshPacket.from (fixed32) — required by firmware for ack routing
-    [2, 5, destination],             // MeshPacket.to (fixed32)
-    [3, 0, channel],                 // MeshPacket.channel
-    [4, 2, new Uint8Array(data)],    // MeshPacket.decoded
-    [6, 5, packetId],                // MeshPacket.id (fixed32)
-    [9, 0, hopLimit],                // MeshPacket.hop_limit
-    [10, 0, wantAck],                // MeshPacket.want_ack
-  ]);
-
-  const bytes = new Uint8Array(encodeMessage([
-    [2, 2, new Uint8Array(meshPacket)], // ToRadio.packet
-  ]));
-  return { bytes, packetId };
 }
