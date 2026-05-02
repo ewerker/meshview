@@ -118,8 +118,14 @@ function ConfigCard({ config }) {
   );
 }
 
-export default function DeviceSettingsPanel() {
-  const { connected, deviceConfigs, configSaveStatus, requestDeviceConfig, myNode, myNodeNum, metadata } = useMeshStore();
+export default function DeviceSettingsPanel({ deviceConfigs: deviceConfigsProp, myNode: myNodeProp, myNodeNum: myNodeNumProp, metadata: metadataProp, readonly = false }) {
+  const store = useMeshStore();
+  const deviceConfigs = deviceConfigsProp ?? store.deviceConfigs;
+  const myNode = myNodeProp ?? store.myNode;
+  const myNodeNum = myNodeNumProp ?? store.myNodeNum;
+  const metadata = metadataProp ?? store.metadata;
+  const configSaveStatus = readonly ? null : store.configSaveStatus;
+  const requestDeviceConfig = store.requestDeviceConfig;
   const [isOpen, setIsOpen] = useLocalStorage('deviceSettingsPanel.open', true);
 
   const sortedConfigs = useMemo(() => {
@@ -137,10 +143,7 @@ export default function DeviceSettingsPanel() {
       },
     }] : [];
     const order = Object.keys(SECTION_META);
-    // Auslesbare, aktuell bewusst ausgeblendete Bereiche ohne sichere Feldzuordnung:
-    // SessionKey, ExternalNotification, CannedMessage, Audio, RemoteHardware,
-    // AmbientLighting, DetectionSensor und unbekannte reine Rohfelder wie "Feld 1/2/3".
-    return [...userConfig, ...deviceConfigs]
+    return [...userConfig, ...(deviceConfigs || [])]
       .filter(hasUsefulValues)
       .sort((a, b) => {
         const aKey = a.section?.startsWith('Channel') ? 'Channel' : a.section;
@@ -149,7 +152,8 @@ export default function DeviceSettingsPanel() {
       });
   }, [deviceConfigs, myNode, myNodeNum, metadata]);
 
-  if (!connected) return null;
+  if (!readonly && !store.connected) return null;
+  if (readonly && sortedConfigs.length === 0) return null;
 
   return (
     <div className="border-b bg-blue-50/80 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900 px-3 py-2">
@@ -158,7 +162,7 @@ export default function DeviceSettingsPanel() {
           <ChevronDown className={`w-4 h-4 text-blue-600 dark:text-blue-300 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
           <Settings className="w-4 h-4 text-blue-600 dark:text-blue-300 shrink-0" />
           <div>
-            <div className="font-semibold text-xs text-blue-900 dark:text-blue-100">Geräte-Einstellungen</div>
+            <div className="font-semibold text-xs text-blue-900 dark:text-blue-100">Geräte-Einstellungen{readonly ? ' (gespeichert)' : ''}</div>
             <div className="text-[11px] text-blue-700 dark:text-blue-300 leading-tight">
               Wichtige Einstellungen: User/Node-Name, Kanaldefinitionen und LoRa zuerst · leere Rohfelder werden ausgeblendet.
             </div>
@@ -174,11 +178,13 @@ export default function DeviceSettingsPanel() {
 
       {isOpen && (
         <div className="mt-2 space-y-2">
-          <div className="flex justify-end">
-            <Button size="sm" variant="outline" onClick={requestDeviceConfig} className="bg-white/80 dark:bg-slate-900/60 gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Config lesen
-            </Button>
-          </div>
+          {!readonly && (
+            <div className="flex justify-end">
+              <Button size="sm" variant="outline" onClick={requestDeviceConfig} className="bg-white/80 dark:bg-slate-900/60 gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5" /> Config lesen
+              </Button>
+            </div>
+          )}
 
           {sortedConfigs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
@@ -186,7 +192,7 @@ export default function DeviceSettingsPanel() {
             </div>
           ) : (
             <div className="rounded-lg bg-white/75 dark:bg-slate-900/50 border border-blue-100 dark:border-blue-900 p-3 text-xs text-blue-700 dark:text-blue-300">
-              Noch keine Einstellungen empfangen. Klicke auf „Config lesen“.
+              {readonly ? 'Keine gespeicherten Einstellungen für dieses Gerät.' : 'Noch keine Einstellungen empfangen. Klicke auf „Config lesen“.'}
             </div>
           )}
         </div>

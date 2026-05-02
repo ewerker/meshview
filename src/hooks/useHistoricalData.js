@@ -68,6 +68,7 @@ export function useHistoricalData(myNodeNum, enabled) {
   const [nodes, setNodes] = useState([]);
   const [packets, setPackets] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [deviceConfigs, setDeviceConfigs] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const reload = useCallback(async () => {
@@ -75,14 +76,17 @@ export function useHistoricalData(myNodeNum, enabled) {
       setNodes([]);
       setPackets([]);
       setMessages([]);
+      setDeviceConfigs([]);
       return;
     }
     setLoading(true);
     try {
-      const [nodeRows, packetRows] = await Promise.all([
+      const [nodeRows, packetRows, configRows] = await Promise.all([
         base44.entities.MeshNode.filter({ my_node_num: myNodeNum }, '-last_heard', 1000),
         base44.entities.MeshPacket.filter({ my_node_num: myNodeNum }, '-time', 50),
+        base44.entities.MeshDeviceConfig.filter({ my_node_num: myNodeNum }, '-received_at', 200),
       ]);
+      setDeviceConfigs(configRows);
 
       // Map MeshNode rows -> shape used by NodeCard / NodeMap / NodeDetail
       const mapped = uniqueLatestNodes(nodeRows).map(r => ({ 
@@ -133,5 +137,5 @@ export function useHistoricalData(myNodeNum, enabled) {
 
   useEffect(() => { reload(); }, [reload]);
 
-  return { nodes, packets, messages, loading, reload };
+  return { nodes, packets, messages, deviceConfigs, loading, reload };
 }

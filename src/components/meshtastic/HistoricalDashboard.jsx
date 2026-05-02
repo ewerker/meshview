@@ -9,6 +9,7 @@ import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
 import NodeListControls from '@/components/meshtastic/NodeListControls.jsx';
 import ReceivedPacketsTable from '@/components/meshtastic/ReceivedPacketsTable.jsx';
 import DeviceSelector from '@/components/meshtastic/DeviceSelector.jsx';
+import DeviceSettingsPanel from '@/components/meshtastic/DeviceSettingsPanel.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
@@ -25,7 +26,7 @@ export default function HistoricalDashboard() {
     return devices[0]?.my_node_num || null;
   }, [selectedDevice, devices]);
 
-  const { nodes, packets, messages, loading, reload } = useHistoricalData(effectiveDevice, isAuthenticated);
+  const { nodes, packets, messages, deviceConfigs, loading, reload } = useHistoricalData(effectiveDevice, isAuthenticated);
 
   const myNode = nodes.find(n => n.num === effectiveDevice) || null;
   const myNodeNum = effectiveDevice;
@@ -93,6 +94,7 @@ export default function HistoricalDashboard() {
 
       {!effectiveDevice ? null : (
         <>
+          <DeviceSettingsPanel deviceConfigs={deviceConfigs} myNode={myNode} myNodeNum={myNodeNum} readonly />
           <StatsBar nodes={nodes} messages={messages} connected={false} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 overflow-hidden relative">
