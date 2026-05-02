@@ -298,9 +298,10 @@ function parseUser(bytes) {
     longName: fields[2] ? new TextDecoder().decode(fields[2]) : '',
     shortName: fields[3] ? new TextDecoder().decode(fields[3]) : '',
     macaddr: fields[4] ? bytesToHex(fields[4]) : '',
-    hwModel: fields[6] || 0,
-    isLicensed: fields[7] || false,
-    role: fields[8] || 0,
+    hwModel: fields[5] || 0,
+    isLicensed: fields[6] || false,
+    role: fields[7] || 0,
+    publicKey: fields[8] || null,
   };
 }
 
