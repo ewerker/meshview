@@ -246,6 +246,28 @@ class MeshStore {
     await this.serial.sendWantConfig();
   }
 
+  // POC: send a text message on a configured channel index. The device handles
+  // encryption based on its own channel config — no per-message PSK in the browser.
+  async sendChannelMessage(text, channelIndex = 0) {
+    if (!this.connected) throw new Error('Kein Gerät verbunden.');
+    if (!text?.trim()) throw new Error('Leerer Text.');
+    const BROADCAST = 0xffffffff;
+    await this.serial.sendTextMessage(text, BROADCAST, channelIndex);
+    // Local echo so the UI shows the sent message immediately
+    this.messages.unshift({
+      id: Math.floor(Math.random() * 0xffffffff),
+      from: this.myNodeNum,
+      to: BROADCAST,
+      text,
+      channel: channelIndex,
+      time: new Date(),
+      kind: 'channel',
+      sent: true,
+    });
+    if (this.messages.length > 100) this.messages.pop();
+    this.notify();
+  }
+
 
   async disconnect() {
     await this.serial.disconnect();

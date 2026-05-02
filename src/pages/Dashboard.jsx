@@ -17,6 +17,7 @@ import HistoricalDashboard from '@/components/meshtastic/HistoricalDashboard.jsx
 import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import UserDataTransferPanel from '@/components/meshtastic/UserDataTransferPanel.jsx';
 import DeviceSettingsPanel from '@/components/meshtastic/DeviceSettingsPanel.jsx';
+import SendMessagePanel from '@/components/meshtastic/SendMessagePanel.jsx';
 import FirstPacketProgress from '@/components/meshtastic/FirstPacketProgress.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
@@ -122,6 +123,7 @@ export default function Dashboard() {
         <>
           <ManualSavePanel autoSaveStatus={autoSaveStatus} autoSaveEnabled={autoSaveEnabled} onAutoSaveEnabled={() => setAutoSaveEnabled(true)} onBusyChange={setManualSaveBusy} onSelectNode={handleSelectNode} />
           <DeviceSettingsPanel />
+          <SendMessagePanel />
           <UserDataTransferPanel onBusyChange={setDataTransferBusy} />
           <FirstPacketProgress visible={packetLog.length === 0} />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
