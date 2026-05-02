@@ -35,12 +35,21 @@ export default function HistoricalDashboard() {
   const [search, setSearch] = useLocalStorage('history.search', '');
   const [sort, setSort] = useLocalStorage('history.sort', 'myFirst');
   const [mainFrameOpen, setMainFrameOpen] = useLocalStorage('dashboard.mainFrame.open', true);
-  const [filters, setFilters] = useLocalStorage('history.filters', {
-    active: false, direct: false, withGps: false, withTelemetry: false,
-    withEnv: false, lowBattery: false, highBattery: false,
-    near1km: false, near5km: false, near25km: false, messagesOnly: false,
-    maxAge: 'any',
-  });
+  const [rawFilters, setFilters] = useLocalStorage('history.filters', {});
+  const filters = {
+    active: rawFilters.active === true,
+    direct: rawFilters.direct === true,
+    withGps: rawFilters.withGps === true,
+    withTelemetry: rawFilters.withTelemetry === true,
+    withEnv: rawFilters.withEnv === true,
+    lowBattery: rawFilters.lowBattery === true,
+    highBattery: rawFilters.highBattery === true,
+    near1km: rawFilters.near1km === true,
+    near5km: rawFilters.near5km === true,
+    near25km: rawFilters.near25km === true,
+    messagesOnly: rawFilters.messagesOnly === true,
+    maxAge: (typeof rawFilters.maxAge === 'string' && rawFilters.maxAge !== 'on') ? rawFilters.maxAge : 'any',
+  };
 
   const MAX_AGE_SECONDS = { '1d': 86400, '3d': 259200, '7d': 604800, '30d': 2592000, '90d': 7776000 };
 
