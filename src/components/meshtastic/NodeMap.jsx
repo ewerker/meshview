@@ -52,16 +52,18 @@ function timeAgo(timestamp) {
   return `vor ${Math.floor(diff / 86400)}d`;
 }
 
-function MapController({ selectedNodeNum, markerRefs }) {
+function MapController({ selectedNodeNum, markerRefs, nodes }) {
   const map = useMap();
   
   useEffect(() => {
     if (!selectedNodeNum || !markerRefs.current) return;
     
-    const marker = markerRefs.current[selectedNodeNum];
-    if (marker && typeof marker.getLatLng === 'function') {
+    const node = nodes?.find(n => n.num === selectedNodeNum);
+    
+    if (node && node.position?.latitude && node.position?.longitude) {
       try {
-        const pos = marker.getLatLng();
+        // Sichere Koordinaten auslesen, um NaN-Fehler im Leaflet-Objekt zu vermeiden
+        const pos = [node.position.latitude, node.position.longitude];
         
         // Sanft zum Node fliegen
         map.flyTo(pos, Math.max(map.getZoom(), 15), { duration: 0.8 });
@@ -75,6 +77,7 @@ function MapController({ selectedNodeNum, markerRefs }) {
 
         // Popup öffnen
         setTimeout(() => {
+          const marker = markerRefs.current[selectedNodeNum];
           if (marker && typeof marker.openPopup === 'function') {
             marker.openPopup();
           }
@@ -83,7 +86,7 @@ function MapController({ selectedNodeNum, markerRefs }) {
         console.error("Fehler beim Fokus auf Node in der Karte:", err);
       }
     }
-  }, [selectedNodeNum, map, markerRefs]);
+  }, [selectedNodeNum, map, markerRefs, nodes]);
 
   return null;
 }
@@ -113,7 +116,7 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <AutoFitBounds nodes={nodesWithPos} />
-        <MapController selectedNodeNum={selectedNodeNum} markerRefs={markerRefs} />
+        <MapController selectedNodeNum={selectedNodeNum} markerRefs={markerRefs} nodes={nodesWithPos} />
 
         {nodesWithPos.map(node => {
           const isMyNode = node.num === myNodeNum;
@@ -126,7 +129,13 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
               key={`${node.num}-${node.user?.id || ''}-${node.position.latitude}-${node.position.longitude}`}
               position={[node.position.latitude, node.position.longitude]}
               icon={createNodeIcon(shortName, isMyNode, isSelected)}
-              ref={(ref) => { if (ref) markerRefs.current[node.num] = ref; }}
+              ref={(ref) => {
+                if (ref) {
+                  markerRefs.current[node.num] = ref;
+                } else {
+                  delete markerRefs.current[node.num];
+                }
+              }}
               eventHandlers={{ click: () => onSelectNode && onSelectNode(node.num) }}
             >
               <Popup>
