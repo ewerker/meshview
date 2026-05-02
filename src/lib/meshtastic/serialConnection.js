@@ -207,11 +207,11 @@ export class MeshtasticSerial {
     }
   }
 
-  async sendTextMessage(text, destination = 0xffffffff, channel = 0) {
+  async sendTextMessage(text, destination = 0xffffffff, channel = 0, options = {}) {
     const encoder = new TextEncoder();
     const textBytes = encoder.encode(text);
     // Build a minimal MeshPacket for text message
-    const { bytes, packetId } = buildTextPacket(textBytes, destination, channel);
+    const { bytes, packetId } = buildTextPacket(textBytes, destination, channel, options);
     await this.sendToRadio(bytes);
     return { packetId };
   }
@@ -253,7 +253,10 @@ function encodeVarint(value) {
   return bytes;
 }
 
-function buildTextPacket(textBytes, destination, channel) {
+function buildTextPacket(textBytes, destination, channel, options = {}) {
+  const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
+  const wantAck = options.wantAck === false ? 0 : 1;
+
   const data = encodeMessage([
     [1, 0, 1],          // Data.portnum = TEXT_MESSAGE_APP
     [2, 2, textBytes],  // Data.payload = UTF-8 message
@@ -265,8 +268,8 @@ function buildTextPacket(textBytes, destination, channel) {
     [3, 0, channel],                 // MeshPacket.channel
     [4, 2, new Uint8Array(data)],    // MeshPacket.decoded
     [6, 0, packetId],                // MeshPacket.id
-    [9, 0, 3],                       // MeshPacket.hop_limit
-    [10, 0, 1],                      // MeshPacket.want_ack
+    [9, 0, hopLimit],                // MeshPacket.hop_limit
+    [10, 0, wantAck],                // MeshPacket.want_ack
   ]);
 
   const bytes = new Uint8Array(encodeMessage([

@@ -8,11 +8,18 @@ import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import { getSendableChannels } from '@/lib/meshtastic/channels.js';
 import OutgoingMessageStatus from './OutgoingMessageStatus.jsx';
+import SendMessageOptions from './SendMessageOptions.jsx';
 
 export default function SendMessagePanel() {
   const store = useMeshStore();
   const [isOpen, setIsOpen] = useLocalStorage('sendMessagePanel.open', true);
   const [channelIndex, setChannelIndex] = useLocalStorage('sendMessagePanel.channel', 0);
+  const [sendOpts, setSendOpts] = useLocalStorage('sendMessagePanel.sendOpts', {
+    kind: 'broadcast',     // 'broadcast' | 'direct'
+    destination: null,     // node num for DM
+    hopLimit: 3,
+    wantAck: true,
+  });
   const [text, setText] = useState('');
   const [status, setStatus] = useState(null); // 'sending' | 'sent' | 'error'
   const [error, setError] = useState(null);
@@ -23,9 +30,18 @@ export default function SendMessagePanel() {
 
   const handleSend = async () => {
     setError(null);
+    if (sendOpts.kind === 'direct' && !sendOpts.destination) {
+      setError('Bitte einen Empfänger-Node auswählen.');
+      setStatus('error');
+      return;
+    }
     setStatus('sending');
     try {
-      await store.sendChannelMessage(text.trim(), Number(channelIndex));
+      await store.sendChannelMessage(text.trim(), Number(channelIndex), {
+        destination: sendOpts.kind === 'direct' ? sendOpts.destination : undefined,
+        hopLimit: sendOpts.hopLimit,
+        wantAck: sendOpts.wantAck,
+      });
       setText('');
       setStatus('sent');
       setTimeout(() => setStatus(null), 2500);
@@ -97,6 +113,13 @@ export default function SendMessagePanel() {
                 </Button>
               </div>
 
+              <SendMessageOptions
+                value={sendOpts}
+                onChange={setSendOpts}
+                nodes={store.nodes}
+                myNodeNum={store.myNodeNum}
+              />
+
               <div className="flex items-center justify-between gap-2 text-[11px]">
                 <div className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   {selected?.isEncrypted ? (
@@ -110,7 +133,7 @@ export default function SendMessagePanel() {
 
               {status === 'sent' && (
                 <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-300">
-                  <CheckCircle2 className="w-4 h-4" /> An Gerät übergeben — warte auf Mesh-Bestätigung.
+                  <CheckCircle2 className="w-4 h-4" /> An Serial geschrieben — warte auf Geräte-/Mesh-Bestätigung.
                 </div>
               )}
               {status === 'error' && error && (

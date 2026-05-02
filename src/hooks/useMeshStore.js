@@ -24,7 +24,7 @@ export function useMeshStore() {
     isSupported: meshStore.isSupported(),
     connect: () => meshStore.connect(),
     requestDeviceConfig: () => meshStore.requestDeviceConfig(),
-    sendChannelMessage: (text, channelIndex) => meshStore.sendChannelMessage(text, channelIndex),
+    sendChannelMessage: (text, channelIndex, options) => meshStore.sendChannelMessage(text, channelIndex, options),
     disconnect: () => meshStore.disconnect(),
   };
 }
