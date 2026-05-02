@@ -24,18 +24,23 @@ export default function SendMessagePanel() {
   const [text, setText] = useState('');
   const [status, setStatus] = useState(null); // 'sending' | 'sent' | 'error'
   const [error, setError] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const channels = useMemo(() => getSendableChannels(store.deviceConfigs), [store.deviceConfigs]);
 
   if (!store.connected) return null;
 
-  const handleSend = async () => {
+  const openPreview = () => {
     setError(null);
     if (sendOpts.kind === 'direct' && !sendOpts.destination) {
       setError('Bitte einen Empfänger-Node auswählen.');
       setStatus('error');
       return;
     }
+    setPreviewOpen(true);
+  };
+
+  const handleConfirmSend = async () => {
     setStatus('sending');
     try {
       await store.sendChannelMessage(text.trim(), Number(channelIndex), {
@@ -44,6 +49,7 @@ export default function SendMessagePanel() {
         wantAck: sendOpts.wantAck,
       });
       setText('');
+      setPreviewOpen(false);
       setStatus('sent');
       setTimeout(() => setStatus(null), 2500);
     } catch (e) {
@@ -102,15 +108,15 @@ export default function SendMessagePanel() {
                 <Input
                   value={text}
                   onChange={e => setText(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && text.trim() && status !== 'sending') handleSend(); }}
+                  onKeyDown={e => { if (e.key === 'Enter' && text.trim() && status !== 'sending') openPreview(); }}
                   placeholder="Nachricht eingeben…"
                   className="flex-1 h-9 text-sm"
                   maxLength={200}
                 />
 
-                <Button onClick={handleSend} disabled={!text.trim() || status === 'sending'} size="sm" className="h-9 gap-1.5">
+                <Button onClick={openPreview} disabled={!text.trim() || status === 'sending'} size="sm" className="h-9 gap-1.5">
                   {status === 'sending' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Senden
+                  Vorschau & Senden
                 </Button>
               </div>
 
@@ -122,9 +128,13 @@ export default function SendMessagePanel() {
               />
 
               <OutgoingPacketPreview
+                open={previewOpen}
+                onOpenChange={setPreviewOpen}
                 text={text}
                 channelIndex={channelIndex}
                 sendOpts={sendOpts}
+                onConfirm={handleConfirmSend}
+                sending={status === 'sending'}
               />
 
               <div className="flex items-center justify-between gap-2 text-[11px]">
