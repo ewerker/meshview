@@ -53,15 +53,18 @@ function formatValue(value) {
   return String(value);
 }
 
-const SENSITIVE_KEYS = /password|privatekey|adminkey|psk|pin|passphrase/i;
+const SENSITIVE_KEYS = /password|privatekey|adminkey|psk/i;
 
 function isSensitive(key) {
   return SENSITIVE_KEYS.test(key);
 }
 
+// Returns the raw displayable value for a sensitive field (already masked strings stay masked)
 function getRawSensitiveValue(key, value) {
   if (!value) return '—';
-  // PSK als Uint8Array → Base64
+  // If the value is already a masked placeholder from the parser, keep it masked (no real value available)
+  if (typeof value === 'string' && value === '••••••••') return '••••••••';
+  // PSK as Uint8Array → Base64
   if (key === 'psk') {
     if (value instanceof Uint8Array) return btoa(String.fromCharCode(...value));
     if (value?.hex) return hexToBase64(value.hex);
@@ -71,11 +74,15 @@ function getRawSensitiveValue(key, value) {
   return formatValue(value);
 }
 
-function formatFieldValue(key, value, revealed) {
-  if (isSensitive(key)) {
-    if (revealed) return getRawSensitiveValue(key, value);
-    return '••••••••';
-  }
+// Whether this sensitive field has a real revealable value (not just a placeholder)
+function isRevealable(key, value) {
+  // wifiPsk and MQTT password are pre-masked in the parser → not revealable
+  if (typeof value === 'string' && value === '••••••••') return false;
+  return true;
+}
+
+function formatFieldValue(key, value) {
+  if (isSensitive(key)) return '••••••••';
   return formatValue(value);
 }
 
@@ -108,7 +115,8 @@ function hasUsefulValues(config) {
 
 function SensitiveValue({ fieldKey, value, isAuthenticated }) {
   const [revealed, setRevealed] = useState(false);
-  const displayVal = revealed ? getRawSensitiveValue(fieldKey, value) : '••••••••';
+  const canReveal = isAuthenticated && isRevealable(fieldKey, value);
+  const displayVal = (canReveal && revealed) ? getRawSensitiveValue(fieldKey, value) : '••••••••';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(getRawSensitiveValue(fieldKey, value));
@@ -116,10 +124,10 @@ function SensitiveValue({ fieldKey, value, isAuthenticated }) {
 
   return (
     <div className="flex items-center gap-1 justify-end">
-      <span className={`font-medium text-blue-950 dark:text-blue-50 text-right break-all font-mono text-[11px] select-all`}>
+      <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all font-mono text-[11px] select-all">
         {displayVal}
       </span>
-      {isAuthenticated && (
+      {canReveal && (
         <>
           <button
             type="button"
@@ -175,7 +183,7 @@ function ConfigCard({ config }) {
               {isSensitive(key) ? (
                 <SensitiveValue fieldKey={key} value={value} isAuthenticated={isAuthenticated} />
               ) : (
-                <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all">{formatFieldValue(key, value)}</span>
+                <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all">{formatValue(value)}</span>
               )}
             </div>
           ))}

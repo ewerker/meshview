@@ -466,7 +466,7 @@ function parseConfigValues(name, fields) {
     Network: {
       wifiEnabled: boolValue(fields[1]),
       wifiSsid: stringValue(fields[2]),
-      wifiPsk: fields[3] instanceof Uint8Array ? new TextDecoder().decode(fields[3]) : (fields[3] ? String(fields[3]) : ''),
+      wifiPsk: fields[3] ? '••••••••' : '',
       ntpServer: stringValue(fields[4]),
       ethernetEnabled: boolValue(fields[5]),
       rsyslogServer: stringValue(fields[8]),
@@ -517,7 +517,7 @@ function parseModuleConfigValues(name, fields) {
       enabled: boolValue(fields[1]),
       address: stringValue(fields[2]),
       username: stringValue(fields[3]),
-      password: fields[4] instanceof Uint8Array ? new TextDecoder().decode(fields[4]) : (fields[4] ? String(fields[4]) : ''),
+      password: fields[4] ? '••••••••' : '',
       encryptionEnabled: boolValue(fields[5]),
       jsonEnabled: boolValue(fields[6]),
       tlsEnabled: boolValue(fields[7]),
