@@ -4,7 +4,7 @@ import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, Lis
 import { Input } from '@/components/ui/input';
 import PacketRowDetails from './PacketRowDetails.jsx';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
-import { resolvePacketChannel } from '@/lib/meshtastic/encryption.js';
+import { resolvePacketChannel, getChannelCandidates } from '@/lib/meshtastic/encryption.js';
 
 function getDecoded(logEntry) {
   // raw is the parsed FromRadio object: { type, packet: { from, to, decoded: {...} }, ... }
@@ -43,6 +43,15 @@ function getPacketIcon(packet) {
 
 function resolveChannelInfo(packet, deviceConfigs) {
   const stored = packet.raw?.packet?.channelInfo;
+  const decodedLocally = !!packet.raw?.packet?.decoded && !packet.raw?.packet?.encrypted;
+  // If the device already decoded the packet, MeshPacket.channel is the channel INDEX.
+  if (decodedLocally) {
+    const idx = packet.raw?.packet?.channelIndex ?? packet.channel ?? stored?.index;
+    if (idx !== null && idx !== undefined) {
+      const meta = getChannelCandidates(deviceConfigs).find(c => c.index === idx);
+      return meta || stored || { index: idx, name: `Channel ${idx}`, hash: null, psk: null };
+    }
+  }
   if (stored && stored.index !== null && stored.index !== undefined) return stored;
   const hash = packet.channelHash ?? packet.raw?.packet?.channelHash;
   if (hash === undefined || hash === null) return stored || null;

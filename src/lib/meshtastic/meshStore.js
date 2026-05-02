@@ -56,9 +56,22 @@ class MeshStore {
     const parsed = parseFromRadio(rawBytes);
 
     if (parsed.type === 'packet' && parsed.packet) {
-      parsed.packet.channelHash = parsed.packet.channel || 0;
-      parsed.packet.channelInfo = resolvePacketChannel(this.deviceConfigs, parsed.packet.channelHash);
-      parsed.packet.channel = parsed.packet.channelInfo.index;
+      const rawChannelField = parsed.packet.channel || 0;
+      // Firmware behaviour: if the device decoded the packet locally, MeshPacket.channel
+      // carries the channel INDEX. If it's still encrypted, it carries the channel HASH.
+      if (parsed.packet.decoded && !parsed.packet.encrypted) {
+        parsed.packet.channelIndex = rawChannelField;
+        const channelMeta = getChannelCandidates(this.deviceConfigs).find(c => c.index === rawChannelField);
+        parsed.packet.channelInfo = channelMeta
+          ? { ...channelMeta, hash: channelMeta.hash }
+          : { index: rawChannelField, name: `Channel ${rawChannelField}`, hash: null, psk: null };
+        parsed.packet.channelHash = channelMeta?.hash ?? null;
+        parsed.packet.channel = rawChannelField;
+      } else {
+        parsed.packet.channelHash = rawChannelField;
+        parsed.packet.channelInfo = resolvePacketChannel(this.deviceConfigs, parsed.packet.channelHash);
+        parsed.packet.channel = parsed.packet.channelInfo.index;
+      }
     }
 
     if (parsed.type === 'packet' && parsed.packet?.encrypted && !parsed.packet.decoded) {
