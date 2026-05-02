@@ -43,15 +43,19 @@ function getPacketIcon(packet) {
 function getPacketChannel(packet) {
   const index = packet.channel ?? packet.raw?.packet?.channelInfo?.index ?? packet.raw?.packet?.channel;
   const hash = packet.channelHash ?? packet.raw?.packet?.channelHash;
-  return index ?? (hash !== undefined ? `Hash ${hash}` : '-');
+  if (index !== null && index !== undefined) return index;
+  // Hash 0 = Primary-Channel (Index 0), nicht ein unaufgeloester Hash
+  if (hash === 0) return 0;
+  return hash !== undefined ? `Hash ${hash}` : '-';
 }
 
 function getPacketChannelTitle(packet) {
   const hash = packet.channelHash ?? packet.raw?.packet?.channelHash;
   const index = packet.channel ?? packet.raw?.packet?.channelInfo?.index;
   const name = packet.raw?.packet?.channelInfo?.name;
-  if (index === null || index === undefined) return hash !== undefined ? `Unaufgelöster Channel-Hash ${hash}` : 'Channel unbekannt';
-  return `${name || `Channel ${index}`}${hash !== undefined ? ` · Hash ${hash}` : ''}`;
+  const effectiveIndex = (index !== null && index !== undefined) ? index : (hash === 0 ? 0 : null);
+  if (effectiveIndex === null) return hash !== undefined ? `Unaufgelöster Channel-Hash ${hash}` : 'Channel unbekannt';
+  return `${name || `Channel ${effectiveIndex}`}${hash !== undefined ? ` · Hash ${hash}` : ''}`;
 }
 
 function getPacketLabel(packet) {
