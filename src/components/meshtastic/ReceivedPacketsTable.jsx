@@ -4,6 +4,7 @@ import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, Lis
 import { Input } from '@/components/ui/input';
 import PacketRowDetails from './PacketRowDetails.jsx';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
+import { resolvePacketChannel } from '@/lib/meshtastic/encryption.js';
 
 function getDecoded(logEntry) {
   // raw is the parsed FromRadio object: { type, packet: { from, to, decoded: {...} }, ... }
@@ -40,19 +41,30 @@ function getPacketIcon(packet) {
   return <Radio className="w-3 h-3 text-slate-400" />;
 }
 
-function getPacketChannel(packet) {
-  const index = packet.channel ?? packet.raw?.packet?.channelInfo?.index ?? packet.raw?.packet?.channel;
+function resolveChannelInfo(packet, deviceConfigs) {
+  const stored = packet.raw?.packet?.channelInfo;
+  if (stored && stored.index !== null && stored.index !== undefined) return stored;
+  const hash = packet.channelHash ?? packet.raw?.packet?.channelHash;
+  if (hash === undefined || hash === null) return stored || null;
+  // Re-resolve live with current deviceConfigs (configs may have arrived after the packet)
+  const resolved = resolvePacketChannel(deviceConfigs, hash);
+  return (resolved.index !== null && resolved.index !== undefined) ? resolved : (stored || resolved);
+}
+
+function getPacketChannel(packet, deviceConfigs) {
+  const info = resolveChannelInfo(packet, deviceConfigs);
+  const index = info?.index ?? packet.channel;
   const hash = packet.channelHash ?? packet.raw?.packet?.channelHash;
   if (index !== null && index !== undefined) return index;
-  // Hash 0 = Primary-Channel (Index 0), nicht ein unaufgeloester Hash
   if (hash === 0) return 0;
   return hash !== undefined ? `Hash ${hash}` : '-';
 }
 
-function getPacketChannelTitle(packet) {
+function getPacketChannelTitle(packet, deviceConfigs) {
+  const info = resolveChannelInfo(packet, deviceConfigs);
   const hash = packet.channelHash ?? packet.raw?.packet?.channelHash;
-  const index = packet.channel ?? packet.raw?.packet?.channelInfo?.index;
-  const name = packet.raw?.packet?.channelInfo?.name;
+  const index = info?.index ?? packet.channel;
+  const name = info?.name;
   const effectiveIndex = (index !== null && index !== undefined) ? index : (hash === 0 ? 0 : null);
   if (effectiveIndex === null) return hash !== undefined ? `Unaufgelöster Channel-Hash ${hash}` : 'Channel unbekannt';
   return `${name || `Channel ${effectiveIndex}`}${hash !== undefined ? ` · Hash ${hash}` : ''}`;
@@ -114,6 +126,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
   const store = useMeshStore();
   const packetLog = packets ?? store.packetLog;
   const nodes = store.nodes || [];
+  const deviceConfigs = store.deviceConfigs || [];
   const [expandedSeq, setExpandedSeq] = useState(null);
   const [packetSearch, setPacketSearch] = useState('');
 
@@ -231,7 +244,7 @@ export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = fals
                   </div>
                 </td>
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
-                  <span title={getPacketChannelTitle(packet)}>{typeof getPacketChannel(packet) === 'number' ? `Ch ${getPacketChannel(packet)}` : getPacketChannel(packet)}</span>
+                  <span title={getPacketChannelTitle(packet, deviceConfigs)}>{typeof getPacketChannel(packet, deviceConfigs) === 'number' ? `Ch ${getPacketChannel(packet, deviceConfigs)}` : getPacketChannel(packet, deviceConfigs)}</span>
                 </td>
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                   {formatTime(packet.time)}
