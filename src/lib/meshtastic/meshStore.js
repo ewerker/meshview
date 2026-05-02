@@ -354,7 +354,9 @@ class MeshStore {
     this.notify();
 
     try {
-      const { packetId } = await this.serial.sendTextMessage(trimmed, destination, channelIndex, { hopLimit, wantAck, from: this.myNodeNum || 0 });
+      // Firmware ≥2.x erwartet from=0 vom Phone-API und setzt es selbst auf myNodeNum.
+      // Setzen wir from explizit, verwirft die Firmware das Paket teilweise still.
+      const { packetId } = await this.serial.sendTextMessage(trimmed, destination, channelIndex, { hopLimit, wantAck, from: 0 });
       tracked.id = packetId;
       tracked.status = 'written_to_serial'; // bytes left the browser; device acceptance not yet proven
       tracked.updatedAt = Date.now();

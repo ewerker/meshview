@@ -133,7 +133,7 @@ export default function SendMessagePanel() {
                 text={text}
                 channelIndex={channelIndex}
                 sendOpts={sendOpts}
-                fromNodeNum={store.myNodeNum}
+                fromNodeNum={0}
                 onConfirm={handleConfirmSend}
                 sending={status === 'sending'}
               />
