@@ -52,38 +52,49 @@ function timeAgo(timestamp) {
   return `vor ${Math.floor(diff / 86400)}d`;
 }
 
+function MapController({ selectedNodeNum, markerRefs }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (!selectedNodeNum || !markerRefs.current) return;
+    
+    const marker = markerRefs.current[selectedNodeNum];
+    if (marker && typeof marker.getLatLng === 'function') {
+      try {
+        const pos = marker.getLatLng();
+        
+        // Sanft zum Node fliegen
+        map.flyTo(pos, Math.max(map.getZoom(), 15), { duration: 0.8 });
+        
+        // Alle Marker-Z-Indizes zurücksetzen und den ausgewählten in den Vordergrund holen
+        Object.entries(markerRefs.current).forEach(([num, m]) => {
+          if (m && typeof m.setZIndexOffset === 'function') {
+            m.setZIndexOffset(Number(num) === selectedNodeNum ? 1000 : 0);
+          }
+        });
+
+        // Popup öffnen
+        setTimeout(() => {
+          if (marker && typeof marker.openPopup === 'function') {
+            marker.openPopup();
+          }
+        }, 800);
+      } catch (err) {
+        console.error("Fehler beim Fokus auf Node in der Karte:", err);
+      }
+    }
+  }, [selectedNodeNum, map, markerRefs]);
+
+  return null;
+}
+
 export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNode }) {
-  const mapRef = useRef(null);
   const markerRefs = useRef({});
 
   const nodesWithPos = nodes.filter(n =>
     n.position?.latitude && n.position?.longitude &&
     n.position.latitude !== 0 && n.position.longitude !== 0
   );
-
-  useEffect(() => {
-    if (selectedNodeNum && markerRefs.current[selectedNodeNum] && mapRef.current) {
-      const marker = markerRefs.current[selectedNodeNum];
-      const pos = marker.getLatLng();
-      
-      // Sanft zum Node fliegen
-      mapRef.current.flyTo(pos, Math.max(mapRef.current.getZoom(), 15), { duration: 0.8 });
-      
-      // Alle Marker-Z-Indizes zurücksetzen und den ausgewählten in den Vordergrund holen
-      Object.entries(markerRefs.current).forEach(([num, m]) => {
-        if (m && m.setZIndexOffset) {
-          m.setZIndexOffset(Number(num) === selectedNodeNum ? 1000 : 0);
-        }
-      });
-
-      // Popup öffnen
-      setTimeout(() => {
-        if (marker && marker.openPopup) {
-          marker.openPopup();
-        }
-      }, 800); // Warten bis der Flug weitestgehend abgeschlossen ist
-    }
-  }, [selectedNodeNum]);
 
   const center = nodesWithPos.length > 0
     ? [nodesWithPos[0].position.latitude, nodesWithPos[0].position.longitude]
@@ -92,7 +103,6 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
   return (
     <div className="h-full w-full rounded-lg overflow-hidden border">
       <MapContainer
-        ref={mapRef}
         center={center}
         zoom={nodesWithPos.length > 0 ? 13 : 6}
         style={{ height: '100%', width: '100%' }}
@@ -103,6 +113,7 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <AutoFitBounds nodes={nodesWithPos} />
+        <MapController selectedNodeNum={selectedNodeNum} markerRefs={markerRefs} />
 
         {nodesWithPos.map(node => {
           const isMyNode = node.num === myNodeNum;
