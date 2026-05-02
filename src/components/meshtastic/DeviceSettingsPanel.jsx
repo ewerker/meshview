@@ -77,9 +77,7 @@ function getRawSensitiveValue(key, value) {
 
 // Whether this sensitive field has a real revealable value (not just a placeholder)
 function isRevealable(key, value) {
-  // wifiPsk and MQTT password are pre-masked in the parser → not revealable
-  if (typeof value === 'string' && value === '••••••••') return false;
-  return true;
+  return !(typeof value === 'string' && value === '••••••••');
 }
 
 function formatFieldValue(key, value) {

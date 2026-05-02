@@ -467,14 +467,22 @@ function parseConfigValues(name, fields) {
       deviceBatteryInaAddress: fields[5] ?? null,
       powermonEnabled: boolValue(fields[6]),
     },
-    Network: {
-      wifiEnabled: boolValue(fields[1]),
-      wifiSsid: stringValue(fields[2]),
-      wifiPsk: fields[3] ? '••••••••' : '',
-      ntpServer: stringValue(fields[4]),
-      ethernetEnabled: boolValue(fields[5]),
-      rsyslogServer: stringValue(fields[8]),
-    },
+    Network: (() => {
+      const field2 = stringValue(fields[2]);
+      const field3 = stringValue(fields[3]);
+      const field4 = stringValue(fields[4]);
+      const field5 = stringValue(fields[5]);
+      const usesShiftedWifiFields = !field2 && field3 && field4;
+
+      return {
+        wifiEnabled: boolValue(fields[1]),
+        wifiSsid: usesShiftedWifiFields ? field3 : field2,
+        wifiPsk: usesShiftedWifiFields ? field4 : field3,
+        ntpServer: usesShiftedWifiFields ? field5 : field4,
+        ethernetEnabled: boolValue(usesShiftedWifiFields ? fields[6] : fields[5]),
+        rsyslogServer: stringValue(fields[8]),
+      };
+    })(),
     Display: {
       screenOnSecs: fields[1] ?? null,
       gpsFormat: fields[2] ?? null,
