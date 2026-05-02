@@ -51,6 +51,29 @@ class MeshStore {
 
     const parsed = parseFromRadio(rawBytes);
 
+    // Diagnostic: while any outgoing packet is still pending (no ack/nak/timeout/error yet),
+    // dump every FromRadio so we can see exactly what the device sends back after we wrote bytes.
+    const pendingIds = this.outgoing
+      .filter(o => o.id && !['ack', 'nak', 'timeout', 'error', 'reply_received'].includes(o.status))
+      .map(o => o.id);
+    if (pendingIds.length > 0) {
+      const reqId = parsed?.packet?.decoded?.requestId;
+      const qsId = parsed?.queueStatus?.meshPacketId;
+      const ackId = parsed?.type === 'ack' ? parsed.id : null;
+      const matchedId = [reqId, qsId, ackId].find(x => x && pendingIds.includes(x));
+      console.debug('[fromRadio]', {
+        type: parsed?.type,
+        from: parsed?.packet?.from,
+        to: parsed?.packet?.to,
+        portnum: parsed?.packet?.decoded?.portnumName,
+        requestId: reqId ? `0x${reqId.toString(16)}` : undefined,
+        queueStatusPacketId: qsId ? `0x${qsId.toString(16)}` : undefined,
+        topLevelAckId: ackId ? `0x${ackId.toString(16)}` : undefined,
+        pending: pendingIds.map(x => `0x${x.toString(16)}`),
+        matched: matchedId ? `0x${matchedId.toString(16)}` : 'NO MATCH — unhandled feedback',
+      });
+    }
+
     if (parsed.type === 'packet' && parsed.packet) {
       parsed.packet.channelHash = parsed.packet.channel || 0;
       parsed.packet.channelInfo = resolvePacketChannel(this.deviceConfigs, parsed.packet.channelHash);

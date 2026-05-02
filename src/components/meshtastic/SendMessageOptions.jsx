@@ -8,8 +8,12 @@ export default function SendMessageOptions({ value, onChange, nodes = [], myNode
 
   const directNodes = nodes
     .filter(n => n.num && n.num !== myNodeNum)
-    .sort((a, b) => (b.lastHeard || 0) - (a.lastHeard || 0))
-    .slice(0, 50);
+    .map(n => {
+      const id = `!${n.num.toString(16).padStart(8, '0')}`;
+      const name = n.user?.longName || n.user?.shortName || id;
+      return { ...n, _label: name, _id: id };
+    })
+    .sort((a, b) => a._label.localeCompare(b._label, undefined, { sensitivity: 'base' }));
 
   const update = (patch) => onChange({ ...value, ...patch });
 
@@ -35,11 +39,11 @@ export default function SendMessageOptions({ value, onChange, nodes = [], myNode
           </SelectTrigger>
           <SelectContent>
             {directNodes.length === 0 && <div className="px-2 py-1 text-[11px] text-slate-400">Keine Nodes bekannt</div>}
-            {directNodes.map(n => {
-              const id = `!${n.num.toString(16).padStart(8, '0')}`;
-              const name = n.user?.longName || n.user?.shortName || id;
-              return <SelectItem key={n.num} value={String(n.num)}>{name} <span className="text-slate-400 font-mono">· {id}</span></SelectItem>;
-            })}
+            {directNodes.map(n => (
+              <SelectItem key={n.num} value={String(n.num)}>
+                {n._label} <span className="text-slate-400 font-mono">· {n._id}</span>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       )}
