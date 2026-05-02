@@ -13,7 +13,7 @@ import DeviceSettingsPanel from '@/components/meshtastic/DeviceSettingsPanel.jsx
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
-import { Radio, Map, List, Loader2 } from 'lucide-react';
+import { Radio, Map, List, Loader2, ChevronDown } from 'lucide-react';
 
 export default function HistoricalDashboard() {
   const { isAuthenticated } = useAuth();
@@ -34,6 +34,7 @@ export default function HistoricalDashboard() {
   const [selectedNodeNum, setSelectedNodeNum] = useState(null);
   const [search, setSearch] = useLocalStorage('history.search', '');
   const [sort, setSort] = useLocalStorage('history.sort', 'myFirst');
+  const [mainFrameOpen, setMainFrameOpen] = useLocalStorage('dashboard.mainFrame.open', true);
   const [filters, setFilters] = useLocalStorage('history.filters', {
     active: false, direct: false, withGps: false, withTelemetry: false,
     withEnv: false, lowBattery: false, highBattery: false,
@@ -97,7 +98,21 @@ export default function HistoricalDashboard() {
           <DeviceSettingsPanel deviceConfigs={deviceConfigs} myNode={myNode} myNodeNum={myNodeNum} readonly />
           <StatsBar nodes={nodes} messages={messages} connected={false} filters={filters} onFiltersChange={setFilters} />
 
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <button
+              type="button"
+              onClick={() => setMainFrameOpen(!mainFrameOpen)}
+              className="w-full border-b bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                <ChevronDown className={`w-4 h-4 transition-transform ${mainFrameOpen ? '' : '-rotate-90'}`} />
+                Bisherige Daten
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Nodes · Karte · Pakete · Details</span>
+            </button>
+
+            {mainFrameOpen && (
+            <div className="flex-1 min-h-0 overflow-hidden relative">
             {loading && (
               <div className="absolute top-2 right-2 z-10 bg-white dark:bg-slate-800 shadow rounded-full p-1.5">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
@@ -195,6 +210,8 @@ export default function HistoricalDashboard() {
                 </Panel>
               </PanelGroup>
             </div>
+            </div>
+            )}
           </div>
         </>
       )}
