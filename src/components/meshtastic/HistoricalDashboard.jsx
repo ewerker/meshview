@@ -134,8 +134,13 @@ export default function HistoricalDashboard() {
                   <TabsTrigger value="nodes" className="flex-1 gap-1"><List className="w-4 h-4" />Nodes</TabsTrigger>
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />Detail</TabsTrigger>
                 </TabsList>
-                <TabsContent value="map" className="flex-1 min-h-[55vh] p-4 overflow-hidden">
-                  <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                <TabsContent value="map" className="flex-1 min-h-[55vh] p-4 overflow-hidden flex flex-col">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 px-1">
+                    Nodes: <span className="font-semibold text-slate-700 dark:text-slate-200">{sortedNodes.length}/{nodes.length}</span>
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                  </div>
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
                   <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
@@ -176,8 +181,13 @@ export default function HistoricalDashboard() {
                 <Panel defaultSize={52} minSize={30}>
                   <PanelGroup direction="vertical" className="h-full" autoSaveId="dashboard.layout.center">
                     <Panel defaultSize={45} minSize={20}>
-                      <div className="h-full p-4 overflow-hidden">
-                        <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                      <div className="h-full p-4 overflow-hidden flex flex-col">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 px-1">
+                          Nodes: <span className="font-semibold text-slate-700 dark:text-slate-200">{sortedNodes.length}/{nodes.length}</span>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                          <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                        </div>
                       </div>
                     </Panel>
 
