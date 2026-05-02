@@ -18,6 +18,7 @@ import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import UserDataTransferPanel from '@/components/meshtastic/UserDataTransferPanel.jsx';
 import DeviceSettingsPanel from '@/components/meshtastic/DeviceSettingsPanel.jsx';
 import FirstPacketProgress from '@/components/meshtastic/FirstPacketProgress.jsx';
+import SendMessagePoc from '@/components/meshtastic/SendMessagePoc.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
@@ -124,6 +125,7 @@ export default function Dashboard() {
           <DeviceSettingsPanel />
           <UserDataTransferPanel onBusyChange={setDataTransferBusy} />
           <FirstPacketProgress visible={packetLog.length === 0} />
+          <SendMessagePoc />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
           <div className="flex-1 min-h-0 flex flex-col">
