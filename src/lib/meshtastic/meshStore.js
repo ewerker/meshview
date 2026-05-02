@@ -354,7 +354,7 @@ class MeshStore {
     this.notify();
 
     try {
-      const { packetId } = await this.serial.sendTextMessage(trimmed, destination, channelIndex, { hopLimit, wantAck });
+      const { packetId } = await this.serial.sendTextMessage(trimmed, destination, channelIndex, { hopLimit, wantAck, from: this.myNodeNum || 0 });
       tracked.id = packetId;
       tracked.status = 'written_to_serial'; // bytes left the browser; device acceptance not yet proven
       tracked.updatedAt = Date.now();

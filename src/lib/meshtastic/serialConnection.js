@@ -215,6 +215,10 @@ export class MeshtasticSerial {
     await this.sendToRadio(bytes);
     return { packetId };
   }
+
+  setMyNodeNum(num) {
+    this.myNodeNum = num >>> 0;
+  }
 }
 
 // Minimal protobuf encoding for ToRadio { want_config_id: uint32 }
@@ -272,13 +276,15 @@ export function inspectTextPacket(text, destination = 0xffffffff, channel = 0, o
   if (!Number.isFinite(hopLimit) || hopLimit < 1 || hopLimit > 7) issues.push(`hop_limit außerhalb 1..7 (=${hopLimit}).`);
   if (!Number.isFinite(channel) || channel < 0 || channel > 7) issues.push(`channel außerhalb 0..7 (=${channel}).`);
 
-  const { bytes, packetId } = buildTextPacket(textBytes, dest, channel, { hopLimit, wantAck });
+  const fromNum = Number.isFinite(options.from) ? (options.from >>> 0) : 0;
+  const { bytes, packetId } = buildTextPacket(textBytes, dest, channel, { hopLimit, wantAck, from: fromNum });
 
   return {
     issues,
     packetId,
     fields: {
       'ToRadio.packet (field 2, length-delim)': `${bytes.length} Bytes ToRadio-Wrapper`,
+      'MeshPacket.from (field 1, fixed32)': `0x${fromNum.toString(16).padStart(8, '0')}${fromNum === 0 ? ' (auto/Gerät)' : ''}`,
       'MeshPacket.to (field 2, fixed32)': `0x${dest.toString(16).padStart(8, '0')}${dest === 0xffffffff ? ' (Broadcast)' : ''}`,
       'MeshPacket.channel (field 3)': String(channel),
       'MeshPacket.id (field 6, fixed32)': `0x${packetId.toString(16).padStart(8, '0')}`,
@@ -295,6 +301,7 @@ export function inspectTextPacket(text, destination = 0xffffffff, channel = 0, o
 function buildTextPacket(textBytes, destination, channel, options = {}) {
   const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
   const wantAck = options.wantAck === false ? 0 : 1;
+  const from = Number.isFinite(options.from) ? (options.from >>> 0) : 0;
 
   const data = encodeMessage([
     [1, 0, 1],          // Data.portnum = TEXT_MESSAGE_APP
@@ -302,7 +309,9 @@ function buildTextPacket(textBytes, destination, channel, options = {}) {
   ]);
 
   const packetId = Math.floor(Math.random() * 0xffffffff) >>> 0;
+  // Field order matches the official Python/JS clients: from, to, channel, decoded, id, hop_limit, want_ack
   const meshPacket = encodeMessage([
+    [1, 5, from],                    // MeshPacket.from (fixed32) — required by firmware for ack routing
     [2, 5, destination],             // MeshPacket.to (fixed32)
     [3, 0, channel],                 // MeshPacket.channel
     [4, 2, new Uint8Array(data)],    // MeshPacket.decoded

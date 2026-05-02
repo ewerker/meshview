@@ -10,15 +10,16 @@ function bytesToHex(bytes) {
 
 // Modal preview of the exact bytes that will be sent. Forces explicit confirmation
 // so the user can verify the packet is well-formed before it goes to serial.
-export default function OutgoingPacketPreview({ open, onOpenChange, text, channelIndex, sendOpts, onConfirm, sending }) {
+export default function OutgoingPacketPreview({ open, onOpenChange, text, channelIndex, sendOpts, fromNodeNum, onConfirm, sending }) {
   const inspection = useMemo(() => {
     if (!open) return null;
     const destination = sendOpts.kind === 'direct' ? sendOpts.destination : 0xffffffff;
     return inspectTextPacket(text, destination ?? 0xffffffff, Number(channelIndex), {
       hopLimit: sendOpts.hopLimit,
       wantAck: sendOpts.wantAck,
+      from: fromNodeNum || 0,
     });
-  }, [open, text, channelIndex, sendOpts]);
+  }, [open, text, channelIndex, sendOpts, fromNodeNum]);
 
   const hasIssues = inspection?.issues?.length > 0;
 
