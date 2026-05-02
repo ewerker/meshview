@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Battery, Wifi, MapPin, Clock, Thermometer, Droplets, Gauge, Star, Radio, Ruler, Plug } from 'lucide-react';
+import { Battery, Wifi, MapPin, Clock, Thermometer, Droplets, Gauge, Star, Radio, Ruler, Plug, Activity } from 'lucide-react';
 import { HardwareModel } from '@/lib/meshtastic/constants.js';
 import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
@@ -25,20 +25,51 @@ function formatAbsoluteTime(timestamp) {
   return date.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-function BatteryBar({ level }) {
-  if (level === undefined || level === null || level === 0) return null;
-  const isPowered = level > 100;
-  const display = Math.min(level, 100);
-  const color = isPowered ? 'bg-blue-500' : display > 60 ? 'bg-green-500' : display > 30 ? 'bg-yellow-500' : 'bg-red-500';
+function MetricBar({ icon: Icon, label, value, min, max, unit, colorClass, formatter }) {
+  if (value === undefined || value === null) return null;
+  let percentage = ((value - min) / (max - min)) * 100;
+  percentage = Math.max(0, Math.min(100, percentage));
+  const displayValue = formatter ? formatter(value) : value;
+  
   return (
-    <div className="flex items-center gap-2">
-      {isPowered ? <Plug className="w-4 h-4 text-blue-500" /> : <Battery className="w-4 h-4 text-slate-400" />}
-      <div className="flex-1 bg-slate-200 rounded-full h-2">
-        <div className={`h-2 rounded-full ${color}`} style={{ width: `${display}%` }} />
+    <div className="flex items-center gap-2 text-xs">
+      <div className="w-12 flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0">
+        {Icon && <Icon className="w-3 h-3" />}
+        <span className="truncate">{label}</span>
       </div>
-      <span className="text-xs font-medium w-auto whitespace-nowrap">
-        {display}%{isPowered && <span className="text-blue-500 ml-1">⚡</span>}
-      </span>
+      <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden flex shrink-0">
+        <div className={`h-full ${colorClass}`} style={{ width: `${percentage}%` }} />
+      </div>
+      <div className="w-14 text-right font-medium text-slate-600 dark:text-slate-300 shrink-0">
+        {displayValue}{unit}
+      </div>
+    </div>
+  );
+}
+
+function FreshnessBar({ timestamp }) {
+  if (!timestamp) return null;
+  const diff = Math.floor(Date.now() / 1000) - timestamp;
+  const maxAge = 86400; 
+  let percentage = Math.max(0, 100 - (diff / maxAge) * 100);
+  
+  let color = 'bg-red-500';
+  if (diff < 3600) color = 'bg-green-500';
+  else if (diff < 43200) color = 'bg-yellow-500';
+  else if (diff < 86400) color = 'bg-orange-500';
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <div className="w-12 flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0">
+        <Clock className="w-3 h-3" />
+        <span>Zeit</span>
+      </div>
+      <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden flex shrink-0">
+        <div className={`h-full ${color}`} style={{ width: `${percentage}%` }} />
+      </div>
+      <div className="w-14 text-right font-medium text-slate-600 dark:text-slate-300 shrink-0 truncate" title={formatAbsoluteTime(timestamp)}>
+        {timeAgo(timestamp)}
+      </div>
     </div>
   );
 }
@@ -84,31 +115,57 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="text-xs text-slate-500">{hwModel}</div>
-
-        {/* Signal */}
-        {(node.snr !== undefined || node.rssi !== undefined) && (
-          <div className="flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1">
-              <Wifi className="w-3 h-3 text-blue-500" />
-              <span>SNR: <strong>{node.snr?.toFixed(1) ?? '-'} dB</strong></span>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span>{hwModel}</span>
+          {/* Battery & Voltage - Dezent */}
+          {(dm?.batteryLevel > 0 || dm?.voltage > 0) && (
+            <div className="flex items-center gap-2">
+              {dm?.batteryLevel > 0 && (
+                <span className="flex items-center gap-1">
+                  {dm.batteryLevel > 100 ? <Plug className="w-3 h-3 text-blue-500" /> : <Battery className="w-3 h-3" />}
+                  {Math.min(dm.batteryLevel, 100)}%{dm.batteryLevel > 100 && '⚡'}
+                </span>
+              )}
+              {dm?.voltage > 0 && <span>{dm.voltage.toFixed(2)}V</span>}
             </div>
-            {node.rssi && (
-              <span>RSSI: <strong>{node.rssi} dBm</strong></span>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Battery */}
-        {dm?.batteryLevel > 0 && <BatteryBar level={dm.batteryLevel} />}
-        {dm?.voltage > 0 && (
-          <div className="text-xs text-slate-500">{dm.voltage.toFixed(2)}V</div>
-        )}
+        {/* Metrics Bars */}
+        <div className="space-y-1.5">
+          <MetricBar 
+            icon={Wifi} 
+            label="SNR" 
+            value={node.snr} 
+            min={-20} max={15} 
+            unit=" dB" 
+            colorClass="bg-blue-500" 
+            formatter={(v) => v.toFixed(1)} 
+          />
+          <MetricBar 
+            icon={Radio} 
+            label="RSSI" 
+            value={node.rssi} 
+            min={-130} max={-40} 
+            unit=" dBm" 
+            colorClass="bg-orange-500" 
+          />
+          <MetricBar 
+            icon={Activity} 
+            label="Kanal" 
+            value={dm?.channelUtilization} 
+            min={0} max={100} 
+            unit="%" 
+            colorClass="bg-purple-500" 
+            formatter={(v) => v.toFixed(1)} 
+          />
+          <FreshnessBar timestamp={node.lastHeard} />
+        </div>
 
         {/* Position */}
         {pos?.latitude !== 0 && pos?.longitude !== 0 && pos?.latitude && (
-          <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300 flex-wrap">
+          <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300 flex-wrap pt-1">
             <MapPin className="w-3 h-3 text-red-500" />
             <span>{pos.latitude.toFixed(5)}, {pos.longitude.toFixed(5)}</span>
             {pos.altitude ? <span className="text-slate-400">· {pos.altitude}m</span> : null}
@@ -123,7 +180,7 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
 
         {/* Environment */}
         {em && (
-          <div className="flex flex-wrap gap-2 text-xs">
+          <div className="flex flex-wrap gap-2 text-xs pt-1">
             {em.temperature !== null && em.temperature !== undefined && (
               <div className="flex items-center gap-1">
                 <Thermometer className="w-3 h-3 text-orange-500" />
@@ -142,22 +199,6 @@ export default function NodeCard({ node, isMyNode, onClick, selected }) {
                 <span>{em.barometricPressure.toFixed(0)} hPa</span>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Last heard */}
-        <div className="flex items-center gap-1 text-xs text-slate-400">
-          <Clock className="w-3 h-3" />
-          <span>{timeAgo(node.lastHeard)}</span>
-          {node.lastHeard && (
-            <span className="text-slate-300 dark:text-slate-500">· {formatAbsoluteTime(node.lastHeard)}</span>
-          )}
-        </div>
-
-        {/* Channel util */}
-        {dm?.channelUtilization > 0 && (
-          <div className="text-xs text-slate-400">
-            Kanal-Auslastung: {dm.channelUtilization.toFixed(1)}% · TX: {dm.airUtilTx?.toFixed(1)}%
           </div>
         )}
       </CardContent>
