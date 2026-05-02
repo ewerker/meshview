@@ -42,7 +42,7 @@ function NodeResultList({ title, nodes, tone, onSelectNode }) {
   );
 }
 
-export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAutoSaveEnabled, onSelectNode }) {
+export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAutoSaveEnabled, onBusyChange, onSelectNode }) {
   const { isAuthenticated, navigateToLogin } = useAuth();
   const { t } = useI18n();
   const { connected, nodes, packetLog, myNodeNum, myNode } = useMeshStore();
@@ -59,6 +59,7 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
 
   const handleSave = async () => {
     setSaving(true);
+    onBusyChange?.(true);
     setResult(null);
     setError(null);
     setProgress(null);
@@ -89,6 +90,7 @@ export default function ManualSavePanel({ autoSaveStatus, autoSaveEnabled, onAut
     }
 
     setSaving(false);
+    onBusyChange?.(false);
   };
 
   return (
