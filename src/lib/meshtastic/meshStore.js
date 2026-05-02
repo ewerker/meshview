@@ -33,6 +33,15 @@ class MeshStore {
     };
   }
 
+  sanitizeLastHeard(value) {
+    const now = Math.floor(Date.now() / 1000);
+    // Plausible range: after 2020-01-01, not more than 1h in the future
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 1577836800 || value > now + 3600) {
+      return now;
+    }
+    return value;
+  }
+
   async handlePacket(rawBytes) {
     // Show loading indicator while actively receiving packets
     this.isLoading = true;
@@ -106,7 +115,7 @@ class MeshStore {
         user: ni.user,
         position: ni.position,
         snr: ni.snr,
-        lastHeard: ni.lastHeard,
+        lastHeard: this.sanitizeLastHeard(ni.lastHeard),
         deviceMetrics: ni.deviceMetrics,
         channel: ni.channel,
         hopsAway: ni.hopsAway,
@@ -132,7 +141,7 @@ class MeshStore {
 
     // Update node with packet info
     const existingNode = this.nodes.get(fromNum) || { num: fromNum };
-    existingNode.lastHeard = packet.rxTime || Math.floor(Date.now() / 1000);
+    existingNode.lastHeard = this.sanitizeLastHeard(packet.rxTime);
     existingNode.snr = packet.rxSnr;
     existingNode.rssi = packet.rxRssi;
 
