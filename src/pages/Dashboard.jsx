@@ -22,7 +22,7 @@ import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 import { useMeshPersistence } from '@/hooks/useMeshPersistence.js';
-import { Radio, Map, List, ChevronDown } from 'lucide-react';
+import { Radio, Map, List, ChevronDown, Wrench } from 'lucide-react';
 
 export default function Dashboard() {
   const { connected, nodes, messages, packetLog, myNodeNum, myNode, metadata, isSupported } = useMeshStore();
@@ -36,6 +36,7 @@ export default function Dashboard() {
   const [search, setSearch] = useLocalStorage('dashboard.search', '');
   const [sort, setSort] = useLocalStorage('dashboard.sort', 'myFirst');
   const [mainFrameOpen, setMainFrameOpen] = useLocalStorage('dashboard.mainFrame.open', true);
+  const [toolsOpen, setToolsOpen] = useLocalStorage('dashboard.tools.open', false);
   const [filters, setFilters] = useLocalStorage('dashboard.filters', {
     active: false,
     direct: false,
@@ -120,9 +121,27 @@ export default function Dashboard() {
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
       ) : (
         <>
-          <ManualSavePanel autoSaveStatus={autoSaveStatus} autoSaveEnabled={autoSaveEnabled} onAutoSaveEnabled={() => setAutoSaveEnabled(true)} onBusyChange={setManualSaveBusy} onSelectNode={handleSelectNode} />
-          <DeviceSettingsPanel />
-          <UserDataTransferPanel onBusyChange={setDataTransferBusy} />
+          <button
+            type="button"
+            onClick={() => setToolsOpen(!toolsOpen)}
+            className="w-full border-b bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <ChevronDown className={`w-4 h-4 transition-transform ${toolsOpen ? '' : '-rotate-90'}`} />
+              <Wrench className="w-3.5 h-3.5" />
+              Tools
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">Speichern · Einstellungen · Daten-Transfer</span>
+          </button>
+
+          {toolsOpen && (
+            <div className="flex flex-col">
+              <ManualSavePanel autoSaveStatus={autoSaveStatus} autoSaveEnabled={autoSaveEnabled} onAutoSaveEnabled={() => setAutoSaveEnabled(true)} onBusyChange={setManualSaveBusy} onSelectNode={handleSelectNode} />
+              <DeviceSettingsPanel />
+              <UserDataTransferPanel onBusyChange={setDataTransferBusy} />
+            </div>
+          )}
+          
           <FirstPacketProgress visible={packetLog.length === 0} />
           <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
 
