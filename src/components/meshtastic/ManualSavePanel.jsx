@@ -14,6 +14,9 @@ function NodeResultList({ title, nodes, tone, onSelectNode }) {
   if (!nodes?.length) return null;
 
   const toneClass = tone === 'new' ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300';
+  const badgeToneClass = tone === 'new'
+    ? 'border-green-200 bg-green-50/60 text-green-800 hover:bg-green-100 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200 dark:hover:bg-green-900/40'
+    : 'border-blue-200 bg-blue-50/60 text-blue-800 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200 dark:hover:bg-blue-900/40';
   const visibleNodes = expanded ? nodes : nodes.slice(0, 20);
 
   return (
@@ -24,7 +27,7 @@ function NodeResultList({ title, nodes, tone, onSelectNode }) {
           const reasons = node.change_reasons?.length ? ` (${node.change_reasons.join(', ')})` : '';
           return (
             <button key={`${title}-${node.num}`} type="button" onClick={() => onSelectNode?.(node.num)}>
-              <Badge variant="outline" className="text-[11px] font-mono cursor-pointer hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950">
+              <Badge variant="outline" className={`text-[11px] font-mono cursor-pointer ${badgeToneClass}`}>
                 {node.long_name || node.short_name || node.node_id || `#${node.num?.toString(16).toUpperCase()}`}{reasons}
               </Badge>
             </button>
