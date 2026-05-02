@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
-import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight, Search, Reply } from 'lucide-react';
+import { Clock, MessageSquare, MapPin, Zap, Radio, Settings, FileText, Hash, List, AlertTriangle, ChevronRight, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import PacketRowDetails from './PacketRowDetails.jsx';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
@@ -105,7 +105,7 @@ function formatTime(timestamp) {
   return `${hms}.${ms}`;
 }
 
-export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, messagesOnly = false, packets }) {
+export default function ReceivedPacketsTable({ onSelectNode, messagesOnly = false, packets }) {
   const { t } = useI18n();
   const store = useMeshStore();
   const packetLog = packets ?? store.packetLog;
@@ -224,18 +224,6 @@ export default function ReceivedPacketsTable({ onSelectNode, onReplyToNode, mess
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 max-w-[200px] sm:max-w-xs" title={details !== '-' ? details : undefined}>
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="truncate">{details}</span>
-                    {packet.raw?.packet?.decoded?.text && packet.from && onReplyToNode && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onReplyToNode({ nodeNum: packet.from, channel: getPacketChannel(packet) });
-                        }}
-                        className="shrink-0 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
-                      >
-                        <Reply className="w-3 h-3" /> Antworten
-                      </button>
-                    )}
                   </div>
                 </td>
                 <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
