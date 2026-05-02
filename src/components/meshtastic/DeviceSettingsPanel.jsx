@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
-import { Settings, Wifi, Bluetooth, Cloud, RefreshCw, CheckCircle2, Database, ChevronDown, Cpu, MapPin, Battery, Monitor, Radio, Shield, Cable, Boxes, Activity, Users, Hash, User } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Settings, Wifi, Bluetooth, Cloud, RefreshCw, CheckCircle2, Database, ChevronDown, Cpu, MapPin, Battery, Monitor, Radio, Shield, Cable, Boxes, Activity, Users, Hash, User, Eye, EyeOff, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
+import { useAuth } from '@/lib/AuthContext';
 
 const SECTION_META = {
   User: { title: 'User / Node-Name', icon: User },
@@ -52,9 +53,22 @@ function formatValue(value) {
   return String(value);
 }
 
-function formatFieldValue(key, value) {
+const SENSITIVE_KEYS = /password|privateKey|adminKey|psk/i;
+
+function isSensitive(key) {
+  return SENSITIVE_KEYS.test(key);
+}
+
+function getRawSensitiveValue(key, value) {
   if (key === 'psk' && value?.hex) return hexToBase64(value.hex);
-  if (/password|privateKey|adminKey/i.test(key) && value && value !== 'vorhanden') return '••••••••';
+  return formatValue(value);
+}
+
+function formatFieldValue(key, value, revealed) {
+  if (isSensitive(key)) {
+    if (revealed) return getRawSensitiveValue(key, value);
+    return '••••••••';
+  }
   return formatValue(value);
 }
 
@@ -85,7 +99,47 @@ function hasUsefulValues(config) {
   return Object.values(values).some(value => value !== null && value !== undefined && value !== '');
 }
 
+function SensitiveValue({ fieldKey, value, isAuthenticated }) {
+  const [revealed, setRevealed] = useState(false);
+  const displayVal = revealed ? getRawSensitiveValue(fieldKey, value) : '••••••••';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(getRawSensitiveValue(fieldKey, value));
+  };
+
+  return (
+    <div className="flex items-center gap-1 justify-end">
+      <span className={`font-medium text-blue-950 dark:text-blue-50 text-right break-all font-mono text-[11px] select-all`}>
+        {displayVal}
+      </span>
+      {isAuthenticated && (
+        <>
+          <button
+            type="button"
+            onClick={() => setRevealed(r => !r)}
+            className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 shrink-0"
+            title={revealed ? 'Verbergen' : 'Anzeigen'}
+          >
+            {revealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
+          {revealed && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 shrink-0"
+              title="Kopieren"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function ConfigCard({ config }) {
+  const { isAuthenticated } = useAuth();
   const sectionKey = config.section?.startsWith('Channel') ? 'Channel' : config.section;
   const meta = SECTION_META[sectionKey] || { title: config.section, icon: Settings };
   const Icon = meta.icon;
@@ -106,8 +160,12 @@ function ConfigCard({ config }) {
         <div className="space-y-1">
           {entries.map(([key, value]) => (
             <div key={key} className="flex justify-between gap-3 text-xs">
-              <span className="text-blue-700 dark:text-blue-300">{FIELD_LABELS[key] || key}</span>
-              <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all">{formatFieldValue(key, value)}</span>
+              <span className="text-blue-700 dark:text-blue-300 shrink-0">{FIELD_LABELS[key] || key}</span>
+              {isSensitive(key) ? (
+                <SensitiveValue fieldKey={key} value={value} isAuthenticated={isAuthenticated} />
+              ) : (
+                <span className="font-medium text-blue-950 dark:text-blue-50 text-right break-all">{formatFieldValue(key, value)}</span>
+              )}
             </div>
           ))}
         </div>
