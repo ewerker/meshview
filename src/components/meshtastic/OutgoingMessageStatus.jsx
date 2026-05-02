@@ -58,6 +58,18 @@ function formatDest(msg) {
   return <>Broadcast</>;
 }
 
+function getStatusMeta(msg) {
+  // Broadcasts have no routing-ACK by protocol; accepted_by_device is the terminal "success" state.
+  if (msg.kind === 'channel' && msg.status === 'accepted_by_device') {
+    return {
+      label: 'Gesendet (Broadcast)', icon: CheckCircle2,
+      className: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-200 dark:border-green-900',
+      description: 'Broadcasts erhalten kein Routing-ACK. Das Gerät hat das Paket akzeptiert und ausgesendet.',
+    };
+  }
+  return STATUS_META[msg.status] || STATUS_META.queued;
+}
+
 export default function OutgoingMessageStatus({ outgoing }) {
   if (!outgoing?.length) return null;
 
@@ -69,7 +81,7 @@ export default function OutgoingMessageStatus({ outgoing }) {
         Letzte gesendete Nachrichten
       </div>
       {recent.map(msg => {
-        const meta = STATUS_META[msg.status] || STATUS_META.queued;
+        const meta = getStatusMeta(msg);
         const Icon = meta.icon;
         return (
           <div key={msg.tempId} className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 text-xs">
@@ -106,7 +118,7 @@ export default function OutgoingMessageStatus({ outgoing }) {
       })}
       <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug px-0.5 pt-1 flex items-start gap-1">
         <Clock className="w-3 h-3 mt-0.5 shrink-0" />
-        <span>„An Serial geschrieben" = nur Browser → serieller Port. „Vom Gerät angenommen" = lokales Funkgerät hat eingereiht. Erst „Mesh ACK" heißt, dass es im Mesh angekommen ist; „Antwort erhalten" zeigt eine echte Reaktion vom Empfänger.</span>
+        <span>Broadcasts haben protokollbedingt kein Routing-ACK — Endstufe ist „Gesendet (Broadcast)". Nur Direkt-Nachrichten mit want-ack liefern Mesh-ACK/NAK; „Antwort erhalten" zeigt eine echte Textantwort.</span>
       </div>
     </div>
   );

@@ -302,8 +302,10 @@ class MeshStore {
     const trimmed = text.trim();
     const destination = Number.isFinite(options.destination) ? options.destination >>> 0 : this.BROADCAST_ADDR;
     const hopLimit = Number.isFinite(options.hopLimit) ? options.hopLimit : 3;
-    const wantAck = options.wantAck === false ? false : true;
     const isBroadcast = destination === this.BROADCAST_ADDR;
+    // Broadcasts get no routing-ACK by protocol -> default wantAck=false unless explicitly true.
+    // DMs default to want_ack=true unless explicitly disabled.
+    const wantAck = isBroadcast ? options.wantAck === true : options.wantAck !== false;
     const kind = isBroadcast ? 'channel' : 'direct';
     const now = Date.now();
 
@@ -348,8 +350,8 @@ class MeshStore {
       });
       if (this.messages.length > 100) this.messages.pop();
 
-      // Start ACK/NAK timeout watcher (only meaningful when wantAck is true)
-      if (wantAck) {
+      // Routing-ACK only exists for direct messages with want_ack. Broadcasts terminate at accepted_by_device.
+      if (wantAck && !isBroadcast) {
         const handle = setTimeout(() => {
           const entry = this.outgoing.find(o => o.id === packetId);
           if (entry && (entry.status === 'written_to_serial' || entry.status === 'accepted_by_device')) {
