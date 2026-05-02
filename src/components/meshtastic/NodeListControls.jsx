@@ -17,7 +17,9 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
     });
   };
 
-  const activeCount = Object.values(filters).filter(Boolean).length;
+  const booleanFilterKeys = ['active', 'direct', 'withGps', 'withTelemetry', 'withEnv', 'lowBattery', 'highBattery', 'near1km', 'near5km', 'near25km', 'messagesOnly'];
+  const activeCount = booleanFilterKeys.filter(key => filters[key]).length
+    + (filters.maxAge && filters.maxAge !== 'any' ? 1 : 0);
 
   const filterOptions = [
     { key: 'active', label: t('filterActive') },
