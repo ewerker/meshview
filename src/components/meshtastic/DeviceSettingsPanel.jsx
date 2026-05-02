@@ -53,14 +53,21 @@ function formatValue(value) {
   return String(value);
 }
 
-const SENSITIVE_KEYS = /password|privateKey|adminKey|psk/i;
+const SENSITIVE_KEYS = /password|privatekey|adminkey|psk|pin|passphrase/i;
 
 function isSensitive(key) {
   return SENSITIVE_KEYS.test(key);
 }
 
 function getRawSensitiveValue(key, value) {
-  if (key === 'psk' && value?.hex) return hexToBase64(value.hex);
+  if (!value) return '—';
+  // PSK als Uint8Array → Base64
+  if (key === 'psk') {
+    if (value instanceof Uint8Array) return btoa(String.fromCharCode(...value));
+    if (value?.hex) return hexToBase64(value.hex);
+    return String(value);
+  }
+  if (value instanceof Uint8Array) return new TextDecoder().decode(value);
   return formatValue(value);
 }
 
@@ -144,7 +151,11 @@ function ConfigCard({ config }) {
   const meta = SECTION_META[sectionKey] || { title: config.section, icon: Settings };
   const Icon = meta.icon;
   const values = config.payload?.values || getDisplayValues(config);
-  const entries = Object.entries(values).filter(([, value]) => value !== null && value !== undefined && value !== '');
+  const entries = Object.entries(values).filter(([, value]) => {
+    if (value === null || value === undefined || value === '') return false;
+    if (value instanceof Uint8Array) return value.length > 0;
+    return true;
+  });
 
   return (
     <div className="rounded-lg bg-white/75 dark:bg-slate-900/50 border border-blue-100 dark:border-blue-900 p-3 min-w-[220px] flex-1">
