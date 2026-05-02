@@ -135,7 +135,7 @@ export default function HistoricalDashboard() {
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />Detail</TabsTrigger>
                 </TabsList>
                 <TabsContent value="map" className="flex-1 min-h-[55vh] p-4 overflow-hidden">
-                  <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                  <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
                   <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
@@ -177,7 +177,7 @@ export default function HistoricalDashboard() {
                   <PanelGroup direction="vertical" className="h-full" autoSaveId="dashboard.layout.center">
                     <Panel defaultSize={45} minSize={20}>
                       <div className="h-full p-4 overflow-hidden">
-                        <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
+                        <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={setSelectedNodeNum} />
                       </div>
                     </Panel>
 

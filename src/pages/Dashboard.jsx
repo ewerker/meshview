@@ -150,7 +150,7 @@ export default function Dashboard() {
                   <TabsTrigger value="detail" className="flex-1 gap-1"><Radio className="w-4 h-4" />{t('detail')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="map" className="flex-1 min-h-[55vh] p-4 overflow-hidden">
-                  <NodeMap nodes={nodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={handleSelectNode} />
+                  <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={handleSelectNode} />
                 </TabsContent>
                 <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
                   <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
@@ -210,7 +210,7 @@ export default function Dashboard() {
                     <Panel defaultSize={45} minSize={20}>
                       <div className="h-full p-4 overflow-hidden">
                         <NodeMap
-                          nodes={nodes}
+                          nodes={sortedNodes}
                           myNodeNum={myNodeNum}
                           selectedNodeNum={selectedNodeNum}
                           onSelectNode={handleSelectNode}
