@@ -48,7 +48,10 @@ export default function Dashboard() {
     near5km: false,
     near25km: false,
     messagesOnly: false,
+    maxAge: 'any',
   });
+
+  const MAX_AGE_SECONDS = { '1d': 86400, '3d': 259200, '7d': 604800, '30d': 2592000, '90d': 7776000 };
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
 
@@ -64,6 +67,10 @@ export default function Dashboard() {
 
     // Additive filters - all active filters must match
     if (filters.active && (now - (n.lastHeard || 0)) >= 900) return false;
+    if (filters.maxAge && filters.maxAge !== 'any') {
+      const limit = MAX_AGE_SECONDS[filters.maxAge];
+      if (limit && (!n.lastHeard || (now - n.lastHeard) > limit)) return false;
+    }
     if (filters.direct && n.hopsAway !== 0) return false;
     if (filters.withGps && (!n.position?.latitude || !n.position?.longitude || n.position.latitude === 0)) return false;
     if (filters.withTelemetry && !n.deviceMetrics) return false;

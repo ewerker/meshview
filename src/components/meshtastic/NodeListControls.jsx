@@ -32,6 +32,17 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
     { key: 'near25km', label: t('filterNear25') },
   ];
 
+  const maxAgeOptions = [
+    { value: 'any', label: t('maxAgeAny') },
+    { value: '1d', label: t('maxAge1d') },
+    { value: '3d', label: t('maxAge3d') },
+    { value: '7d', label: t('maxAge7d') },
+    { value: '30d', label: t('maxAge30d') },
+    { value: '90d', label: t('maxAge90d') },
+  ];
+
+  const maxAge = filters.maxAge || 'any';
+
   return (
     <div className="px-3 py-2 border-b bg-card dark:bg-slate-800 space-y-2">
       <div className="relative">
@@ -70,6 +81,19 @@ export default function NodeListControls({ search, onSearch, sort, onSort, filte
 
       {showFilters && (
         <div className="grid grid-cols-1 gap-2 pt-2 border-t">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs font-normal text-slate-500 shrink-0">{t('filterMaxAge')}</Label>
+            <Select value={maxAge} onValueChange={(value) => onFiltersChange({ ...filters, maxAge: value })}>
+              <SelectTrigger className="h-7 text-xs flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {maxAgeOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {filterOptions.map(option => (
             <div key={option.key} className="flex items-center gap-2">
               <Checkbox

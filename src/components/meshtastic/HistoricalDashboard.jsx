@@ -39,7 +39,10 @@ export default function HistoricalDashboard() {
     active: false, direct: false, withGps: false, withTelemetry: false,
     withEnv: false, lowBattery: false, highBattery: false,
     near1km: false, near5km: false, near25km: false, messagesOnly: false,
+    maxAge: 'any',
   });
+
+  const MAX_AGE_SECONDS = { '1d': 86400, '3d': 259200, '7d': 604800, '30d': 2592000, '90d': 7776000 };
 
   const selectedNode = selectedNodeNum ? nodes.find(n => n.num === selectedNodeNum) : null;
   const now = Math.floor(Date.now() / 1000);
@@ -51,6 +54,10 @@ export default function HistoricalDashboard() {
       if (!name.toLowerCase().includes(q)) return false;
     }
     if (filters.active && (now - (n.lastHeard || 0)) >= 900) return false;
+    if (filters.maxAge && filters.maxAge !== 'any') {
+      const limit = MAX_AGE_SECONDS[filters.maxAge];
+      if (limit && (!n.lastHeard || (now - n.lastHeard) > limit)) return false;
+    }
     if (filters.direct && n.hopsAway !== 0) return false;
     if (filters.withGps && (!n.position?.latitude || n.position.latitude === 0)) return false;
     if (filters.withTelemetry && !n.deviceMetrics) return false;
