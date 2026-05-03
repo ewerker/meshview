@@ -102,8 +102,8 @@ export default function HistoricalDashboard() {
 
       {!effectiveDevice ? null : (
         <>
-          <DeviceSettingsPanel deviceConfigs={deviceConfigs} myNode={myNode} myNodeNum={myNodeNum} readonly />
           <StatsBar nodes={nodes} messages={messages} connected={false} filters={filters} onFiltersChange={setFilters} />
+          <DeviceSettingsPanel deviceConfigs={deviceConfigs} myNode={myNode} myNodeNum={myNodeNum} readonly />
 
           <div className="flex-1 min-h-0 flex flex-col">
             <button
