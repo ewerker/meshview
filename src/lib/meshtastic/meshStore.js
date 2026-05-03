@@ -22,13 +22,21 @@ class MeshStore {
     this.configSaveStatus = null;
     this.currentConfigId = null;
 
+    this.lastDisconnect = null;
+
     this.serial.onPacket = (data) => this.handlePacket(data);
     this.serial.onConnect = () => {
       this.connected = true;
+      this.lastDisconnect = null;
       this.notify();
     };
-    this.serial.onDisconnect = () => {
+    this.serial.onDisconnect = (info) => {
       this.connected = false;
+      this.lastDisconnect = {
+        reason: info?.reason || 'unknown',
+        message: info?.message || 'Verbindung wurde beendet.',
+        time: Date.now(),
+      };
       this.notify();
     };
   }

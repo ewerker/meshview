@@ -21,6 +21,8 @@ export function useMeshStore() {
     configSaveStatus: meshStore.configSaveStatus,
     isLoading: meshStore.isLoading,
     isSupported: meshStore.isSupported(),
+    lastDisconnect: meshStore.lastDisconnect,
+    clearLastDisconnect: () => { meshStore.lastDisconnect = null; meshStore.notify(); },
     connect: () => meshStore.connect(),
     requestDeviceConfig: () => meshStore.requestDeviceConfig(),
     disconnect: () => meshStore.disconnect(),

@@ -35,7 +35,7 @@ export class MeshtasticSerial {
         if (event.target === this.port || !event.target) {
           console.warn('USB device physically disconnected');
           this.running = false;
-          if (this.onDisconnect) this.onDisconnect();
+          if (this.onDisconnect) this.onDisconnect({ reason: 'usb_unplugged', message: 'Das USB-Gerät wurde physisch entfernt.' });
         }
       };
       navigator.serial.addEventListener('disconnect', this._onPortDisconnect);
@@ -90,10 +90,12 @@ export class MeshtasticSerial {
 
     this.port = null;
     this.buffer = [];
-    if (this.onDisconnect) this.onDisconnect();
+    if (this.onDisconnect) this.onDisconnect({ reason: 'manual', message: 'Manuell getrennt.' });
   }
 
   async readLoop() {
+    let lastError = null;
+    let fatalError = null;
     try {
       while (this.running && this.port?.readable) {
         let reader;
@@ -101,9 +103,10 @@ export class MeshtasticSerial {
           reader = this.port.readable.getReader();
         } catch (e) {
           console.warn('Failed to get reader, port might be dead:', e.message);
+          fatalError = e;
           break; // Exit the loop if we can't get a reader
         }
-        
+
         this.reader = reader;
         try {
           while (this.running) {
@@ -118,6 +121,7 @@ export class MeshtasticSerial {
           }
         } catch (e) {
           console.warn('Serial read error, attempting recovery:', e.message);
+          lastError = e;
         } finally {
           try { reader.releaseLock(); } catch (_) {}
           this.reader = null;
@@ -130,11 +134,18 @@ export class MeshtasticSerial {
       }
     } catch (e) {
       console.warn('Fatal error in readLoop:', e.message);
+      fatalError = e;
     } finally {
       // If we exited the loop unexpectedly while running, trigger disconnect
       if (this.running) {
         this.running = false;
-        if (this.onDisconnect) this.onDisconnect();
+        const err = fatalError || lastError;
+        if (this.onDisconnect) {
+          this.onDisconnect({
+            reason: fatalError ? 'port_unreadable' : 'read_error',
+            message: err?.message || 'Verbindung zum Gerät unerwartet beendet.',
+          });
+        }
       }
     }
   }

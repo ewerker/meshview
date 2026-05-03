@@ -18,6 +18,7 @@ import ManualSavePanel from '@/components/meshtastic/ManualSavePanel.jsx';
 import UserDataTransferPanel from '@/components/meshtastic/UserDataTransferPanel.jsx';
 import DeviceSettingsPanel from '@/components/meshtastic/DeviceSettingsPanel.jsx';
 import FirstPacketProgress from '@/components/meshtastic/FirstPacketProgress.jsx';
+import UnexpectedDisconnectDialog from '@/components/meshtastic/UnexpectedDisconnectDialog.jsx';
 import { distanceToMyNode } from '@/lib/meshtastic/distance.js';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
@@ -116,6 +117,7 @@ export default function Dashboard() {
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
       <ConnectionBar />
+      <UnexpectedDisconnectDialog />
 
       {!connected ? (
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
