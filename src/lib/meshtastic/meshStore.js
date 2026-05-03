@@ -162,7 +162,9 @@ class MeshStore {
 
     // Update node with packet info
     const existingNode = this.nodes.get(fromNum) || { num: fromNum };
-    existingNode.lastHeard = this.sanitizeLastHeard(packet.rxTime);
+    // Use local "now" — packet.rxTime is the sender's clock and can be wildly off
+    // when the device has no GPS/NTP sync (often appears as a fixed offset like 11h).
+    existingNode.lastHeard = Math.floor(Date.now() / 1000);
     existingNode.snr = packet.rxSnr;
     existingNode.rssi = packet.rxRssi;
     if (typeof packet.hopsAway === 'number') existingNode.hopsAway = packet.hopsAway;
