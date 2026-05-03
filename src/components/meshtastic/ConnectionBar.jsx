@@ -9,8 +9,9 @@ import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 import LanguageSwitcher from '@/components/LanguageSwitcher.jsx';
 import { useDarkMode } from '@/lib/DarkModeContext';
 import { useAuth } from '@/lib/AuthContext';
+import StatsChips from '@/components/meshtastic/StatsChips.jsx';
 
-export default function ConnectionBar() {
+export default function ConnectionBar({ messages, filters, onFiltersChange }) {
   const { connected, isSupported, connect, disconnect, nodes, myNode, metadata } = useMeshStore();
   const { t } = useI18n();
   const { isDark, toggleDark } = useDarkMode();
@@ -41,9 +42,7 @@ export default function ConnectionBar() {
       <div className="flex w-full sm:w-auto items-center gap-1.5 sm:gap-3 flex-wrap justify-start sm:justify-end">
         {connected && (
           <>
-            <Badge variant="outline" className="text-green-400 border-green-400">
-              {nodes.length} Nodes
-            </Badge>
+            <StatsChips nodes={nodes} messages={messages || []} filters={filters} onFiltersChange={onFiltersChange} />
             {myNode?.user?.longName && (
               <Badge variant="outline" className="text-blue-400 border-blue-400">
                 {myNode.user.shortName || myNode.user.longName}
