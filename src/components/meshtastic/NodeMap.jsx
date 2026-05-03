@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import MapFullscreenToggle from './MapFullscreenToggle.jsx';
 
 // Fix Leaflet default icon issue with bundlers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -141,6 +142,7 @@ function MapController({ selectedNodeNum, markerRefs, nodes }) {
 
 export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNode }) {
   const markerRefs = useRef({});
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const nodesWithPos = nodes.filter(n =>
     n.position?.latitude && n.position?.longitude &&
@@ -151,8 +153,13 @@ export default function NodeMap({ nodes, myNodeNum, selectedNodeNum, onSelectNod
     ? [nodesWithPos[0].position.latitude, nodesWithPos[0].position.longitude]
     : [48.1351, 11.5820]; // Default: Munich
 
+  const containerClass = isFullscreen
+    ? 'fixed inset-0 z-[9999] bg-white dark:bg-slate-900 rounded-none border-0'
+    : 'h-full w-full rounded-lg overflow-hidden border relative';
+
   return (
-    <div className="h-full w-full rounded-lg overflow-hidden border">
+    <div className={containerClass}>
+      <MapFullscreenToggle isFullscreen={isFullscreen} onToggle={setIsFullscreen} />
       <MapContainer
         center={center}
         zoom={nodesWithPos.length > 0 ? 13 : 6}

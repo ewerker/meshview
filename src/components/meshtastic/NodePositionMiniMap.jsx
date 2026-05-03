@@ -1,8 +1,9 @@
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { distanceToMyNode, formatDistance } from '@/lib/meshtastic/distance.js';
+import MapFullscreenToggle from './MapFullscreenToggle.jsx';
 
 // Fix default marker icon (same as NodeMap)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -35,7 +36,21 @@ function FitBounds({ points }) {
   return null;
 }
 
+function MiniMapSizeWatcher() {
+  const map = useMap();
+  useEffect(() => {
+    const refresh = () => map.invalidateSize({ pan: false });
+    const container = map.getContainer();
+    const ro = new ResizeObserver(refresh);
+    ro.observe(container);
+    const t = setTimeout(refresh, 100);
+    return () => { ro.disconnect(); clearTimeout(t); };
+  }, [map]);
+  return null;
+}
+
 export default function NodePositionMiniMap({ node, myNode }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const pos = node?.position;
   if (!pos?.latitude || pos.latitude === 0) return null;
 
@@ -48,9 +63,15 @@ export default function NodePositionMiniMap({ node, myNode }) {
 
   const points = hasMyPos ? [nodeLatLng, myLatLng] : [nodeLatLng];
 
+  const mapWrapperClass = isFullscreen
+    ? 'fixed inset-0 z-[9999] bg-white dark:bg-slate-900 border-0 rounded-none'
+    : 'rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 relative';
+  const mapWrapperStyle = isFullscreen ? {} : { height: 180 };
+
   return (
     <div className="space-y-2">
-      <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700" style={{ height: 180 }}>
+      <div className={mapWrapperClass} style={mapWrapperStyle}>
+        <MapFullscreenToggle isFullscreen={isFullscreen} onToggle={setIsFullscreen} />
         <MapContainer
           center={nodeLatLng}
           zoom={14}
@@ -59,6 +80,7 @@ export default function NodePositionMiniMap({ node, myNode }) {
           attributionControl={false}
         >
           <FitBounds points={points} />
+          <MiniMapSizeWatcher />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             maxZoom={19}
