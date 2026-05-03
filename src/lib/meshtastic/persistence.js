@@ -18,8 +18,12 @@ let autoSaveCallback = null;
 // Globaler Lock: Auto-Save und Manual-Save dürfen nie gleichzeitig laufen.
 // Beide warten aufeinander, indem sie acquireSaveLock() vor dem Schreiben aufrufen.
 let saveLockPromise = null;
+let lastSaveCompletedAt = 0;
 export function isSaveLocked() {
   return saveLockPromise !== null;
+}
+export function getLastSaveCompletedAt() {
+  return lastSaveCompletedAt;
 }
 export async function acquireSaveLock(label) {
   // Auf laufenden Save warten, bevor ein neuer beginnt
@@ -31,6 +35,7 @@ export async function acquireSaveLock(label) {
   return () => {
     const p = saveLockPromise;
     saveLockPromise = null;
+    lastSaveCompletedAt = Date.now();
     release?.();
     return p;
   };

@@ -1,6 +1,8 @@
 // Runs snapshot-based autosave after the user enabled saving in this session.
 import { useEffect, useRef, useState } from 'react';
-import { saveMeshSnapshot, isSaveLocked } from '@/lib/meshtastic/persistence.js';
+import { saveMeshSnapshot, isSaveLocked, getLastSaveCompletedAt } from '@/lib/meshtastic/persistence.js';
+
+const AUTOSAVE_COOLDOWN_MS = 60_000; // 1 Minute Sichtbarkeit für vorheriges Ergebnis
 
 export function useMeshPersistence({ enabled, myNodeNum, nodes, packetLog }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState(null);
@@ -13,10 +15,16 @@ export function useMeshPersistence({ enabled, myNodeNum, nodes, packetLog }) {
     const fingerprint = `${myNodeNum}:${nodes.length}:${packetLog.length}:${packetLog.at(-1)?.seq || 0}:${packetLog.at(-1)?.time || 0}`;
     if (fingerprint === lastFingerprintRef.current || savingRef.current) return;
 
+    // Cooldown nach letzter abgeschlossener Sicherung respektieren
+    const sinceLastSave = Date.now() - getLastSaveCompletedAt();
+    const delay = Math.max(5000, AUTOSAVE_COOLDOWN_MS - sinceLastSave);
+
     const timer = setTimeout(async () => {
       // Falls währenddessen ein manueller Save (oder anderer Flush) läuft: nicht starten,
       // beim nächsten Render-Tick versucht der Hook es erneut.
       if (isSaveLocked() || savingRef.current) return;
+      // Cooldown erneut prüfen, falls inzwischen gespeichert wurde
+      if (Date.now() - getLastSaveCompletedAt() < AUTOSAVE_COOLDOWN_MS) return;
 
       savingRef.current = true;
       setAutoSaveStatus({ status: 'saving' });
@@ -30,7 +38,7 @@ export function useMeshPersistence({ enabled, myNodeNum, nodes, packetLog }) {
       }
 
       savingRef.current = false;
-    }, 5000);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, [enabled, myNodeNum, nodes, packetLog]);
