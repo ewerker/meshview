@@ -47,18 +47,44 @@ function MapSizeWatcher() {
   const map = useMap();
 
   useEffect(() => {
-    const updateSize = () => map.invalidateSize({ pan: false });
+    let rafId = null;
+    let settleTimer = null;
+
+    const refreshTiles = () => {
+      // Force Leaflet to re-evaluate viewport size and redraw tile layers,
+      // then prune off-screen tiles. Without this, tiles outside the previous
+      // viewport stay blank after the container grows.
+      map.invalidateSize({ pan: false, debounceMoveend: true });
+      map.eachLayer(layer => {
+        if (layer && typeof layer.redraw === 'function' && layer._url) {
+          layer.redraw();
+        }
+      });
+    };
+
+    const scheduleRefresh = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        refreshTiles();
+        // After resize settles, run once more to fill any gaps
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(refreshTiles, 200);
+      });
+    };
+
     const container = map.getContainer();
-    const resizeObserver = new ResizeObserver(updateSize);
+    const resizeObserver = new ResizeObserver(scheduleRefresh);
     resizeObserver.observe(container);
 
-    const timers = [0, 150, 400, 900].map(delay => setTimeout(updateSize, delay));
-    map.on('zoomend moveend', updateSize);
+    const timers = [0, 150, 400, 900].map(delay => setTimeout(refreshTiles, delay));
+    map.on('zoomend moveend', refreshTiles);
 
     return () => {
       timers.forEach(clearTimeout);
+      clearTimeout(settleTimer);
+      if (rafId) cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
-      map.off('zoomend moveend', updateSize);
+      map.off('zoomend moveend', refreshTiles);
     };
   }, [map]);
 
