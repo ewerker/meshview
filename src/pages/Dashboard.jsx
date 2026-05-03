@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage.js';
 import { useMeshStore } from '@/hooks/useMeshStore.js';
 import ConnectionBar from '@/components/meshtastic/ConnectionBar.jsx';
+import StatsBar from '@/components/meshtastic/StatsBar.jsx';
 import NodeCard from '@/components/meshtastic/NodeCard.jsx';
 import NodeMap from '@/components/meshtastic/NodeMap.jsx';
 import NodeDetail from '@/components/meshtastic/NodeDetail.jsx';
@@ -114,12 +115,14 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
-      <ConnectionBar messages={messages} filters={filters} onFiltersChange={setFilters} />
+      <ConnectionBar />
 
       {!connected ? (
         isAuthenticated ? <HistoricalDashboard /> : <DisconnectedHero />
       ) : (
         <>
+          <StatsBar nodes={nodes} messages={messages} connected={connected} filters={filters} onFiltersChange={setFilters} />
+
           <button
             type="button"
             onClick={() => setToolsOpen(!toolsOpen)}
