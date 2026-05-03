@@ -80,20 +80,43 @@ export function parseFromRadio(bytes) {
 }
 
 function parseMeshPacket(bytes) {
+  // mesh.proto MeshPacket field numbers:
+  // 1=from, 2=to, 3=channel, 4=decoded(Data), 5=encrypted, 6=id, 7=rx_time,
+  // 8=rx_snr(float), 9=hop_limit, 10=want_ack, 11=priority, 12=rx_rssi,
+  // 13=delayed, 14=via_mqtt, 15=hop_start, 16=public_key, 17=pki_encrypted,
+  // 18=next_hop, 19=relay_node, 20=tx_after, 21=transport_mechanism
   const fields = parseMessage(bytes);
+  const transportMechanism = fields[21] ?? null;
+  const transportNames = { 0: 'TRANSPORT_UNKNOWN', 1: 'TRANSPORT_LORA', 2: 'TRANSPORT_MQTT', 3: 'TRANSPORT_HAM' };
   const packet = {
     from: fields[1] || 0,
     to: fields[2] || 0,
     channel: fields[3] || 0,
     id: fields[6] || 0,
-    rxTime: fields[9] || 0,
-    rxSnr: fields[13] ? int32ToFloat(fields[13]) : 0,
-    hopLimit: fields[10] || 0,
-    rxRssi: signedInt(fields[14] || 0),
-    viaMqtt: fields[15] || false,
+    rxTime: fields[7] || 0,
+    rxSnr: fields[8] !== undefined ? int32ToFloat(fields[8]) : 0,
+    hopLimit: fields[9] ?? 0,
+    wantAck: !!fields[10],
+    priority: fields[11] ?? null,
+    rxRssi: signedInt(fields[12] || 0),
+    delayed: fields[13] ?? null,
+    viaMqtt: !!fields[14],
+    hopStart: fields[15] ?? null,
+    publicKey: fields[16] || null,
+    pkiEncrypted: !!fields[17],
+    nextHop: fields[18] ?? null,
+    relayNode: fields[19] ?? null,
+    txAfter: fields[20] ?? null,
+    transportMechanism,
+    transportMechanismName: transportMechanism !== null ? (transportNames[transportMechanism] || `TRANSPORT_${transportMechanism}`) : null,
     decoded: null,
     encrypted: fields[5] || null,
   };
+
+  // hops travelled = hop_start - hop_limit (only meaningful if both present)
+  if (typeof packet.hopStart === 'number' && typeof packet.hopLimit === 'number') {
+    packet.hopsAway = Math.max(0, packet.hopStart - packet.hopLimit);
+  }
 
   if (fields[4]) {
     packet.decoded = parseData(fields[4]);

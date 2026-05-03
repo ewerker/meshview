@@ -165,6 +165,8 @@ class MeshStore {
     existingNode.lastHeard = this.sanitizeLastHeard(packet.rxTime);
     existingNode.snr = packet.rxSnr;
     existingNode.rssi = packet.rxRssi;
+    if (typeof packet.hopsAway === 'number') existingNode.hopsAway = packet.hopsAway;
+    if (typeof packet.viaMqtt === 'boolean') existingNode.viaMqtt = packet.viaMqtt;
 
     if (decoded.user) {
       // Merge user fields - keep existing values if new ones are empty (e.g. NodeInfo with only id)
