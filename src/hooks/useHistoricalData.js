@@ -29,9 +29,10 @@ export function useMyDevices(isAuthenticated) {
     setLoading(true);
     try {
       // Pull enough rows to include complete saved node lists; group by my_node_num
-      const [rows, lastPackets] = await Promise.all([
+      const [rows, lastPackets, lastPacketsByUpdate] = await Promise.all([
         base44.entities.MeshNode.list('-updated_date', 1000),
         base44.entities.MeshPacket.list('-time', 500),
+        base44.entities.MeshPacket.list('-updated_date', 200),
       ]);
       const lastPacketByDevice = new Map();
       for (const p of lastPackets) {
@@ -40,6 +41,15 @@ export function useMyDevices(isAuthenticated) {
           lastPacketByDevice.set(p.my_node_num, p.time);
         }
       }
+      // Jüngste DB-Schreibzeit pro Gerät — egal ob Node- oder Paket-Schreibvorgang
+      const lastPacketSaveByDevice = new Map();
+      for (const p of lastPacketsByUpdate) {
+        if (!p.my_node_num) continue;
+        if (!lastPacketSaveByDevice.has(p.my_node_num)) {
+          lastPacketSaveByDevice.set(p.my_node_num, p.updated_date);
+        }
+      }
+      const newer = (a, b) => (String(a || '').localeCompare(String(b || '')) >= 0 ? a : b);
       const map = new Map();
       for (const r of rows) {
         if (!r.my_node_num) continue;
@@ -50,13 +60,26 @@ export function useMyDevices(isAuthenticated) {
             // try to find the self-node (where num === my_node_num)
             long_name: r.num === r.my_node_num ? r.long_name : null,
             short_name: r.num === r.my_node_num ? r.short_name : null,
-            last_save: r.updated_date,
+            last_save: newer(r.updated_date, lastPacketSaveByDevice.get(r.my_node_num)),
             last_packet_time: lastPacketByDevice.get(r.my_node_num) || null,
           });
         } else if (r.num === r.my_node_num) {
           const e = map.get(r.my_node_num);
           if (!e.long_name && r.long_name) e.long_name = r.long_name;
           if (!e.short_name && r.short_name) e.short_name = r.short_name;
+        }
+      }
+      // Geräte berücksichtigen, die nur Pakete (keine MeshNode-Änderung) gespeichert haben
+      for (const [deviceNum, savedAt] of lastPacketSaveByDevice.entries()) {
+        if (!map.has(deviceNum)) {
+          map.set(deviceNum, {
+            my_node_num: deviceNum,
+            my_node_id: null,
+            long_name: null,
+            short_name: null,
+            last_save: savedAt,
+            last_packet_time: lastPacketByDevice.get(deviceNum) || null,
+          });
         }
       }
       setDevices(Array.from(map.values()).sort((a, b) =>
