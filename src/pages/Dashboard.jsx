@@ -179,9 +179,9 @@ export default function Dashboard() {
                     <NodeMap nodes={sortedNodes} myNodeNum={myNodeNum} selectedNodeNum={selectedNodeNum} onSelectNode={handleSelectNode} />
                   </div>
                 </TabsContent>
-                <TabsContent value="nodes" className="flex-1 overflow-auto flex flex-col p-0">
+                <TabsContent value="nodes" className="flex-1 min-h-0 overflow-hidden flex flex-col p-0">
                   <NodeListControls search={search} onSearch={setSearch} sort={sort} onSort={setSort} filters={filters} onFiltersChange={setFilters} />
-                    <div className="flex-1 overflow-auto p-4 grid gap-3">
+                    <div className="flex-1 overflow-y-auto min-h-0 p-4 grid gap-3">
                     {sortedNodes.map(node => (
                       <NodeCard
                         key={node.num}
