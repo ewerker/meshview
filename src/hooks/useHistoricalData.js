@@ -29,7 +29,17 @@ export function useMyDevices(isAuthenticated) {
     setLoading(true);
     try {
       // Pull enough rows to include complete saved node lists; group by my_node_num
-      const rows = await base44.entities.MeshNode.list('-updated_date', 1000);
+      const [rows, lastPackets] = await Promise.all([
+        base44.entities.MeshNode.list('-updated_date', 1000),
+        base44.entities.MeshPacket.list('-time', 500),
+      ]);
+      const lastPacketByDevice = new Map();
+      for (const p of lastPackets) {
+        if (!p.my_node_num) continue;
+        if (!lastPacketByDevice.has(p.my_node_num)) {
+          lastPacketByDevice.set(p.my_node_num, p.time);
+        }
+      }
       const map = new Map();
       for (const r of rows) {
         if (!r.my_node_num) continue;
@@ -40,7 +50,8 @@ export function useMyDevices(isAuthenticated) {
             // try to find the self-node (where num === my_node_num)
             long_name: r.num === r.my_node_num ? r.long_name : null,
             short_name: r.num === r.my_node_num ? r.short_name : null,
-            last_seen: r.updated_date,
+            last_save: r.updated_date,
+            last_packet_time: lastPacketByDevice.get(r.my_node_num) || null,
           });
         } else if (r.num === r.my_node_num) {
           const e = map.get(r.my_node_num);
@@ -49,7 +60,7 @@ export function useMyDevices(isAuthenticated) {
         }
       }
       setDevices(Array.from(map.values()).sort((a, b) =>
-        (b.last_seen || '').localeCompare(a.last_seen || '')
+        (b.last_save || '').localeCompare(a.last_save || '')
       ));
     } catch (e) {
       console.error('Failed to load devices', e);
