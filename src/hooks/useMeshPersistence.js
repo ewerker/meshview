@@ -1,6 +1,6 @@
 // Runs snapshot-based autosave after the user enabled saving in this session.
 import { useEffect, useRef, useState } from 'react';
-import { saveMeshSnapshot } from '@/lib/meshtastic/persistence.js';
+import { saveMeshSnapshot, isSaveLocked } from '@/lib/meshtastic/persistence.js';
 
 export function useMeshPersistence({ enabled, myNodeNum, nodes, packetLog }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState(null);
@@ -14,6 +14,10 @@ export function useMeshPersistence({ enabled, myNodeNum, nodes, packetLog }) {
     if (fingerprint === lastFingerprintRef.current || savingRef.current) return;
 
     const timer = setTimeout(async () => {
+      // Falls währenddessen ein manueller Save (oder anderer Flush) läuft: nicht starten,
+      // beim nächsten Render-Tick versucht der Hook es erneut.
+      if (isSaveLocked() || savingRef.current) return;
+
       savingRef.current = true;
       setAutoSaveStatus({ status: 'saving' });
 

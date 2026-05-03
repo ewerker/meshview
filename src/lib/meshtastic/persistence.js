@@ -15,9 +15,31 @@ let packetTimer = null;
 let nodeTimer = null;
 let autoSaveCallback = null;
 
+// Globaler Lock: Auto-Save und Manual-Save dürfen nie gleichzeitig laufen.
+// Beide warten aufeinander, indem sie acquireSaveLock() vor dem Schreiben aufrufen.
+let saveLockPromise = null;
+export function isSaveLocked() {
+  return saveLockPromise !== null;
+}
+export async function acquireSaveLock(label) {
+  // Auf laufenden Save warten, bevor ein neuer beginnt
+  while (saveLockPromise) {
+    try { await saveLockPromise; } catch { /* ignore */ }
+  }
+  let release;
+  saveLockPromise = new Promise(resolve => { release = resolve; });
+  return () => {
+    const p = saveLockPromise;
+    saveLockPromise = null;
+    release?.();
+    return p;
+  };
+}
+
 async function flushPackets() {
   packetTimer = null;
   if (packetBuffer.length === 0) return;
+  const release = await acquireSaveLock('flushPackets');
   const batch = packetBuffer;
   packetBuffer = [];
   try {
@@ -27,12 +49,15 @@ async function flushPackets() {
   } catch (e) {
     autoSaveCallback?.({ status: 'error', message: 'Pakete konnten nicht automatisch gespeichert werden.' });
     console.warn('MeshPacket bulkCreate failed', e);
+  } finally {
+    release();
   }
 }
 
 async function flushNodes() {
   nodeTimer = null;
   if (nodeBuffer.size === 0) return;
+  const release = await acquireSaveLock('flushNodes');
   const entries = Array.from(nodeBuffer.values());
   const createdNodes = [];
   const updatedNodes = [];
@@ -59,6 +84,7 @@ async function flushNodes() {
     }
   }
   autoSaveCallback?.({ status: 'saved', packets: 0, createdNodes, updatedNodes });
+  release();
 }
 
 function scheduleFlush() {
@@ -259,6 +285,17 @@ async function bulkCreateInBatches(entity, rows, onProgress, getProgressText) {
 export async function saveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress }) {
   if (!myNodeNum) throw new Error('Eigenes Gerät wurde noch nicht erkannt.');
 
+  // Wartet, falls gerade ein anderer Save (Auto oder manuell) läuft.
+  if (saveLockPromise) onProgress?.('Warte auf laufende Sicherung…');
+  const release = await acquireSaveLock('saveMeshSnapshot');
+  try {
+    return await runSaveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress });
+  } finally {
+    release();
+  }
+}
+
+async function runSaveMeshSnapshot({ myNodeNum, nodes, packetLog, onProgress }) {
   const myNodeId = nodeIdString(myNodeNum);
   const nodeRows = nodes
     .filter(node => typeof node.num === 'number')
