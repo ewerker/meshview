@@ -177,7 +177,7 @@ export function createPersistFn(getMyNodeNum, getMyNode, onAutoSave) {
       const patch = {
         snr: p.rxSnr ?? null,
         rssi: p.rxRssi ?? null,
-        last_heard: p.rxTime || Math.floor(Date.now() / 1000),
+        last_heard: Math.floor(Date.now() / 1000),
         channel: p.channel ?? null,
         hops_away: p.hopLimit !== undefined ? null : null, // not reliable here
       };
