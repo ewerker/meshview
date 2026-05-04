@@ -109,6 +109,15 @@ function normalizeBoolean(value) {
   return null;
 }
 
+function normalizeNumber(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
 function newestRecord(records) {
   return [...records].sort((a, b) => String(b.updated_date || '').localeCompare(String(a.updated_date || '')))[0];
 }
@@ -135,8 +144,8 @@ export function createPersistFn(getMyNodeNum, getMyNode, onAutoSave) {
       seq: logEntry.seq,
       time: logEntry.time,
       type: logEntry.type || 'unknown',
-      from_num: logEntry.from ?? null,
-      to_num: logEntry.to ?? null,
+      from_num: normalizeNumber(logEntry.from),
+      to_num: normalizeNumber(logEntry.to),
       portnum: decoded?.portnumName || null,
       rx_snr: parsed?.packet?.rxSnr ?? null,
       rx_rssi: parsed?.packet?.rxRssi ?? null,
@@ -233,8 +242,8 @@ function normalizePacketForSave(logEntry, myNodeNum, myNodeId) {
     seq: logEntry.seq,
     time: logEntry.time,
     type: logEntry.type || 'unknown',
-    from_num: logEntry.from ?? null,
-    to_num: logEntry.to ?? null,
+    from_num: normalizeNumber(logEntry.from),
+    to_num: normalizeNumber(logEntry.to),
     portnum: decoded?.portnumName || null,
     rx_snr: parsed?.packet?.rxSnr ?? null,
     rx_rssi: parsed?.packet?.rxRssi ?? null,
