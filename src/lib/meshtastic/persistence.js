@@ -111,6 +111,10 @@ function normalizeBoolean(value) {
 
 function normalizeNumber(value) {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'bigint') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
   if (typeof value === 'string' && value.trim() !== '') {
     const n = Number(value);
     if (Number.isFinite(n)) return n;
