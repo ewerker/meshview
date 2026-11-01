@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Radio, Usb, List, Map, Wifi, Activity, Cpu, AlertTriangle, Moon, Database } from 'lucide-react';
+import { ChevronLeft, Radio, Usb, List, Map, Wifi, Activity, Cpu, AlertTriangle, Moon, Database, Phone } from 'lucide-react';
+import ContactBlock from '@/components/ContactBlock.jsx';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
 
 function Section({ icon: Icon, color, title, children }) {
@@ -18,7 +19,7 @@ function Section({ icon: Icon, color, title, children }) {
 
 const copy = {
   de: {
-    title: 'Hilfe & Anleitung', heading: 'Erste Schritte & Hilfe', about: 'Über diese App', legal: 'Impressum', docs: 'Meshtastic Docs ↗',
+    title: 'Hilfe & Anleitung', heading: 'Erste Schritte & Hilfe', about: 'Über diese App', legal: 'Impressum', docs: 'Meshtastic Docs ↗', contact: 'Kontakt',
     sections: [
       { icon: Usb, color: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300', title: '1. Gerät verbinden', body: ['Diese App nutzt die Web Serial API – sie funktioniert nur in Google Chrome, Microsoft Edge oder einem anderen Chromium-basierten Browser auf Desktop.', 'Schritte:', 'Meshtastic-Gerät per USB-Kabel mit dem Computer verbinden.|Auf „Mit Gerät verbinden“ klicken.|Im Browser-Dialog den richtigen seriellen Port auswählen (meist CP210x, CH340 oder direktes USB-Serial).|Das Dashboard lädt automatisch alle bekannten Nodes und Telemetriedaten.', 'Falls kein Port erscheint: USB-Kabel prüfen (Datenkabel, kein reines Ladekabel) oder den passenden Treiber installieren (CP210x, CH340).'] },
       { icon: Activity, color: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300', title: '2. Statusleiste & Kacheln', body: ['Direkt unter dem Header zeigen vier Kacheln den aktuellen Mesh-Status:', 'Nodes gesamt – alle bekannten Nodes (Klick: alle Filter zurücksetzen).|Aktiv (15min) – Nodes mit Aktivität in den letzten 15 Minuten.|Mit GPS – Nodes, die Positionsdaten gesendet haben.|Nachrichten – Anzahl empfangener Text-Nachrichten in der aktuellen Session.', 'Aktivitäts- und GPS-Kacheln sind klickbar und filtern die Node-Liste entsprechend.'] },
@@ -32,7 +33,7 @@ const copy = {
     ],
   },
   en: {
-    title: 'Help & guide', heading: 'Getting started & help', about: 'About this app', legal: 'Legal notice', docs: 'Meshtastic Docs ↗',
+    title: 'Help & guide', heading: 'Getting started & help', about: 'About this app', legal: 'Legal notice', docs: 'Meshtastic Docs ↗', contact: 'Contact',
     sections: [
       { icon: Usb, color: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300', title: '1. Connect device', body: ['This app uses the Web Serial API – it only works in Google Chrome, Microsoft Edge or another Chromium-based desktop browser.', 'Steps:', 'Connect your Meshtastic device to the computer via USB cable.|Click “Connect device”.|Choose the correct serial port in the browser dialog, usually CP210x, CH340 or direct USB serial.|The dashboard automatically loads all known nodes and telemetry data.', 'If no port appears: check the USB cable (data cable, not charge-only) or install the matching driver (CP210x, CH340).'] },
       { icon: Activity, color: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300', title: '2. Status bar & tiles', body: ['Directly below the header, four tiles show the current mesh status:', 'Total nodes – all known nodes (click: reset all filters).|Active (15 min) – nodes active within the last 15 minutes.|With GPS – nodes that sent position data.|Messages – number of received text messages in the current session.', 'The activity and GPS tiles are clickable and filter the node list accordingly.'] },
@@ -81,6 +82,10 @@ export default function Help() {
             {renderBody(section.body)}
           </Section>
         ))}
+
+        <Section icon={Phone} color="bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200" title={page.contact}>
+          <ContactBlock />
+        </Section>
 
         <div className="flex gap-3 text-sm text-center pb-6">
           <Link to="/about" className="flex-1 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg py-3 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">{page.about}</Link>

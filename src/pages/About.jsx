@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Radio, Map, Activity, Wifi, Thermometer, Shield, Cpu, Filter, Moon, Database } from 'lucide-react';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
+import ContactBlock from '@/components/ContactBlock.jsx';
 
 const APP_VERSION = 'v1.1.0';
 
@@ -12,6 +13,7 @@ const pageCopy = {
     tech: 'Technologie',
     browser: 'Die App benötigt einen Chromium-basierten Browser (Chrome, Edge, Opera) auf Desktop. Firefox und Safari unterstützen die Web Serial API nicht.',
     links: 'Links',
+    contact: 'Kontakt',
     project: 'Offizielles Meshtastic-Projekt',
     operator: 'Webseite des Betreibers',
     legal: 'Impressum & Haftungsausschluss',
@@ -32,6 +34,7 @@ const pageCopy = {
     tech: 'Technology',
     browser: 'This app requires a Chromium-based desktop browser such as Chrome, Edge or Opera. Firefox and Safari do not support the Web Serial API.',
     links: 'Links',
+    contact: 'Contact',
     project: 'Official Meshtastic project',
     operator: 'Operator website',
     legal: 'Legal notice & disclaimer',
@@ -113,6 +116,11 @@ export default function About() {
 
         <section className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm text-yellow-800 dark:text-yellow-200">
           ⚠️ {copy.browser}
+        </section>
+
+        <section className="bg-white dark:bg-slate-800 rounded-lg border dark:border-slate-700 p-4 space-y-2">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-200 mb-1">{copy.contact}</h2>
+          <ContactBlock textClass="text-sm text-slate-600 dark:text-slate-300" />
         </section>
 
         <section className="bg-white dark:bg-slate-800 rounded-lg border dark:border-slate-700 p-4 space-y-2">

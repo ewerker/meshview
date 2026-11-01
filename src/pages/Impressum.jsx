@@ -1,5 +1,6 @@
 import { ChevronLeft, Radio } from 'lucide-react';
 import { useI18n } from '@/lib/i18n/I18nContext.jsx';
+import ContactBlock from '@/components/ContactBlock.jsx';
 
 const content = {
   de: {
@@ -91,12 +92,7 @@ export default function Impressum() {
 
         <section className="space-y-1">
           <h2 className="font-semibold text-slate-700 dark:text-slate-200">{c.contact}</h2>
-          <p className="text-slate-600 dark:text-slate-300">
-            Tel: <a href="tel:+493429347057" className="text-blue-600 dark:text-blue-400 hover:underline">+49 (0) 34293 470571</a><br />
-            Fax: +49 (0) 34293 470572<br />
-            E-Mail: <a href="mailto:richter@w-2.de" className="text-blue-600 dark:text-blue-400 hover:underline">richter@w-2.de</a><br />
-            Web: <a href="https://w-2.de" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">https://w-2.de</a>
-          </p>
+          <ContactBlock />
         </section>
 
         <hr className="border-slate-200 dark:border-slate-700" />
