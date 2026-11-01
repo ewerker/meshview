@@ -5,15 +5,15 @@ export const CONTACT = {
   phoneHref: 'tel:+4934293470571',
   fax: '+49 34293 470572',
   faxHref: 'tel:+4934293470572',
-  emergency: '+1778337468',
-  emergencyHref: 'tel:+1778337468',
+  emergency: '+491778337468',
+  emergencyHref: 'tel:+491778337468',
   email: 'richter@w-2.de',
   website: 'https://w-2.de',
 };
 
 const labels = {
-  de: { phone: 'Telefon', fax: 'Fax', emergency: 'Notfälle', email: 'E-Mail', website: 'Website' },
-  en: { phone: 'Phone', fax: 'Fax', emergency: 'Emergencies', email: 'E-mail', website: 'Website' },
+  de: { phone: 'Telefon', fax: 'Fax', emergency: 'Hotline', email: 'E-Mail', website: 'Website' },
+  en: { phone: 'Phone', fax: 'Fax', emergency: 'Hotline', email: 'E-mail', website: 'Website' },
 };
 
 export default function ContactBlock({ textClass = 'text-slate-600 dark:text-slate-300', className = '' }) {
